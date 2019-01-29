@@ -1,7 +1,7 @@
 import cv2
 import os
 import time
-
+from Camera import Camera
 
 
 class CameraGroup():
@@ -60,6 +60,34 @@ class CameraGroup():
         cap = cv2.VideoCapture(sourceNumber)
         if cap is None or not cap.isOpened():
             print('Warning: unable to open video source: ', sourceNumber)
-
+    def findConnectedCams(self):
+        index = 0
+        arr = []
+        while True:
+            cap = cv2.VideoCapture(index)
+            if not cap.read()[0]:
+                break
+            else:
+                arr.append(index)
+            cap.release()
+            index += 1
+            if index < 10:
+                break
+        return arr
     #def addCamCalib(self):
+
+    def initConnectedCams(self, includeDefaultCam=False):
+        conCams = self.findConnectedCams()
+        if not includeDefaultCam:
+            if conCams[0] is 0: # Defaulkt cam is in list. We want to remove it.
+                conCams.remove(0)
+                print(conCams)
+        for i in conCams:
+            cam = Camera(('Cam',i),i,i)
+            self.addSingleCam(cam)
+
+    def getSingleImg(self, index):
+        cam = self.getCamByID(index)
+        frame = cam.getSingleFrame()
+        return frame
 

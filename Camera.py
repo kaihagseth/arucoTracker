@@ -13,9 +13,12 @@ class Camera():
         self._intri_cam_mtrx = intri_cam_mtrx
         self._cam_loca = cam_loca
         self._cam_pose = cam_pose_mtrc
+        self.src = srcIndex
+        self.vidCap = cv2.VideoCapture(self.src)
         #if cam_pose_mtrc is not None:
         #    self.inv_cam_pose = np.linalg.inv(self.cam_pose)
         self._aov = aov
+    def startVidStream(self):
         self._vidstreamthread = WebcamVideoStream(src=0,camName=camName)
         self._vidstreamthread.start()
     def getFrame(self):
@@ -33,7 +36,9 @@ class Camera():
         Take a image, find the
         :return:
         '''
-
+    def getSingleFrame(self):
+        grabbed, frame = self.vidCap.read()
+        return frame
 #otc1 = OTCam()
 #otc2 = OTCam(camName="Cam2",srcIndex=1)
 #time.sleep(1)
