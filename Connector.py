@@ -1,8 +1,4 @@
-
-
-
-
-
+from CameraGroup import CameraGroup
 
 
 class Connector():
@@ -11,4 +7,9 @@ class Connector():
     '''
 
     def __init__(self):
-        pass
+        self.cg = CameraGroup()
+
+
+
+    def addCamera(self, cam):
+        self.cg.addSingleCam(cam)
