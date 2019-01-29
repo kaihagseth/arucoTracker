@@ -1,2 +1,5 @@
 README @ Project File: Ship Pose Estimator
 
+SYNTAX:
+'_number' means this is a field in the class, and should NOT be changed outside the class without knowing what your doing.
+
