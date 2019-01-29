@@ -16,7 +16,7 @@ class SingleImageAnalysis():
         self.OTCam = otcamParent
 
 
-    def estimateModelPos(self, imagePoints, distKoeff, modellParam, intrCamMtrx=None):
+    def estimateModelPos(self, imagePoints, distKoeff, modellParam=None, intrCamMtrx):
         '''
         Estimate the model pose from a single image.
         :param imagePoints: Image coordinates of the point location, given in number of pixels. Order is not essential. Given as 6x2 matrix. If
@@ -27,5 +27,7 @@ class SingleImageAnalysis():
         specified, default parameters is used. Default: [[1,0,0],[0,1,0],[0,0,1], [0,0,0]]
         :return: Extrinsic matrix describing pose and position of camera. Givenas 3x4 matrix.
         '''
-        if intrCamMtrx is None:
-            intrCamMtrx = np.matrix([[1,0,0],[0,1,0],[0,0,1], [0,0,0]])
+        if modellParam is None:
+            modellParam = np.matrix([[1,0,0],[0,1,0],[0,0,1], [0,0,0]])
+
+
