@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import math
+import exceptions as exc
 
 
 
@@ -21,11 +22,11 @@ class SingleImageAnalysis():
         '''
         Estimate the model pose from a single image.
         :param imagePoints: Image coordinates of the point location, given in number of pixels. Order is not essential. Given as 4x2 matrix. If
-        point is not found, it's x's and y's are set to -1. Image origo is top left, +y is downwards.
+        point is not found, its x's and y's are set to -1. Image origo is top left, +y is downwards.
         :param intrCamMtrx: The intrinsic camera matrix. Given as: [[fx, 0, cx],[0, fy, cy],[0,0,1]]
         :param modelParam: The location of on-model bullets, given in homogenus model coordinates. Given as a 4x3 matrix. If not
         specified, default parameters is used. Default: [[1,0,0,0],[0,1,0,0],[0,0,1,0], [1,1,1,1]]
-        :param x: Initial guess of object pose
+        :param x0: Initial guess of object pose
         :return: pose of the object with respect to the camera 6x1 matrix object.
         '''
         if modelParam is None:
@@ -33,6 +34,14 @@ class SingleImageAnalysis():
 
         if x0 is None:
             x0 = np.matrix([0,0,0,0,0,0]).T
+
+        #checking if all image points are present in input
+        for i in range(4):
+            for j in range(2):
+                if imagePoints[i,j] == -1:
+                    raise exc.MissingImagePointException('One or more image points not found, cannot estimate pose')
+
+
 
         # Points in image (y0)
         y0 = imagePoints.T
@@ -112,6 +121,8 @@ class SingleImageAnalysis():
             x = x + dx
 
         return x
+
+
 
 
 
