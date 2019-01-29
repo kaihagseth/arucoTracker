@@ -17,7 +17,7 @@ class SingleImageAnalysis():
         self.OTCam = otcamParent
 
 
-    def estimateModelPos(self, imagePoints, intrCamMtrx, modelParam=None, x0=None):
+    def estimateModelPose(self, imagePoints, intrCamMtrx, modelParam=None, x0=None):
         '''
         Estimate the model pose from a single image.
         :param imagePoints: Image coordinates of the point location, given in number of pixels. Order is not essential. Given as 4x2 matrix. If
@@ -26,7 +26,7 @@ class SingleImageAnalysis():
         :param modelParam: The location of on-model bullets, given in homogenus model coordinates. Given as a 4x3 matrix. If not
         specified, default parameters is used. Default: [[1,0,0,0],[0,1,0,0],[0,0,1,0], [1,1,1,1]]
         :param x0: Initial guess of object pose
-        :return: pose of the object with respect to the camera 6x1 matrix object.
+        :return: pose of the object with respect to the camera 6x1 matrix object and the objrct to camera translation matrix 4x4
         '''
         if modelParam is None:
             modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
@@ -34,13 +34,11 @@ class SingleImageAnalysis():
         if x0 is None:
             x0 = np.matrix([0,0,0,0,0,0]).T
 
-        #checking if all image points are present in input
+        # checking if all image points are present in input
         for i in range(4):
             for j in range(2):
                 if imagePoints[i,j] == -1:
                     raise exc.MissingImagePointException('One or more image points not found, cannot estimate pose')
-
-
 
         # Points in image (y0)
         y0 = imagePoints.T
@@ -87,23 +85,22 @@ class SingleImageAnalysis():
 
             p = np.matrix.reshape(ph, (-1, 1), order='F')
 
-            return p
+            return p, mExt
 
         for i in range(0, 10):
 
             # Predicted image points
-            y = fProject(x, pm, intrCamMtrx)
-
+            y, _ = fProject(x, pm, intrCamMtrx)
 
             # Jakobian
             e = 0.000001
             j = np.asmatrix(np.empty((8, 6)))
-            j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]]), pm, intrCamMtrx) - y), e)
-            j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]]), pm, intrCamMtrx) - y), e)
-            j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]]), pm, intrCamMtrx) - y), e)
-            j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]]), pm, intrCamMtrx) - y), e)
-            j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]]), pm, intrCamMtrx) - y), e)
-            j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, intrCamMtrx) - y), e)
+            j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]]), pm, intrCamMtrx)[0] - y), e)
+            j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]]), pm, intrCamMtrx)[0] - y), e)
+            j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]]), pm, intrCamMtrx)[0] - y), e)
+            j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]]), pm, intrCamMtrx)[0] - y), e)
+            j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]]), pm, intrCamMtrx)[0] - y), e)
+            j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, intrCamMtrx)[0] - y), e)
 
             # reshaping to match y so we can find dY
             y0 = np.reshape(y0, (8, 1), order='c')
@@ -119,4 +116,17 @@ class SingleImageAnalysis():
             # updating pose estimate
             x = x + dx
 
-        return x
+        # getting  translation matrixand pose
+        _, transformMatrix = fProject(x, pm, intrCamMtrx)
+        pose = x
+
+        return pose, transformMatrix
+
+    def transformPose(self, pose, transformMatrix):
+        '''
+        :param pose: Pose in system A that is being transformed
+        :param transformMatrix: matrix from transform from system A to B
+        :return: The transformed pose
+        '''
+
+        
