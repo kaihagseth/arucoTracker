@@ -7,7 +7,7 @@ from Camera import Camera
 class CameraGroup():
     def __init__(self):
         self.camReg = []
-
+        self.includeDefCam = True
 
 
     def addSingleCam(self, cam):
@@ -61,7 +61,10 @@ class CameraGroup():
         if cap is None or not cap.isOpened():
             print('Warning: unable to open video source: ', sourceNumber)
     def findConnectedCams(self):
-        index = 0
+        if self.includeDefCam is False:
+            index = 1 # Dont include webcam at index 0.
+        else:
+            index = 0
         arr = []
         while True:
             cap = cv2.VideoCapture(index)
@@ -77,6 +80,7 @@ class CameraGroup():
     #def addCamCalib(self):
 
     def initConnectedCams(self, includeDefaultCam=False):
+        self.includeDefCam = includeDefaultCam
         conCams = self.findConnectedCams()
         if not includeDefaultCam:
             if conCams[0] is 0: # Defaulkt cam is in list. We want to remove it.
@@ -85,6 +89,7 @@ class CameraGroup():
         for i in conCams:
             cam = Camera(('Cam',i),i,i)
             self.addSingleCam(cam)
+
 
     def getSingleImg(self, index):
         cam = self.getCamByID(index)

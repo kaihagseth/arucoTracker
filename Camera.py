@@ -1,6 +1,7 @@
 import numpy as np
 from WebcamVideoStream import WebcamVideoStream
 import cv2
+from IntrinsicCalibration import IntrinsicCalibration
 import time
 '''
 Class for Object Tracking Camera.
@@ -18,6 +19,7 @@ class Camera():
         #if cam_pose_mtrc is not None:
         #    self.inv_cam_pose = np.linalg.inv(self.cam_pose)
         self._aov = aov
+        self.IC = IntrinsicCalibration()
     def startVidStream(self):
         self._vidstreamthread = WebcamVideoStream(src=0,camName=camName)
         self._vidstreamthread.start()
@@ -39,6 +41,11 @@ class Camera():
     def getSingleFrame(self):
         grabbed, frame = self.vidCap.read()
         return frame
+
+    def saveFrameToCalib(self, cbFrame):
+        #print('Chessboardframe is saved to this came on index ', self._ID, '.')
+        self.IC.calibCamVeg(cbFrame)
+
 #otc1 = OTCam()
 #otc2 = OTCam(camName="Cam2",srcIndex=1)
 #time.sleep(1)

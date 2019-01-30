@@ -22,3 +22,6 @@ class Connector():
 
     def getImgFromSingleCam(self, camId):
         return self.cg.getSingleImg(camId)
+
+    def getCamFromIndex(self, index):
+        return self.cg.getCamByID(index)
