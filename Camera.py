@@ -16,10 +16,9 @@ class Camera():
         self._cam_pose = cam_pose_mtrc
         self.src = srcIndex
         self.vidCap = cv2.VideoCapture(self.src)
-        #if cam_pose_mtrc is not None:
-        #    self.inv_cam_pose = np.linalg.inv(self.cam_pose)
         self._aov = aov
         self.IC = IntrinsicCalibration()
+
     def startVidStream(self):
         self._vidstreamthread = WebcamVideoStream(src=0,camName=camName)
         self._vidstreamthread.start()
@@ -46,6 +45,8 @@ class Camera():
         #print('Chessboardframe is saved to this came on index ', self._ID, '.')
         self.IC.calibCamVeg(cbFrame)
 
+    def undistort(self, img):
+        self.IC.undistortImage(img)
 #otc1 = OTCam()
 #otc2 = OTCam(camName="Cam2",srcIndex=1)
 #time.sleep(1)

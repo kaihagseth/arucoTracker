@@ -7,7 +7,7 @@ class TextUI():
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = True
+        self.DEBUG = False
         self.c = connector
     def start(self):
         if self.DEBUG:
@@ -33,7 +33,9 @@ class TextUI():
               '2. List cameras \n'
               '3. Import cameras \n'
               '4. Calibrate cameras \n'
-              '5. Test cameras'
+              '5. Test cameras \n'
+              '7. Videotest cameras'
+
               )
         choice = int(input('Type: '))
         if choice is 1:
@@ -52,7 +54,8 @@ class TextUI():
             self.calibCameras()
         elif choice is 5:
             self.testCameras()
-
+        elif choice is 7:
+            self.videoTest(0)
 
     def calibCameras(self):
         '''
@@ -82,7 +85,7 @@ class TextUI():
             print('Calibration process started.')
             camIDs = self.c.getConnectedCams()
             for ID in camIDs:
-                _calibSingleCam(ID)
+                self._calibSingleCam(ID)
 
     def _calibSingleCam(self, ID):
         notFinished = True
@@ -113,6 +116,17 @@ class TextUI():
         if choice in camIndexs:
             img = self.c.getImgFromSingleCam(choice)
             text = 'Test: Cam src: ', str(choice)
-            cv2.imshow('Test', img)
+            cv2.imshow('Raw', img)
             cv2.waitKey(0)
 
+    def videoTest(self, ID):
+        cam = self.c.getCamFromIndex(ID)
+        notFinished = True
+        while notFinished:  #
+            frame = cam.getSingleFrame()
+            undisFrame = cam.undistort(frame)
+            cv2.imshow('Raw', frame)
+            cv2.imshow('Undistorted', undisFrame)
+            key = cv2.waitKey(20)
+            if key == 27:  # exit on Esc
+                break
