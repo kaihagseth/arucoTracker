@@ -70,6 +70,7 @@ class SingleImageAnalysis():
             Rx = np.matrix([[1, 0, 0], [0, math.cos(ax), -math.sin(ax)], [0, math.sin(ax), math.cos(ax)]])
             Ry = np.matrix([[math.cos(ay), 0, math.sin(ay)], [0, 1, 1], [-math.sin(ay), 0, math.cos(ay)]])
             Rz = np.matrix([[math.cos(az), -math.sin(az), 0], [math.sin(az), math.cos(az), 0], [0, 0, 1]])
+            # TODO: Endre fra fixed angles to euler representasjon (se John J. Craig)
             Rzy = np.matmul(Rz, Ry)
             R = np.matmul(Rzy, Rx)
 
@@ -133,9 +134,8 @@ class SingleImageAnalysis():
         :return: Transformation matrix for system A represented in system B
         '''
 
-        Rba = transformMatrix[0:3, 0:3]
-        Rab = Rba.T
-        Pbaorg = -Rba*transformMatrix[0:3, 3]
+        Rab = transformMatrix[0:3, 0:3].T
+        Pbaorg = -Rab*transformMatrix[0:3, 3]
         Tab = np.vstack(np.hstack(Rab, Pbaorg), [[0, 0, 0, 1]])
 
         return Tab
@@ -153,6 +153,23 @@ class SingleImageAnalysis():
 
         return Tca
 
-    def ttansformMatrixToPose(self, transformMatrix):
+    def tansformMatrixToPose(self, transformMatrix):
+        '''
+        TODO: Skrive forklaring
+        :param transformMatrix:
+        :return: Pose [ax; ay; az; tx; ty; tz]
+        '''
+
+        T = transformMatrix
+
+        ay = np.arctan2(-T[2, 0], np.sqrt(np.square(T[0, 0])+np.square(T[1, 2])))
+        az = np.arctan2(T[1, 0]/np.cos(ay), T[0, 0]/np.cos(ay))
+        ax = np.arctan2(T[2, 1] / np.cos(ay), T[2, 2] / np.cos(ay))
+
+        pose = np.matrix([ax, ay, az, T[0, 3], T[1, 3], T[2, 3]]).T
+
+        return pose
+
+
 
 
