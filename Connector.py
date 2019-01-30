@@ -4,6 +4,7 @@ from CameraGroup import CameraGroup
 class Connector():
     '''
     Connect the UI with rest of the application.
+    hello
     '''
 
     def __init__(self):
