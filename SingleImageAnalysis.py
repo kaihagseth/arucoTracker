@@ -26,7 +26,8 @@ class SingleImageAnalysis():
         :param modelParam: The location of on-model bullets, given in homogenus model coordinates. Given as a 4x3 matrix. If not
         specified, default parameters is used. Default: [[1,0,0,0],[0,1,0,0],[0,0,1,0], [1,1,1,1]]
         :param x0: Initial guess of object pose
-        :return: pose of the object with respect to the camera 6x1 matrix object and the objrct to camera translation matrix 4x4
+        :return: pose of the object with respect to the camera 6x1 matrix object [ax; ay; az; tx; ty; tz]
+        and the object to camera translation matrix 4x4
         '''
         if modelParam is None:
             modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
@@ -56,10 +57,11 @@ class SingleImageAnalysis():
             :param x: Model to camera pose parameters
             :param pm: Points in homogenus 3D coordinates 4xN matrix
             :param K: Intrinsic camera matrix
-            :return: Projected image coordinates in nx1 matrix object
+            :return: Projected image coordinates in nx1 matrix object and transformation matrix of model
+            pose relative to camera
             '''
 
-            # Model Pose
+            # Model Pose relative to camera
             ax, ay, az, tx, ty, tz = x[0], x[1], x[2], x[3], x[4], x[5]
             tM = np.vstack((tx, ty))
             tM = np.vstack((tM, tz))
@@ -85,7 +87,9 @@ class SingleImageAnalysis():
 
             p = np.matrix.reshape(ph, (-1, 1), order='F')
 
-            return p, mExt
+            # Homogenus transformation matrix
+            tMtx = np.vstack(mExt, np.matrix([[0, 0, 0, 1]]))
+            return p, tMtx
 
         for i in range(0, 10):
 
@@ -122,11 +126,33 @@ class SingleImageAnalysis():
 
         return pose, transformMatrix
 
-    def transformPose(self, pose, transformMatrix):
+    def inverseTransform(self, transformMatrix):
         '''
-        :param pose: Pose in system A that is being transformed
-        :param transformMatrix: matrix from transform from system A to B
-        :return: The transformed pose
+        TODO: Skrive forklaring fra Introduction to Robotics av John J. Craig s36
+        :param transformMatrix: Transformation matrix for system B represented in system A
+        :return: Transformation matrix for system A represented in system B
         '''
 
-        
+        Rba = transformMatrix[0:3, 0:3]
+        Rab = Rba.T
+        Pbaorg = -Rba*transformMatrix[0:3, 3]
+        Tab = np.vstack(np.hstack(Rab, Pbaorg), [[0, 0, 0, 1]])
+
+        return Tab
+
+
+    def compoundTransformations(self, transformMatrixA, transformMatrixB):
+        '''
+        TODO: Skrive forklaring fra Introduction to Robotics av John J. Craig s35
+        :param transformMatrixA: Transformation matrix for system B represented in system A
+        :param transformMatrixB: Transformation matrix for system C represented in system B
+        :return: The compounded transformation matrix for system C represented in system A
+        '''
+
+        Tca = transformMatrixA*transformMatrixB
+
+        return Tca
+
+    def ttansformMatrixToPose(self, transformMatrix):
+
+
