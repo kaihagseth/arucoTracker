@@ -16,15 +16,24 @@ class IntrinsicCalibration():
     '''
 
     def __init__(self):
+        self._curr_ret = None
+        self._curr_rvecs = None
+        self._curr_tvecs = None
         self._curr_mtx = None
-        self.curr_dist = None
-        self.curr_newcameramtx = None
-        self.curr_roi = None
+        self._curr_dist = None
+        self._curr_newcameramtx = None
+        self._curr_roi = None
+    def loadSavedValues(self, filename='IntriCalib.npz'):
+        npzfile = np.load(filename)
+        self._curr_mtx = npzfile['mtx']
+        self._curr_dist = npzfile['dist']
+        self._curr_newcameramtx = npzfile['newcameramtx']
+        self._curr_roi = npzfile['roi']
 
     def calibCamDefault(self, frame=None, useDemo=False, showImg=False):
         '''
         Doing checkboard calib:
-        '''''
+        '''
 
         if not useDemo:
             img = frame
@@ -155,21 +164,51 @@ class IntrinsicCalibration():
             #cv2.imshow('Calib res', dst)
             #cv2.waitKey(0)
             cv2.imwrite('images/calibresult.png', dst)
-            np.savez('IntriCalib', ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
+            np.savez('IntriCalib', ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             npzfile = np.load('IntriCalib.npz')
             print('Intrinsi calib: ', npzfile['mtx'])
+            self._curr_ret = ret
+            self._curr_mtx = mtx
+            self._curr_dist = dist
+            self._curr_rvecs = rvecs
+            self._curr_tvecs = tvecs
+            self._curr_newcameramtx = newcameramtx
+            self._curr_roi = roi
+
         except cv2.error:
             print('OpenCV failed. ')
             raise FailedCalibrationException(msg='Calib failed')
 
     def undistortImage(self, img):
-        dst = cv2.undistort(img, self._curr_mtx, self.curr_dist, None, self.curr_newcameramtx)
+        dst = None
+        try:
+            print('Hello undistort')
+            dst = cv2.undistort(img, self._curr_mtx, self._curr_dist, None, self._curr_newcameramtx)
+            print(dst)
+        except cv2.error: # Not successfull
+            raise FailedCalibrationException
         if not dst.any():  # dst is empty, no calib result is found.
             raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
         # crop the image
-        x, y, w, h = self.curr_roi
+        print('Past dst')
+        x, y, w, h = self._curr_roi
         dst = dst[y:y + h, x:x + w]
         return dst
 if __name__ == "__main__":
+    print('Hello')
     ic = IntrinsicCalibration()
-    ic.calibCamDefault(useDemo=True)
+    ic.loadSavedValues('IntriCalib.npz')
+    #ic.calibCamDefault(useDemo=True)
+    print('Hi')
+    img = cv2.imread('images/img.jpg')
+    print('OK')
+    imgd = None
+    try:
+        print('Inside imgd')
+        imgd = ic.undistortImage(img)
+    except FailedCalibrationException:
+        print('Unsuccesfull')
+    print('Img: ', imgd)
+    cv2.imshow('Undistort',imgd)
+    cv2.imwrite('images/imgd.jpg', imgd)
+    cv2.waitKey(7000)

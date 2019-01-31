@@ -20,7 +20,7 @@ class Camera():
         self.IC = IntrinsicCalibration()
 
     def startVidStream(self):
-        self._vidstreamthread = WebcamVideoStream(src=0,camName=camName)
+        self._vidstreamthread = WebcamVideoStream(src=0,camName=self._name)
         self._vidstreamthread.start()
     def getFrame(self):
         self._vidstreamthread.read()
@@ -47,6 +47,8 @@ class Camera():
 
     def undistort(self, img):
         self.IC.undistortImage(img)
+    def activateSavedValues(self, filename='IntriCalib.npz'):
+        self.IC.loadSavedValues(filename)
 #otc1 = OTCam()
 #otc2 = OTCam(camName="Cam2",srcIndex=1)
 #time.sleep(1)

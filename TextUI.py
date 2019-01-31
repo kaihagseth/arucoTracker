@@ -12,7 +12,6 @@ class TextUI():
     def start(self):
         if self.DEBUG:
             self.c.initConnectedCams(includeDefaultCam=True)
-            self.calibCameras()
             print('DEBUG MODE. Cameras initialised.')
         print('SHIP POSE ESTIMATOR @ NTNU 2019 \n'
               'Please make your choice: \n'
@@ -119,14 +118,17 @@ class TextUI():
             cv2.imshow('Raw', img)
             cv2.waitKey(0)
 
-    def videoTest(self, ID):
+    def videoTest(self, ID2):
         cam = self.c.getCamFromIndex(ID)
+        #cam.activateSavedValues('IntriCalib.npz')
         notFinished = True
         while notFinished:  #
+            print('Inside')
             frame = cam.getSingleFrame()
             undisFrame = cam.undistort(frame)
             cv2.imshow('Raw', frame)
             cv2.imshow('Undistorted', undisFrame)
-            key = cv2.waitKey(20)
+            print('Before waitkey')
+            key = cv2.waitKey(0)
             if key == 27:  # exit on Esc
                 break
