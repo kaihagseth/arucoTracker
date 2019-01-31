@@ -7,23 +7,35 @@ class TextUI():
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = False
+        self.DEBUG = True
         self.c = connector
+
+    '''
+    Launching the UI.
+    '''
     def start(self):
-        if self.DEBUG:
-            self.c.initConnectedCams(includeDefaultCam=True)
-            print('DEBUG MODE. Cameras initialised.')
-        print('SHIP POSE ESTIMATOR @ NTNU 2019 \n'
-              'Please make your choice: \n'
-              '1. Start application \n'
-              '2. Change model parameters \n'
-              '3. Configure cameras \n'
-              '4. Exit'
-              )
-        choice = int(input('Type: '))
-        if choice is 3:
-            self.configCameras()
-        self.start()
+        stopProgram = True
+        while not stopProgram:
+            if self.DEBUG:
+                self.c.initConnectedCams(includeDefaultCam=True)
+                self.calibCameras()
+                print('DEBUG MODE. Cameras initialised.')
+            print('SHIP POSE ESTIMATOR @ NTNU 2019 \n'
+                  'Please make your choice: \n'
+                  '1. Start application \n'
+                  '2. Change model parameters \n'
+                  '3. Configure cameras \n'
+                  '4. Exit'
+                  )
+            choice = int(input('Type: '))
+            if choice is 1:
+                pass
+            if choice is 2:
+                pass
+            if choice is 3:
+                self.configCameras()
+            elif choice is 4:
+                stopProgram = True
     def configCameras(self):
         print('\n'
               'Please make your choice: \n'
@@ -34,7 +46,6 @@ class TextUI():
               '4. Calibrate cameras \n'
               '5. Test cameras \n'
               '7. Videotest cameras'
-
               )
         choice = int(input('Type: '))
         if choice is 1:
@@ -43,12 +54,8 @@ class TextUI():
             self.c.initConnectedCams(includeDefaultCam=False)
 
         elif choice is 2:
-            print('\n'
-                  'Cameras is on index: ', self.c.getConnectedCams()
-                 )
+            print('Cameras is on index: ', self.c.getConnectedCams())
             print('Number of cameras: ', len(self.c.getConnectedCams()))
-            #print(cam.name, '\n') for cam in self.c.getCamList()
-            #choice = int(input('Type: '))
         elif choice is 4:
             self.calibCameras()
         elif choice is 5:
@@ -58,7 +65,7 @@ class TextUI():
 
     def calibCameras(self):
         '''
-        Calib cameras.
+        Menu for selecting what cameras to calibrate.
         '''
         print('\n'
               'Please make your choice: \n'
@@ -67,27 +74,29 @@ class TextUI():
               )
         choice = int(input('Type:'))
         if choice is 1:
-            print('Running calib on 1.')
-            ID = 1
-            notFinished = True
-            cam = self.c.getCamFromIndex(ID)
-            while notFinished:
-                frame = cam.getSingleFrame()
-                cv2.imshow('Calibrate cam', frame)
-                key = cv2.waitKey(20)
-                if key == 32:  # exit on Space
-                    cam.saveFrameToCalib(frame)
-                    cv2.destroyWindow('Calibrate cam')
-                    break
-            print('Not yet supported.')
+            print('ID of wanted camera, example 0:')
+            IDchoice = int(input('Type:'))
+            print(' How many calibration images do you want to take? Recommended is 10.')
+            numbImg = int(input('Type:'))
+            self._calibSingleCam(ID=IDchoice, numbImg=numbImg)
         elif choice is 2:
+            print(' How many calibration images do you want to take? Recommended is 10 per cam.')
+            numbImg = int(input('Type:'))
             print('Calibration process started.')
             camIDs = self.c.getConnectedCams()
             for ID in camIDs:
-                self._calibSingleCam(ID)
+                self._calibSingleCam(ID, numbImg)
 
-    def _calibSingleCam(self, ID):
+    def _calibSingleCam(self, ID, numbImg):
+        '''
+        Calibrate a single camera, based on ID. Take n images and send them to the calib-algorithm. Only send the frames
+        that gives a decent result.
+        :param ID: ID of camera to calibrate.
+        :param numbImg: Number of images to take in with calibration.
+        :return: None
+        '''
         notFinished = True
+        frames = []
         cam = self.c.getCamFromIndex(ID)
         while notFinished: #Hasn't got decent calib result for cam yet
             frame = cam.getSingleFrame()
@@ -95,12 +104,22 @@ class TextUI():
             key = cv2.waitKey(20)
             if key == 32:  # exit on Space
                 try: # Catch error with calib algo / bad picture
-                    cam.saveFrameToCalib(frame)
-                    cv2.destroyWindow('Calibrate cam')
-                    print('Calibration of cam ', ID, 'is finished.')
-                    notFinished = False # Calibration was successful, go to next cam.
+                    cam.calibrateCam([frame])
+                    frames.append(frame)
+                    print('Captured, image nr {0} of {1}'.format(len(frames), numbImg))
                 except FailedCalibrationException:
                     print('Calibration failed, trying again.')
+
+                if len(frames) >= numbImg:
+                    try:  # Try calibration with all images, catch failure
+                        cam.calibrateCam(frames)
+                        cv2.destroyWindow('Calibrate cam')
+                        print('Calibration of cam ', ID, 'is finished.')
+                        notFinished = False  # Calibration was successful, go to next cam.
+                    except FailedCalibrationException:
+                        print('Calibration failed, trying again.')
+                #else:
+                 #   notFinished = True
 
 
     def testCameras(self):
