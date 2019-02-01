@@ -7,18 +7,27 @@ class TextUI():
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = True
+        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
         self.c = connector
 
     '''
     Launching the UI.
     '''
     def start(self):
-        stopProgram = True
+        stopProgram = False
         while not stopProgram:
             if self.DEBUG:
+                ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
                 self.c.initConnectedCams(includeDefaultCam=True)
-                self.calibCameras()
+                #self.calibCameras()
+                cam = self.c.getCamFromIndex(0)
+                cam.loadSavedCalibValues()
+                orgimg = cam.getSingleFrame()
+                img = cam._IC.undistort_image(orgimg)
+                print(img)
+                cv2.imshow('frame', img )
+                cv2.imshow('Frame org', orgimg)
+                cv2.waitKey(0)
                 print('DEBUG MODE. Cameras initialised.')
             print('SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
@@ -40,29 +49,35 @@ class TextUI():
         print('\n'
               'Please make your choice: \n'
               '1. Initialise connected cameras \n'
-              '6. Initialise connected cameras except screencam \n'
-              '2. List cameras \n'
-              '3. Import cameras \n'
-              '4. Calibrate cameras \n'
-              '5. Test cameras \n'
-              '7. Videotest cameras'
+              '2. Initialise connected cameras except screencam \n'
+              '3. List cameras \n'
+              '4. Import cameras \n'
+              '5. Calibrate cameras \n'
+              '6. Test cameras \n'
+              '7. Videotest cameras \n'
+              '8. Show current calib params, index 0'
               )
         choice = int(input('Type: '))
         if choice is 1:
             self.c.initConnectedCams(includeDefaultCam=True)
-        if choice is 6:
+        elif choice is 2:
             self.c.initConnectedCams(includeDefaultCam=False)
 
-        elif choice is 2:
+        elif choice is 3:
             print('Cameras is on index: ', self.c.getConnectedCams())
             print('Number of cameras: ', len(self.c.getConnectedCams()))
-        elif choice is 4:
-            self.calibCameras()
         elif choice is 5:
+            self.calibCameras()
+        elif choice is 6:
             self.testCameras()
         elif choice is 7:
             self.videoTest(0)
-
+        elif choice is 8:
+            print('Printing parameters')
+            self.c.getCamFromIndex(0)._IC.printCurrParams()
+        else: #Invalid typing
+            print('Bad typing. Try again.')
+            self.configCameras()
     def calibCameras(self):
         '''
         Menu for selecting what cameras to calibrate.
@@ -97,10 +112,16 @@ class TextUI():
         '''
         notFinished = True
         frames = []
-        cam = self.c.getCamFromIndex(ID)
+
         while notFinished: #Hasn't got decent calib result for cam yet
-            frame = cam.getSingleFrame()
-            cv2.imshow('Calibrate cam', frame)
+            try:
+                cam = self.c.getCamFromIndex(ID)
+                frame = cam.getSingleFrame()
+                cv2.imshow('Calibrate cam', frame)
+            except cv2.error:
+                print('Cam capture failed. Trying again.')
+
+                #raise FailedCalibrationException(msg='Couldn\'t acces camera.')
             key = cv2.waitKey(20)
             if key == 32:  # exit on Space
                 try: # Catch error with calib algo / bad picture
@@ -137,17 +158,20 @@ class TextUI():
             cv2.imshow('Raw', img)
             cv2.waitKey(0)
 
-    def videoTest(self, ID2):
+    def videoTest(self, ID):
         cam = self.c.getCamFromIndex(ID)
         #cam.activateSavedValues('IntriCalib.npz')
         notFinished = True
         while notFinished:  #
-            print('Inside')
-            frame = cam.getSingleFrame()
-            undisFrame = cam.undistort(frame)
-            cv2.imshow('Raw', frame)
-            cv2.imshow('Undistorted', undisFrame)
-            print('Before waitkey')
-            key = cv2.waitKey(0)
-            if key == 27:  # exit on Esc
-                break
+            try:
+                print('Inside')
+                frame = cam.getSingleFrame()
+                undisFrame = cam.undistort(frame)
+                cv2.imshow('Raw', frame)
+                cv2.imshow('Undistorted', undisFrame)
+                print('Before waitkey')
+                key = cv2.waitKey(0)
+                if key == 27:  # exit on Esc
+                    break
+            except cv2.error:
+                print('OpenCV failed. Trying again.')

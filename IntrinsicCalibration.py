@@ -19,9 +19,9 @@ class IntrinsicCalibration():
         self._curr_ret = None
         self._curr_rvecs = None
         self._curr_tvecs = None
-        self._curr_mtx = None
-        self._curr_dist = None
-        self._curr_newcameramtx = None
+        self._curr_camera_matrix = None
+        self._curr_dist_coeff = None
+        self._curr_newcamera_mtx = None
         self._curr_roi = None
         self._parr_cam = parr_cam
     def loadSavedValues(self, filename='IntriCalib.npz'):
@@ -32,10 +32,11 @@ class IntrinsicCalibration():
         :param filename: Filename to get values from.
         :return: None
         '''
+        print('Loading old parameters from file ', filename)
         npzfile = np.load(filename)
-        self._curr_mtx = npzfile['mtx']
-        self._curr_dist = npzfile['dist']
-        self._curr_newcameramtx = npzfile['newcameramtx']
+        self._curr_camera_matrix = npzfile['mtx']
+        self._curr_dist_coeff = npzfile['dist']
+        self._curr_newcamera_mtx = npzfile['newcameramtx']
         self._curr_roi = npzfile['roi']
 
     def calibCam(self, frames):
@@ -48,7 +49,7 @@ class IntrinsicCalibration():
         #Save the images to a distinct camera folder
         i = 1
         camName = ''
-        '''  '''
+        ''' Make sure we don't use invalid name.  '''
         if self._parr_cam is None:
             camName = '0'
         else:
@@ -104,20 +105,38 @@ class IntrinsicCalibration():
             if len(frames) >= 2:
                 cv2.imwrite('images/calibresult.png', dst)
             '''Save latest values to a file.'''
+            
             np.savez('IntriCalib', ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
             self._curr_ret = ret
-            self._curr_mtx = mtx
-            self._curr_dist = dist
+            self._curr_camera_matrix = mtx
+            self._curr_dist_coeff = dist
             self._curr_rvecs = rvecs
             self._curr_tvecs = tvecs
-            self._curr_newcameramtx = newcameramtx
+            self._curr_newcamera_mtx = newcameramtx
             self._curr_roi = roi
 
         except cv2.error:
             print('OpenCV failed. ')
             raise FailedCalibrationException(msg='Calib failed')
+    def printCurrParams(self):
+        print('_curr_ret : ', self._curr_ret)
+        print('_curr_mtx : ', self._curr_camera_matrix)
+        print('_curr_dist : ', self._curr_dist_coeff)
+        print('_curr_rvecs : ', self._curr_rvecs)
+        print('_curr_newcameramtx : ', self._curr_newcamera_mtx)
+        print('_curr_roi : ', self._curr_roi)
 
+    def undistort_image(self, image):
+        img =  cv2.undistort(image, self._curr_camera_matrix, self._curr_dist_coeff,
+                             newCameraMatrix=self._curr_newcamera_mtx)
+        print('Image: ', img)
+        x, y, w, h = self._curr_roi
+        dst = img[y:y + h, x:x + w]
+        return dst
+        # def undistort_image(self, image):
+        #return cv2.undistort(image, self.camera_matrix, self.dist_coeffs,
+        #                     newCameraMatrix=self.new_camera_matrix)
     def undistortImage(self, img):
         '''
         Goal: Insert a distored image and get a undistorted image back.
@@ -127,7 +146,7 @@ class IntrinsicCalibration():
         dst = None
         try:
             print('Hello undistort')
-            dst = cv2.undistort(img, self._curr_mtx, self._curr_dist, None, self._curr_newcameramtx)
+            dst = cv2.undistort(img, self._curr_camera_matrix, self._curr_dist_coeff, None, self._curr_newcamera_mtx)
             print(dst)
         except cv2.error: # Not successfull
             raise FailedCalibrationException

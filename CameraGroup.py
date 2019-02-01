@@ -2,7 +2,7 @@ import cv2
 import os
 import time
 from Camera import Camera
-
+import time
 
 class CameraGroup():
     def __init__(self):
@@ -60,7 +60,11 @@ class CameraGroup():
         cap = cv2.VideoCapture(sourceNumber)
         if cap is None or not cap.isOpened():
             print('Warning: unable to open video source: ', sourceNumber)
-    def findConnectedCams(self):
+    def findConnectedCams2(self):
+        '''
+        Find all cams connected to system.  
+        :return: 
+        ''' #TODO: Find new algorithm, this thing is sloooow.
         if self.includeDefCam is False:
             index = 1 # Dont include webcam at index 0.
         else:
@@ -71,19 +75,42 @@ class CameraGroup():
             if not cap.read()[0]:
                 break
             else:
+                print('Found cam at index ', index)
                 arr.append(index)
+            time.sleep(2)
             cap.release()
             index += 1
+            time.sleep(2)
             if index < 10:
                 break
         return arr
-    #def addCamCalib(self):
+
+    def findConnectedCams(self):
+        '''
+        Find all cams connected to system.  
+        :return: 
+        ''' #TODO: Find new algorithm, this thing is sloooow.
+        if self.includeDefCam is False:
+            index = 1 # Dont include webcam at index 0.
+        else:
+            index = 0
+        arr = []
+        startArr = [0, 1, 2]
+        for i in startArr:
+            cap = cv2.VideoCapture(i)
+            ret, frame = cap.read()
+            print('Index ', i, ': ', ret)
+            if ret:
+                arr.append(i)
+            time.sleep(2)
+        return arr
 
     def initConnectedCams(self, includeDefaultCam=False):
         self.includeDefCam = includeDefaultCam
         conCams = self.findConnectedCams()
+        print('Connected cams: ', conCams)
         if not includeDefaultCam:
-            if conCams[0] is 0: # Defaulkt cam is in list. We want to remove it.
+            if conCams[0] is 0: # Default cam is in list. We want to remove it.
                 conCams.remove(0)
                 print(conCams)
         for i in conCams:
@@ -95,4 +122,3 @@ class CameraGroup():
         cam = self.getCamByID(index)
         frame = cam.getSingleFrame()
         return frame
-
