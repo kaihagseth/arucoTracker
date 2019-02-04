@@ -1,13 +1,14 @@
 import cv2
 from exceptions import FailedCalibrationException
 import time
+import logging
 
 class TextUI():
     '''
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
+        self.DEBUG = False # If True, do some obvious things for fast forward initialisation.
         self.c = connector
 
     '''
@@ -28,8 +29,8 @@ class TextUI():
                 cv2.imshow('frame', img )
                 cv2.imshow('Frame org', orgimg)
                 cv2.waitKey(0)
-                print('DEBUG MODE. Cameras initialised.')
-            print('SHIP POSE ESTIMATOR @ NTNU 2019 \n'
+                print('\n DEBUG MODE. Cameras initialised.')
+            print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
                   '1. Start application \n'
                   '2. Change model parameters \n'
@@ -38,13 +39,30 @@ class TextUI():
                   )
             choice = int(input('Type: '))
             if choice is 1:
-                pass
+                self.startApplication()
             if choice is 2:
                 pass
             if choice is 3:
                 self.configCameras()
             elif choice is 4:
                 stopProgram = True
+    def startApplication(self):
+        logging.info('Starting application')
+        runApp = True
+        self.c.startApplication(self.dispContiniusResults, self.doAbortApp)
+    def doAbortApp(self):
+        intext = True
+        if intext is 'Q':
+            print('doAbortFx is True')
+            return True
+        else:
+            print('dpAbortApp() is False')
+            return False
+
+    def dispContiniusResults(self, result):
+        print(result)
+    def abortFunction(self):
+        pass
     def configCameras(self):
         print('\n'
               'Please make your choice: \n'

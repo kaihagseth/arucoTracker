@@ -1,14 +1,27 @@
+import logging
+
 import cv2
 import os
 import time
 from Camera import Camera
 import time
+from infi.devicemanager import DeviceManager #DM to
 
 class CameraGroup():
     def __init__(self):
         self.camReg = []
         self.includeDefCam = True
-
+        dm = DeviceManager()
+        dm.root.rescan()
+        devices = dm.all_devices
+        webcams = []
+        for i in devices:
+            try:
+                if str(i.location).startswith('0000.0014') and "webcam" in i.friendly_name.lower():  # Only things at channel 14 is useful
+                    print('\n {} : address: {}, bus: {}, location: {}'.format(i.friendly_name, i.address, i.bus_number, i.location))
+                    webcams.append(i)
+            except Exception:
+                pass
 
     def addSingleCam(self, cam):
         self.camReg.append(cam)
@@ -24,7 +37,7 @@ class CameraGroup():
                 wantedCam = cam
                 break
         if wantedCam is None:
-            print('No cam found.')
+            logging.error('No cam found.')
         return wantedCam
 
 
@@ -77,10 +90,10 @@ class CameraGroup():
             else:
                 print('Found cam at index ', index)
                 arr.append(index)
-            time.sleep(2)
+            time.sleep(1)
             cap.release()
             index += 1
-            time.sleep(2)
+            time.sleep(1)
             if index < 10:
                 break
         return arr
@@ -90,6 +103,7 @@ class CameraGroup():
         Find all cams connected to system.  
         :return: 
         ''' #TODO: Find new algorithm, this thing is sloooow.
+        logging.info('Inside findConnectedCams()')
         if self.includeDefCam is False:
             index = 1 # Dont include webcam at index 0.
         else:
@@ -99,10 +113,10 @@ class CameraGroup():
         for i in startArr:
             cap = cv2.VideoCapture(i)
             ret, frame = cap.read()
-            print('Index ', i, ': ', ret)
+            #3logging.info('Cam on index ', i, ': ', ret)
             if ret:
                 arr.append(i)
-            time.sleep(2)
+            time.sleep(0.5)
         return arr
 
     def initConnectedCams(self, includeDefaultCam=False):
@@ -116,7 +130,7 @@ class CameraGroup():
         for i in conCams:
             cam = Camera(('Cam',i),i,i)
             self.addSingleCam(cam)
-
+        return self.camReg
 
     def getSingleImg(self, index):
         cam = self.getCamByID(index)

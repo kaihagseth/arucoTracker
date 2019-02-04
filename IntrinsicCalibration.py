@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import cv2
 import glob
@@ -105,7 +107,7 @@ class IntrinsicCalibration():
             if len(frames) >= 2:
                 cv2.imwrite('images/calibresult.png', dst)
             '''Save latest values to a file.'''
-            
+
             np.savez('IntriCalib', ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
             self._curr_ret = ret
@@ -130,7 +132,7 @@ class IntrinsicCalibration():
     def undistort_image(self, image):
         img =  cv2.undistort(image, self._curr_camera_matrix, self._curr_dist_coeff,
                              newCameraMatrix=self._curr_newcamera_mtx)
-        print('Image: ', img)
+        logging.debug('Image: ', img)
         x, y, w, h = self._curr_roi
         dst = img[y:y + h, x:x + w]
         return dst
@@ -143,17 +145,16 @@ class IntrinsicCalibration():
         :param img: Distorted image
         :return: A undistorted image.
         '''
-        dst = None
         try:
-            print('Hello undistort')
+            logging.debug('Inside undistortImage()')
             dst = cv2.undistort(img, self._curr_camera_matrix, self._curr_dist_coeff, None, self._curr_newcamera_mtx)
-            print(dst)
+            logging.debug(dst)
         except cv2.error: # Not successfull
             raise FailedCalibrationException
         if not dst.any():  # dst is empty, no calib result is found.
             raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
         # crop the image
-        print('Past dst')
+        logging.debug('Past dst')
         x, y, w, h = self._curr_roi
         dst = dst[y:y + h, x:x + w]
         return dst
@@ -162,7 +163,9 @@ if __name__ == "__main__":
     For debug only
     '''
     ic = IntrinsicCalibration()
-    ic.calibCam([cv2.imread('images/img.jpg')])
+    ic.loadSavedValues()
+    ic.printCurrParams()
+    #ic.calibCam([cv2.imread('images/img.jpg')])
 
     ''' print('Hello')
     ic = IntrinsicCalibration()

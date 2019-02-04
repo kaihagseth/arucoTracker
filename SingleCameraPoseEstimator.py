@@ -2,7 +2,8 @@ import numpy as np
 import math
 import exceptions as exc
 import Camera
-
+from SingleFramePointDetector import SingleFramePointDetector
+import random, time
 
 '''
 Class for doing all analysis and filtering on a single-OTcam image stream.
@@ -19,12 +20,31 @@ class SingleCameraPoseEstimator():
         :param modelParam: The location of on-model bullets, given in homogenus model coordinates. Given as a 4x3 matrix. If not
         specified, default parameters is used. Default: [[1,0,0,0],[0,1,0,0],[0,0,1,0], [1,1,1,1]]
         '''
-        self.OTCam = otcam
-        self.intrCamMtrx = self.OTCam._intri_cam_mtrx
+
+        self._OTCam = otcam
+        self.intrCamMtrx = self._OTCam._intri_cam_mtrx
         if modelParam is None:
             self.modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
         else:
             self.modelParam = modelParam
+        self._SFPD = SingleFramePointDetector()
+        self._setInitialPose = True
+    def findPoseResult_th(self, singlecam_curr_pose, singlecam_curr_pose_que):
+        run = True
+        while run:
+            singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
+            singlecam_curr_pose_que.put(singlecam_curr_pose)
+            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+            time.sleep(0.1)
+            #frame = self._OTCam.getSingleFrame()
+            #ballPoints = self._SFPD.findBallPoints(frame, [0, 0, 0], [250, 250, 250])
+            #modPose = self.estimateModelPose(ballPoints)
+            # Find pose
+#            pose = None
+
+ #           self.curr_pose = pose
+  #          if self._setInitialPose:  # First round
+   #             self.setReference()
 
     def estimateModelPose(self, imagePoints, x0=None):
         '''
