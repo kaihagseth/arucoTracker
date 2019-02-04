@@ -12,7 +12,11 @@ Thus, all analysis involving images from more than one camera, is not done here.
 
 class SingleCameraPoseEstimator():
 
+    # Camera to reference frame transform matrix
     ref = None
+    # bounds for image analysis
+    lower_bounds = None
+    upper_bounds = None
 
     def __init__(self, otcam, modelParam=None):
         '''
@@ -51,14 +55,13 @@ class SingleCameraPoseEstimator():
         Estimate the model pose from a single image.
         :param imagePoints: Image coordinates of the point location, given in number of pixels. Order is not essential. Given as 4x2 matrix. If
         point is not found, its x's and y's are set to -1. Image origo is top left, +y is downwards.
-
-        :param x0: Initial guess of object pose
+        :param x0: Initial guess of object pose. NB! y can not be set to 0 as this will cause errors.
         :return: pose of the object with respect to the camera 6x1 matrix object [ax; ay; az; tx; ty; tz]
         and the object to camera transformation matrix 4x4
         '''
 
         if x0 is None:
-            x0 = np.matrix([0,0,0,0,0,0]).T
+            x0 = np.matrix([0,0,0,0,0,1]).T
 
         # checking if all image points are present in input
         for i in range(4):
@@ -87,6 +90,7 @@ class SingleCameraPoseEstimator():
             '''
 
             # Model Pose relative to camera
+            # TODO: fikse dårlig slicing under
             ax, ay, az, tx, ty, tz = x[0], x[1], x[2], x[3], x[4], x[5]
             tM = np.vstack((tx, ty))
             tM = np.vstack((tM, tz))
@@ -123,7 +127,7 @@ class SingleCameraPoseEstimator():
 
             # Jakobian
             e = 0.000001
-            j = np.asmatrix(np.empty((8, 6)))
+            j = np.matrix(np.empty((8, 6)))
             j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
             j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
             j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
@@ -153,7 +157,8 @@ class SingleCameraPoseEstimator():
 
     def inverseTransform(self, transformMatrix):
         '''
-        TODO: Skrive forklaring fra Introduction to Robotics av John J. Craig s36
+        Find the inverse of the transformation matrix by transposing the rotation and subtracting
+        the translation.
         :param transformMatrix: Transformation matrix for system B represented in system A
         :return: Transformation matrix for system A represented in system B
         '''
@@ -167,7 +172,9 @@ class SingleCameraPoseEstimator():
 
     def compoundTransformations(self, transformMatrixA, transformMatrixB):
         '''
-        TODO: Skrive forklaring fra Introduction to Robotics av John J. Craig s35
+        Find the compounded transformation matrix by doing matrix multiplication of matrix A
+        and matrix B
+        TODO: Add functionality for having any number of inputs (in order)
         :param transformMatrixA: Transformation matrix for system B represented in system A
         :param transformMatrixB: Transformation matrix for system C represented in system B
         :return: The compounded transformation matrix for system C represented in system A
@@ -179,7 +186,7 @@ class SingleCameraPoseEstimator():
 
     def tansformMatrixToPose(self, transformMatrix):
         '''
-        TODO: Skrive forklaring
+        Calculate the 6DOF pose [ax; ay; az; tx; ty; tz] from 4x4 transformation matrix
         :param transformMatrix:
         :return: Pose [ax; ay; az; tx; ty; tz]
         '''
@@ -196,12 +203,28 @@ class SingleCameraPoseEstimator():
 
     def setReference(self):
         '''
-        
-        :return:
+        Set reference frame to the current model pose. Takes an image of the current model position
+        and calculates the inverse of the model to camera transformation matrix.
         '''
 
-        # self.estimateModelPose(self.OTCam.findBallPoints(self.OTCam.getSingleFrame, lower_bounds, upper_bounds))
+        A = self.OTCam.findBallPoints(self.OTCam.getSingleFrame, self.lower_bounds, self.upper_bounds)
+        imgPts = np.matrix(A[:, 0:2])
+        _, tMtx = self.estimateModelPose(imgPts)
+        self.ref = self.inverseTransform(tMtx)
 
+    def GetPose(self):
+        '''
+        Get the pose of current model position relative to reference frame
+        :return: Pose relative to reference
+        '''
 
+        # Getting model pose relative to camera
+        A = self.OTCam.findBallPoints(self.OTCam.getSingleFrame, self.lower_bounds, self.upper_bounds)
+        imgPts = np.matrix(A[:, 0:2])
+        _, tMtx = self.estimateModelPose(imgPts)
+        # Getting model pose relative to reference
+        pose = self.tansformMatrixToPose(tMtx*self.ref)
+
+        return pose
 
 
