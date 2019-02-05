@@ -68,8 +68,6 @@ class SingleFramePointDetector:
         else:
             largest_circles = [0]*len(all_circles)
             for (num, circle) in enumerate(all_circles):
-                print(num)
-                print(all_circles)
                 largest_circles[num] = circle
         for (num, circle) in enumerate(largest_circles):
             ((x, y), radius) = cv2.minEnclosingCircle(circle)
