@@ -156,6 +156,7 @@ class TextUI():
                         print('Calibration of cam ', ID, 'is finished.')
                         notFinished = False  # Calibration was successful, go to next cam.
                     except FailedCalibrationException:
+                        frames = []
                         print('Calibration failed, trying again.')
                 #else:
                  #   notFinished = True

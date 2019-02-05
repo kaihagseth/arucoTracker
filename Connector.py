@@ -17,7 +17,7 @@ class Connector():
         self.PE = PoseEstimator()
     def startApplication(self, dispResFx, doAbortFx):
         self.PE.getPoseFromCams()
-        logging.info('IINITIALISED!!!')
+        logging.info('Running startApplication()')
         doAbort = doAbortFx()
         while not doAbort:
             print('Running dispResFx')

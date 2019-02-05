@@ -50,15 +50,16 @@ class IntrinsicCalibration():
 
         #Save the images to a distinct camera folder
         i = 1
-        camName = ''
-        ''' Make sure we don't use invalid name.  '''
+        camID = 0
+        ''' Make sure we don't use invalid ID.  '''
         if self._parr_cam is None:
-            camName = '0'
+            camID = '0'
+            logging.error('CameraID not found!')
         else:
-            camName = self._parr_cam._name
+            camID = self._parr_cam._ID
         ''' Add all images in folder ''' #TODO: Fix this
         for frame in frames:
-            path = 'images/cam_{0}/calib_img{1}.png'.format(camName, i)
+            path = 'images/cam_{0}/calib_img{1}.png'.format(camID, i)
             cv2.imwrite(path, frame)
             i = i+1
         # Termination criteria
@@ -107,8 +108,8 @@ class IntrinsicCalibration():
             if len(frames) >= 2:
                 cv2.imwrite('images/calibresult.png', dst)
             '''Save latest values to a file.'''
-
-            np.savez('IntriCalib', ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
+            filename = 'IntriCalib{0}'.format(camID)
+            np.savez(filename, ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
             self._curr_ret = ret
             self._curr_camera_matrix = mtx
@@ -118,9 +119,10 @@ class IntrinsicCalibration():
             self._curr_newcamera_mtx = newcameramtx
             self._curr_roi = roi
 
-        except cv2.error:
+        except cv2.error as e:
             print('OpenCV failed. ')
-            raise FailedCalibrationException(msg='Calib failed')
+            print('MSG: ', e)
+            raise FailedCalibrationException(msg=e.err())
     def printCurrParams(self):
         print('_curr_ret : ', self._curr_ret)
         print('_curr_mtx : ', self._curr_camera_matrix)
@@ -164,7 +166,7 @@ if __name__ == "__main__":
     '''
     ic = IntrinsicCalibration()
     ic.loadSavedValues()
-    ic.printCurrParams()
+    ic.pri
     #ic.calibCam([cv2.imread('images/img.jpg')])
 
     ''' print('Hello')

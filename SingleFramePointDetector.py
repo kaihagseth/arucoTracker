@@ -1,4 +1,6 @@
+from heapq import nlargest
 import cv2, imutils
+import numpy as np
 
 
 
@@ -49,7 +51,7 @@ class SingleFramePointDetector():
                 area = cv2.contourArea(contour)
                 if perimeter == 0:
                     break
-                circularity = 4 * pi * (area / (perimeter * perimeter))
+                circularity = 4 * np.pi * (area / (perimeter * perimeter))
                 if 0.7 < circularity < 1.2:
                     circles.append(contour)
 

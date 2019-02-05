@@ -104,20 +104,32 @@ class CameraGroup():
         :return: 
         ''' #TODO: Find new algorithm, this thing is sloooow.
         logging.info('Inside findConnectedCams()')
-        if self.includeDefCam is False:
-            index = 1 # Dont include webcam at index 0.
-        else:
-            index = 0
-        arr = []
-        startArr = [0, 1, 2]
-        for i in startArr:
-            cap = cv2.VideoCapture(i)
-            ret, frame = cap.read()
-            #3logging.info('Cam on index ', i, ': ', ret)
-            if ret:
-                arr.append(i)
-            time.sleep(0.5)
-        return arr
+        logging.info('Using a hack. Hardcoded index list in return.')
+        num_cams = 4
+        ilist = []
+        for i in range(num_cams):
+            ilist.append(i)
+        return ilist
+        #if self.includeDefCam is False:
+        #    index = 1 # Dont include webcam at index 0. Not in use.
+        #else:
+        #    index = 0
+        #arr = []
+        #startArr = [0, 1, 2, 3,4,5,6,7,8,9,10]
+        #for i in startArr:
+        #    print('Index to search: ', i)
+        #    cap = cv2.VideoCapture(i)
+        #    ret, frame = cap.read()
+        #    ret, frame = cap.read()
+        #    #3logging.info('Cam on index ', i, ': ', ret)
+        #    if ret:
+        #        print('Appending: ', i, ' is connected')
+        #        arr.append(i)
+        #    cap.release()
+        #    print('Cap {0} released'.format(i))
+        #    time.sleep(0.5)
+        #return arr
+
 
     def initConnectedCams(self, includeDefaultCam=False):
         self.includeDefCam = includeDefaultCam
@@ -136,3 +148,12 @@ class CameraGroup():
         cam = self.getCamByID(index)
         frame = cam.getSingleFrame()
         return frame
+
+if __name__ == '__main__':
+    #CG = CameraGroup()
+    #cams = CG.findConnectedCams()
+    #print(cams)
+    vc = cv2.VideoCapture(1)
+    ret, frame = vc.read()
+    cv2.imshow('frame', frame)
+    cv2.waitKey(0)

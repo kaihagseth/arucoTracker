@@ -1,9 +1,10 @@
+import cv2
 import numpy as np
 import math
 import exceptions as exc
 import Camera
 from SingleFramePointDetector import SingleFramePointDetector
-import random, time
+import random, time, logging
 
 '''
 Class for doing all analysis and filtering on a single-OTcam image stream.
@@ -25,24 +26,43 @@ class SingleCameraPoseEstimator():
         specified, default parameters is used. Default: [[1,0,0,0],[0,1,0,0],[0,0,1,0], [1,1,1,1]]
         '''
 
-        self._OTCam = otcam
-        self.intrCamMtrx = self._OTCam._intri_cam_mtrx
+        self.OTCam = otcam
+        self.intrCamMtrx = self.OTCam._intri_cam_mtrx
         if modelParam is None:
             self.modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
         else:
             self.modelParam = modelParam
         self._SFPD = SingleFramePointDetector()
         self._setInitialPose = True
+
+
     def findPoseResult_th(self, singlecam_curr_pose, singlecam_curr_pose_que):
+        '''
+        Function to thread.
+        :param singlecam_curr_pose:
+        :param singlecam_curr_pose_que:
+        :return:
+        '''
+        logging.info('Starting getPoseFromCams()')
         run = True
         while run:
             singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
-            singlecam_curr_pose_que.put(singlecam_curr_pose)
             print('Singlecam_curr_pose: ', singlecam_curr_pose)
-            time.sleep(0.1)
-            #frame = self._OTCam.getSingleFrame()
+            time.sleep(0.5) # MUST BE HERE
+            #singlecam_curr_pose = self.GetPose()
+            singlecam_curr_pose_que.put(singlecam_curr_pose)
+            
+            #timestart = time.time()
+            for i in range(1, 10000000, 1):
+                v = 10*i+i
+                #ret, frame = self.OTCam.getSingleFrame()
+            #    cv2.imshow('Frame', frame)
+
             #ballPoints = self._SFPD.findBallPoints(frame, [0, 0, 0], [250, 250, 250])
             #modPose = self.estimateModelPose(ballPoints)
+            #timetaken = time.time()-timestart
+            #print('Time taken: ', timetaken)
+            #time.sleep(0.1)
             # Find pose
 #            pose = None
 
@@ -217,9 +237,8 @@ class SingleCameraPoseEstimator():
         Get the pose of current model position relative to reference frame
         :return: Pose relative to reference
         '''
-
         # Getting model pose relative to camera
-        A = self.OTCam.findBallPoints(self.OTCam.getSingleFrame, self.lower_bounds, self.upper_bounds)
+        A = self.OTCam.findBallPoints(self.OTCam.getSingleFrame(), self.lower_bounds, self.upper_bounds)
         imgPts = np.matrix(A[:, 0:2])
         _, tMtx = self.estimateModelPose(imgPts)
         # Getting model pose relative to reference
