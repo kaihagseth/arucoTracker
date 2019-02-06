@@ -48,7 +48,7 @@ class SingleCameraPoseEstimator():
             print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5) # MUST BE HERE
             #try:
-                #singlecam_curr_pose = self.GetPose()
+                #singlecam_curr_pose = self.getPose()
             #except exc.MissingReferenceFrameException as refErr:
                 #print(refErr.msg)
 
@@ -260,7 +260,7 @@ class SingleCameraPoseEstimator():
         '''
         self._upperBounds = newUpperBounds
 
-    def GetPose(self):
+    def getPose(self):
         '''
         Get the pose of current model position relative to reference frame. NB! angles in radians
         :return: Pose relative to reference
