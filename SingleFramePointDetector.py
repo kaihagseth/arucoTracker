@@ -12,7 +12,7 @@ class SingleFramePointDetector:
         pass
 
     @staticmethod
-    def findBallPoints(frame, lower_bounds=([46, 79, 60]), upper_bounds=([179, 255, 226])):
+    def findBallPoints(frame, lower_bounds=([122, 88, 60]), upper_bounds=([255, 255, 226])):
         """" Finds center points and radii of the largest circles in the image.
         :param frame: BGR-image to analyze
         :param lower_bounds: hsv lower bounds np array ex(170, 100, 100) for red
@@ -39,9 +39,7 @@ class SingleFramePointDetector:
         mask = cv2.inRange(hsv, lower_bounds, upper_bounds)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
-        cv2.imshow('Mask',mask)
-
-        cv2.waitKey(27)
+        cv2.imwrite('mask.jpg',mask)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -59,7 +57,7 @@ class SingleFramePointDetector:
             if perimeter == 0:
                 break
             circularity = 4 * np.pi * (area / (perimeter * perimeter))
-            if 0.7 < circularity < 1.2:
+            if 0.0 < circularity < 5:
                 all_circles.append(contour)
         # find the largest circles in the mask, then use
         # it to compute the minimum enclosing circles and

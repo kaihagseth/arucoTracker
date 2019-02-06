@@ -48,7 +48,7 @@ class Connector():
         return self.cg.getSingleImg(camId)
 
     def getCamFromIndex(self, index):
-        return self.cg.getCamByID(index)
+        return self.cg.getCamByListIndex(index)
 
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'

@@ -80,9 +80,11 @@ class SingleCameraPoseEstimator():
 
 
         # checking if all image points are present in input
+        print('Imagepoints: ', imagePoints)
         for i in range(3):
             for j in range(2):
                 if imagePoints[i,j] == -1:
+                    logging.error('One or more image points not found, cannot estimate pose')
                     raise exc.MissingImagePointException('One or more image points not found, cannot estimate pose')
 
 
@@ -113,28 +115,30 @@ class SingleCameraPoseEstimator():
             tM = np.vstack((tM, tz))
 
             # Rotation Matrix R from model pose
-            Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]])
-            Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 1], [-np.sin(ay), 0, np.cos(ay)]])
-            Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]])
-            Rzy = np.matmul(Rz, Ry)
-            R = np.matmul(Rzy, Rx)
+            Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
+            Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 1], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
+            Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
+            #Rzy = np.matmul(Rz, Ry)
+            #R = np.matmul(Rzy, Rx)
+            R = Rz*Ry*Rx
 
             # Extrinsic camera matrix
             mExt = np.hstack((R, tM))
 
             # Points to project
-            ph = np.matmul(K, mExt)
-            ph = np.matmul(ph, pm)
+            #ph = np.matmul(K, mExt)
+            #ph = np.matmul(ph, pm)
+            ph = K*mExt*pm
 
             # Divide Through 3rd elements
             ph[0, :] = np.divide(ph[0, :], ph[2, :])
             ph[1, :] = np.divide(ph[1, :], ph[2, :])
             ph = ph[0:2, :]
 
-            p = np.matrix.reshape(ph, (-1, 1), order='F')
+            p = np.matrix(np.reshape(ph, (-1, 1), order='F'), dtype=float)
 
             # Homogenus transformation matrix
-            tMtx = np.vstack(mExt, np.matrix([[0, 0, 0, 1]]))
+            tMtx = np.vstack(mExt, np.matrix([[0, 0, 0, 1]], dtype=float))
             return p, tMtx
 
         for i in range(0, 10):
@@ -145,19 +149,20 @@ class SingleCameraPoseEstimator():
             # Jakobian
             e = 0.000001
             j = np.matrix(np.empty((8, 6)))
-            j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
-            j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
-            j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
-            j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
-            j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]]), pm, self._intrCamMtrx)[0] - y), e)
-            j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]], dtype=float), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]], dtype=float), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]], dtype=float), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]], dtype=float), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]], dtype=float), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]], dtype=float), pm, self._intrCamMtrx)[0] - y), e)
 
             # reshaping to match y so we can find dY
             y0 = np.reshape(y0, (-1, 1), order='c')
             dy = y0 - y
 
             # dX from pseudo inverse of jakobian
-            dx = np.matmul(np.linalg.pinv(j), dy)
+            #dx = np.matmul(np.linalg.pinv(j), dy)
+            dx = np.linalg.pinv(j)*dy
 
             # stop if no changes in parameter
             if abs(np.divide(np.linalg.norm(dx), np.linalg.norm(x))) < 0.000001:
@@ -181,7 +186,7 @@ class SingleCameraPoseEstimator():
         '''
         Rab = transformMatrix[0:3, 0:3].T
         Pbaorg = -Rab*transformMatrix[0:3, 3]
-        Tab = np.vstack(np.hstack(Rab, Pbaorg), np.matrix([[0, 0, 0, 1]]))
+        Tab = np.vstack(np.hstack(Rab, Pbaorg), np.matrix([[0, 0, 0, 1]], dtype=float))
         return Tab
 
 
@@ -213,7 +218,7 @@ class SingleCameraPoseEstimator():
         az = np.arctan2(T[1, 0]/np.cos(ay), T[0, 0]/np.cos(ay))
         ax = np.arctan2(T[2, 1] / np.cos(ay), T[2, 2] / np.cos(ay))
 
-        pose = np.matrix([ax, ay, az, T[0, 3], T[1, 3], T[2, 3]]).T
+        pose = np.matrix([ax, ay, az, T[0, 3], T[1, 3], T[2, 3]], dtype=float).T
 
         return pose
 
@@ -223,6 +228,7 @@ class SingleCameraPoseEstimator():
         and calculates the inverse of the model to camera transformation matrix.
         '''
         frame = self._OTCam.getSingleFrame()
+        cv2.imwrite('boat.jpg', frame)
         frame = self._OTCam.getSingleFrame()
         print(frame)
         A = self._SFPD.findBallPoints(frame, self._lowerBounds, self._upperBounds)
@@ -241,12 +247,6 @@ class SingleCameraPoseEstimator():
         Set lower bounds for image detection color
         :param newLowerBounds:
         '''
-        # Getting model pose relative to camera
-        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
-        imgPts = np.matrix(A[:, 0:2])
-        _, tMtx = self.estimateModelPose(imgPts)
-        # Getting model pose relative to reference
-        pose = self.tansformMatrixToPose(tMtx*self._ref)
         self._lowerBounds = newLowerBounds
 
     def setUpperBounds(self, newUpperBounds):
