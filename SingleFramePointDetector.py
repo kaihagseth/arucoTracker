@@ -6,7 +6,7 @@ import numpy as np
 
 class SingleFramePointDetector:
     '''
-    Detect points in a single frame.
+    Detect a number of points in a single frame.
     '''
     def __init__(self):
         pass
