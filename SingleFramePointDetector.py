@@ -19,7 +19,6 @@ class SingleFramePointDetector:
         self.upper_saturation = 255
         self.upper_value = 255
         self.NUMBER_OF_POINTS = 3
-        pass
 
     def setHSVValues(self, lower_values, upper_values):
         """

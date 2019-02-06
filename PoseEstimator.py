@@ -9,6 +9,7 @@ class PoseEstimator():
     def __init__(self):
         self.SCPEs = []
         self.threadInfoList = []
+        self.vision_entities = []
 
     def initSCPEs(self, cams):
         '''
