@@ -19,10 +19,11 @@ class Camera():
         self._ID = cam_id # A distinct number for each camera.
         self._name = cam_name
         self._intrinsic_camera_matrix = intrinsic_camera_matrix
+        self._distortion_coefficients
         self._cam_pose = camera_pose_matrix
         self._src = src_index
         self._vidCap = cv2.VideoCapture(self._src)
-        self._IC = IntrinsicCalibration(self)
+        self._IC = IntrinsicCalibrator(self)
 
     def startVideoStream(self):
         '''
@@ -50,7 +51,7 @@ class Camera():
         """
         self._intrinsic_camera_matrix = intrinsic_params
 
-    def set_dist_coeff(self, distortion_coefficients):
+    def set_distortion_coefficients(self, distortion_coefficients):
         """
         :param distortion_coefficients: new distortion coefficients
         :return: None

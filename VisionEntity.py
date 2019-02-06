@@ -1,14 +1,14 @@
 from Camera import Camera
-import SingleFramePointDetector
-import IntrinsicCalibrator
-import SingleCameraPoseEstimator
+from SingleFramePointDetector import SingleFramePointDetector
+from IntrinsicCalibrator import IntrinsicCalibrator
+from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 
 
 
 class VisionEntity:
     """
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
-    stream
+    stream.
     """
 
     def __init__(self):
@@ -23,10 +23,39 @@ class VisionEntity:
         """
         return self.single_frame_point_detector.findBallPoints(self.getFrame())
 
-    def calibrateCamera(self):
+    def calibrateCameraWithTool(self):
+        """
+        Calibrates intrinsic matrix and distortion coefficients for camera.
+        :return: None
+        """
         self.camera.calibrateCamera()
 
+     def calibrateCameraWithImages(self, images):
+         """
+         Calibrates intrinsic matrix and distortion coefficients for camera.
+         :return: None
+         """
+         self.camera.calibrateCam(images)
+
+    def setCameraIntrinsicParameters(self, intrinsic_parameters):
+        """
+        Calibrates intrinsic matrix and distortion coefficients for camera.
+        :return: None
+        """
+        self.camera.set_intrinsic_params(intrinsic_parameters)
+
+    def setCameraDistortionCoefficents(self, distortion_coefficients):
+        """
+        Calibrates intrinsic matrix and distortion coefficients for camera.
+        :return: None
+        """
+        self.camera.set_distortion_coefficients(distortion_coefficients)
+
     def calibratePointDetector(self):
+        """
+        Opens color calibration tool for image segmentation.
+        :return: None
+        """
         self.single_frame_point_detector.calibrate(self.camera.getStream())
 
     def getObjectPose(self):
@@ -38,6 +67,7 @@ class VisionEntity:
 
     def getFrame(self):
         """
-        :return: A frame from this classes camera object.
+        Returns the current frame from camera.
+        :return: A frame from this object's camera object.
         """
         return self.camera.getFrame()

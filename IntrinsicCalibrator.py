@@ -16,7 +16,9 @@ class IntrinsicCalibrator:
     '''
     Do intrinsic calibration on cameras.
     Returns a
-    # TODO: Refactoring: Remove all references to parent camera.
+    # TODO: Refactoring: Remove all references to parent camera. This class should handle and return calibration.
+    # TODO: Moving the undistort function to the vision entity-class would loosen coupling.
+    #
     '''
 
     def __init__(self, parr_cam=None):
@@ -31,7 +33,7 @@ class IntrinsicCalibrator:
     def loadSavedValues(self, filename='IntriCalib.npz'):
         '''
         Load values to be used in calibration.
-        This procvess is just needed if you don't want to do a new calibration,
+        This process is just needed if you don't want to do a new calibration,
         but use old values instead.
         :param filename: Filename to get values from.
         :return: None

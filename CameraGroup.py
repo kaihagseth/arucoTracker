@@ -8,6 +8,9 @@ import time
 from infi.devicemanager import DeviceManager #DM to
 
 class CameraGroup():
+    """
+    # TODO : Fuse this class with the pose estimator class
+    """
     def __init__(self):
         self._camReg = []
         self._includeDefCam = True

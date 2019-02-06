@@ -1,10 +1,14 @@
 from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import threading, queue, logging
 import time
+
+
 class PoseEstimator():
-    '''
+    """
+    # TODO: This class will control a collection of vision entities, and will take over most jobs of today's camera
+    # TODO: group class
     Collect pose and info from all cameras, and find the best estimated pose possible.
-    '''
+    """
 
     def __init__(self):
         self.SCPEs = []
