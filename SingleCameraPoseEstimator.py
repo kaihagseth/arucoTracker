@@ -43,20 +43,21 @@ class SingleCameraPoseEstimator():
         '''
         logging.info('Starting getPoseFromCams()')
         run = True
+        self.setReference()
         while run:
-            singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
+            #singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
+
+            try:
+                singlecam_curr_pose = self.getPose()
+            except exc.MissingReferenceFrameException as refErr:
+                print('ERROR: ',refErr.msg)
             print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5) # MUST BE HERE
-            #try:
-                #singlecam_curr_pose = self.getPose()
-            #except exc.MissingReferenceFrameException as refErr:
-                #print(refErr.msg)
-
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
             #timestart = time.time()
-            for i in range(1, 10000000, 1):
-                v = 10*i+i
+            #for i in range(1, 10000000, 1):
+             #   v = 10*i+i
                 #ret, frame = self.OTCam.getSingleFrame()
             #    cv2.imshow('Frame', frame)
 
@@ -190,6 +191,7 @@ class SingleCameraPoseEstimator():
         :return: Transformation matrix for system A represented in system B
         '''
 
+
         Rab = transformMatrix[0:3, 0:3].T
         Pbaorg = -Rab*transformMatrix[0:3, 3]
         Tab = np.vstack(np.hstack(Rab, Pbaorg), [[0, 0, 0, 1]])
@@ -234,8 +236,10 @@ class SingleCameraPoseEstimator():
         Set reference frame to the current model pose. Takes an image of the current model position
         and calculates the inverse of the model to camera transformation matrix.
         '''
-        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame, self._lowerBounds, self._upperBounds)
-        A = self._SFPD.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
+        frame = self._OTCam.getSingleFrame()
+        frame = self._OTCam.getSingleFrame()
+        print(frame)
+        A = self._SFPD.findBallPoints(frame, self._lowerBounds, self._upperBounds)
         imgPts = np.matrix(A[:, 0:2])
         try:
             _, tMtx = self.estimateModelPose(imgPts)

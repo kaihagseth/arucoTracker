@@ -196,3 +196,50 @@
 [2019-02-05 17:52:06,895 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
 [2019-02-05 17:52:06,896 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
 [2019-02-05 17:53:03,171 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:48:48,269 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:48:48,297 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:49:08,334 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:49:20,236 Cl:TextUI Fx:startApplication Line:50 ] INFO: Starting application
+[2019-02-06 12:49:20,237 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:49:20,239 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:49:20,266 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:49:20,267 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:49:20,268 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:49:20,268 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 12:50:42,187 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:50:42,188 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:51:03,158 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:51:12,836 Cl:TextUI Fx:startApplication Line:50 ] INFO: Starting application
+[2019-02-06 12:51:12,836 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:51:12,837 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:51:12,838 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:51:12,840 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:51:12,842 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:51:12,842 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 12:52:57,429 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:52:57,430 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:53:14,711 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:53:22,996 Cl:TextUI Fx:startApplication Line:50 ] INFO: Starting application
+[2019-02-06 12:53:22,997 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:53:23,009 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:53:23,009 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 12:53:41,473 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:53:41,474 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:53:57,760 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:54:01,054 Cl:TextUI Fx:startApplication Line:50 ] INFO: Starting application
+[2019-02-06 12:54:01,055 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:54:01,062 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 12:54:01,062 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 12:55:27,239 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:55:27,240 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:55:27,242 Cl:CameraGroup Fx:getCamByID Line:40 ] ERROR: No cam found.
+[2019-02-06 12:56:18,025 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:56:18,026 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:56:33,565 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:56:41,938 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:56:41,939 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:58:06,532 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:58:06,533 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 12:58:23,375 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 12:58:36,877 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 12:58:36,878 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.

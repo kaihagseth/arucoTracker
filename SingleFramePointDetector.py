@@ -12,7 +12,7 @@ class SingleFramePointDetector:
         pass
 
     @staticmethod
-    def findBallPoints(frame, lower_bounds, upper_bounds):
+    def findBallPoints(frame, lower_bounds=([46, 79, 60]), upper_bounds=([179, 255, 226])):
         """" Finds center points and radii of the largest circles in the image.
         :param frame: BGR-image to analyze
         :param lower_bounds: hsv lower bounds np array ex(170, 100, 100) for red
@@ -38,7 +38,9 @@ class SingleFramePointDetector:
         mask = cv2.inRange(hsv, lower_bounds, upper_bounds)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
+        cv2.imshow('Mask',mask)
 
+        cv2.waitKey(27)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -73,3 +75,13 @@ class SingleFramePointDetector:
             ((x, y), radius) = cv2.minEnclosingCircle(circle)
             enclosed_circles[num, :] = x, y, radius
         return enclosed_circles
+
+if __name__ == '__main__':
+    sfpd = SingleFramePointDetector()
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+    points = sfpd.findBallPoints(frame)
+    print('Points: ', points)
+    cv2.imshow('Frame',frame)
+    cv2.waitKey(0)
+    cv2.imwrite('images\\boat_axiscross.jpg', frame)

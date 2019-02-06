@@ -105,7 +105,7 @@ class CameraGroup():
         ''' #TODO: Find new algorithm, this thing is sloooow.
         logging.info('Inside findConnectedCams()')
         logging.info('Using a hack. Hardcoded index list in return.')
-        num_cams = 4
+        num_cams = 1
         ilist = []
         for i in range(num_cams):
             ilist.append(i)

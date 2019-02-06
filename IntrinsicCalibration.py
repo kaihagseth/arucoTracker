@@ -51,7 +51,7 @@ class IntrinsicCalibration():
         #Save the images to a distinct camera folder
         i = 1
         cb_n_width = 7
-        cb_n_height = 9
+        cb_n_height = 5
         camID = 0
         ''' Make sure we don't use invalid ID.  '''
         if self._parr_cam is None:
@@ -113,6 +113,7 @@ class IntrinsicCalibration():
             filename = 'IntriCalib{0}'.format(camID)
             np.savez(filename, ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
+            self._parr_cam.set_intrinsic_param(mtx)
             self._curr_ret = ret
             self._curr_camera_matrix = mtx
             self._curr_dist_coeff = dist
