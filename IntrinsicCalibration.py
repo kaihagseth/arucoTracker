@@ -50,6 +50,8 @@ class IntrinsicCalibration():
 
         #Save the images to a distinct camera folder
         i = 1
+        cb_n_width = 7
+        cb_n_height = 9
         camID = 0
         ''' Make sure we don't use invalid ID.  '''
         if self._parr_cam is None:
@@ -66,8 +68,8 @@ class IntrinsicCalibration():
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,4,0)
-        objp = np.zeros((7 * 5, 3), np.float32)
-        objp[:, :2] = np.mgrid[0:5, 0:7].T.reshape(-1, 2)
+        objp = np.zeros((cb_n_width * cb_n_height, 3), np.float32)
+        objp[:, :2] = np.mgrid[0:cb_n_height, 0:cb_n_width].T.reshape(-1, 2)
 
         # Arrays to store object points and image points from all the images.
         objpoints = []  # 3d point in real world space
@@ -79,7 +81,7 @@ class IntrinsicCalibration():
             for frame in frames:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 # Find the chess board corners
-                ret, corners = cv2.findChessboardCorners(gray, (5, 7), None)
+                ret, corners = cv2.findChessboardCorners(gray, (cb_n_height, cb_n_width), None)
 
                 ''' If found, add object points, image points (after refining them) '''
                 if ret == True:
@@ -87,7 +89,7 @@ class IntrinsicCalibration():
                     cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     imgpoints.append(corners)
                     ''' Draw and display the corners '''
-                    cv2.drawChessboardCorners(frame, (5, 7), corners, ret)
+                    cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
                     cv2.imshow('img', frame)
                     cv2.waitKey(500)
             cv2.destroyAllWindows()
@@ -119,10 +121,11 @@ class IntrinsicCalibration():
             self._curr_newcamera_mtx = newcameramtx
             self._curr_roi = roi
 
-        except cv2.error as e:
-            print('OpenCV failed. ')
-            print('MSG: ', e)
-            raise FailedCalibrationException(msg=e.err())
+        except IndexError:
+            pass#cv2.error as e:
+         #   print('OpenCV failed. ')
+          #  print('MSG: ', e)
+           # raise FailedCalibrationException(msg=e)
     def printCurrParams(self):
         print('_curr_ret : ', self._curr_ret)
         print('_curr_mtx : ', self._curr_camera_matrix)

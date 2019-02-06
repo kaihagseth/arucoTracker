@@ -3,7 +3,7 @@
     "disable_existing_loggers": false,
     "formatters": {
         "simple": {
-            "format": "[%(asctime)s %(module)s] %(levelname)s: %(message)s"
+            "format": "[%(asctime)s Cl:%(module)s Fx:%(funcName)s Line:%(lineno)d ] %(levelname)s: %(message)s"
         }
     },
 

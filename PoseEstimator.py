@@ -11,6 +11,12 @@ class PoseEstimator():
         self.threadInfoList = []
 
     def initSCPEs(self, cams):
+        '''
+        Create a SingleCameraPoseEstimator for every camera.
+        :param cams:
+        :return:
+        '''
+        logging.info('Running ')
         for cam in cams:
             SCPE = SingleCameraPoseEstimator(cam)
             self.SCPEs.append(SCPE)
@@ -32,7 +38,7 @@ class PoseEstimator():
             # Create thread, with target findPoseResult(). All are daemon-threads.
             th = threading.Thread(target=SCPE.findPoseResult_th, args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
             logging.debug('Passing thread creation.')
-            self.threadInfoList.append([SCPE, th, singlecam_curr_pose_que.get()])
+            self.threadInfoList.append([SCPE, th, singlecam_curr_pose_que])
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
@@ -40,9 +46,10 @@ class PoseEstimator():
     def collectPoses(self):
         '''
         In future: Get all output from the poseestimation here.
-        :return:
+        :return: threadInfopList
         '''
         print(self.threadInfoList)
+        print('Pose: ', self.threadInfoList[1][2].get())
         #singlecam_poses = self.threadInfoList[:,2]
         #print(singlecam_poses)
         time.sleep(1)

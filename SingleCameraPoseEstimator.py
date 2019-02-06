@@ -26,12 +26,12 @@ class SingleCameraPoseEstimator():
         specified, default parameters is used. Default: [[1,0,0,0],[0,1,0,0],[0,0,1,0], [1,1,1,1]]
         '''
 
-        self.OTCam = otcam
-        self.intrCamMtrx = self.OTCam._intri_cam_mtrx
+        self._OTCam = otcam
+        self._intrCamMtrx = self._OTCam._intri_cam_mtrx
         if modelParam is None:
-            self.modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
+            self._modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
         else:
-            self.modelParam = modelParam
+            self._modelParam = modelParam
         self._SFPD = SingleFramePointDetector()
         self._setInitialPose = True
 
@@ -51,7 +51,7 @@ class SingleCameraPoseEstimator():
             time.sleep(0.5) # MUST BE HERE
             #singlecam_curr_pose = self.GetPose()
             singlecam_curr_pose_que.put(singlecam_curr_pose)
-            
+
             #timestart = time.time()
             for i in range(1, 10000000, 1):
                 v = 10*i+i
@@ -93,7 +93,7 @@ class SingleCameraPoseEstimator():
         y0 = imagePoints.T
 
         # points in model coordinate system
-        pm = self.modelParam
+        pm = self._modelParam
 
         # Setting pose to guess pose
         x = x0
@@ -143,17 +143,17 @@ class SingleCameraPoseEstimator():
         for i in range(0, 10):
 
             # Predicted image points
-            y, _ = fProject(x, pm, self.intrCamMtrx)
+            y, _ = fProject(x, pm, self._intrCamMtrx)
 
             # Jakobian
             e = 0.000001
             j = np.matrix(np.empty((8, 6)))
-            j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
-            j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
-            j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
-            j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]]), pm, self.intrCamMtrx)[0] - y), e)
-            j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]]), pm, self.intrCamMtrx)[0] - y), e)
-            j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, self.intrCamMtrx)[0] - y), e)
+            j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]]), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]]), pm, self._intrCamMtrx)[0] - y), e)
+            j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, self._intrCamMtrx)[0] - y), e)
 
             # reshaping to match y so we can find dY
             y0 = np.reshape(y0, (8, 1), order='c')
@@ -170,7 +170,7 @@ class SingleCameraPoseEstimator():
             x = x + dx
 
         # getting  translation matrixand pose
-        _, transformMatrix = fProject(x, pm, self.intrCamMtrx)
+        _, transformMatrix = fProject(x, pm, self._intrCamMtrx)
         pose = x
 
         return pose, transformMatrix
@@ -227,7 +227,7 @@ class SingleCameraPoseEstimator():
         and calculates the inverse of the model to camera transformation matrix.
         '''
 
-        A = self.OTCam.findBallPoints(self.OTCam.getSingleFrame, self.lower_bounds, self.upper_bounds)
+        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame, self.lower_bounds, self.upper_bounds)
         imgPts = np.matrix(A[:, 0:2])
         _, tMtx = self.estimateModelPose(imgPts)
         self.ref = self.inverseTransform(tMtx)
@@ -238,7 +238,7 @@ class SingleCameraPoseEstimator():
         :return: Pose relative to reference
         '''
         # Getting model pose relative to camera
-        A = self.OTCam.findBallPoints(self.OTCam.getSingleFrame(), self.lower_bounds, self.upper_bounds)
+        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame(), self.lower_bounds, self.upper_bounds)
         imgPts = np.matrix(A[:, 0:2])
         _, tMtx = self.estimateModelPose(imgPts)
         # Getting model pose relative to reference

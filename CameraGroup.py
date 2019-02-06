@@ -9,8 +9,8 @@ from infi.devicemanager import DeviceManager #DM to
 
 class CameraGroup():
     def __init__(self):
-        self.camReg = []
-        self.includeDefCam = True
+        self._camReg = []
+        self._includeDefCam = True
         dm = DeviceManager()
         dm.root.rescan()
         devices = dm.all_devices
@@ -24,7 +24,7 @@ class CameraGroup():
                 pass
 
     def addSingleCam(self, cam):
-        self.camReg.append(cam)
+        self._camReg.append(cam)
     def getCamByID(self, ID):
         '''
         Get a cam based on number ()
@@ -32,7 +32,7 @@ class CameraGroup():
         :return: OTCam
         '''
         wantedCam = None
-        for cam in self.camReg:
+        for cam in self._camReg:
             if cam._ID is ID:
                 wantedCam = cam
                 break
@@ -47,7 +47,7 @@ class CameraGroup():
         :return: A list with a image from each cam. 
         '''''
         frames = []
-        for cam in self.camReg:
+        for cam in self._camReg:
             frame = cam.getFrame()
             frames.append(frame)
         return frames
@@ -78,7 +78,7 @@ class CameraGroup():
         Find all cams connected to system.  
         :return: 
         ''' #TODO: Find new algorithm, this thing is sloooow.
-        if self.includeDefCam is False:
+        if self._includeDefCam is False:
             index = 1 # Dont include webcam at index 0.
         else:
             index = 0
@@ -132,7 +132,7 @@ class CameraGroup():
 
 
     def initConnectedCams(self, includeDefaultCam=False):
-        self.includeDefCam = includeDefaultCam
+        self._includeDefCam = includeDefaultCam
         conCams = self.findConnectedCams()
         print('Connected cams: ', conCams)
         if not includeDefaultCam:
@@ -142,7 +142,7 @@ class CameraGroup():
         for i in conCams:
             cam = Camera(('Cam',i),i,i)
             self.addSingleCam(cam)
-        return self.camReg
+        return self._camReg
 
     def getSingleImg(self, index):
         cam = self.getCamByID(index)

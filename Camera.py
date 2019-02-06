@@ -19,8 +19,8 @@ class Camera():
         self._intri_cam_mtrx = intri_cam_mtrx
         self._cam_loca = cam_loca
         self._cam_pose = cam_pose_mtrc
-        self.src = srcIndex
-        self.vidCap = cv2.VideoCapture(self.src)
+        self._src = srcIndex
+        self._vidCap = cv2.VideoCapture(self._src)
         self._aov = aov
         self._IC = IntrinsicCalibration(self)
 
@@ -51,7 +51,7 @@ class Camera():
         '''
     def getSingleFrame(self):
         '''Get non-threaded camera frame.'''
-        grabbed, frame = self.vidCap.read()
+        grabbed, frame = self._vidCap.read()
         return frame
 
     def calibrateCam(self, cbFrames):
