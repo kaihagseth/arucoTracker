@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import math
 import exceptions as exc
 import Camera
 from SingleFramePointDetector import SingleFramePointDetector
@@ -14,10 +13,10 @@ Thus, all analysis involving images from more than one camera, is not done here.
 class SingleCameraPoseEstimator():
 
     # Camera to reference frame transform matrix
-    ref = None
+    _ref = None
     # bounds for image analysis
-    lower_bounds = None
-    upper_bounds = None
+    _lowerBounds = [170, 100, 100]
+    _upperBounds = [40, 255, 255]
 
     def __init__(self, otcam, modelParam=None):
         '''
@@ -33,7 +32,6 @@ class SingleCameraPoseEstimator():
         else:
             self._modelParam = modelParam
         self._SFPD = SingleFramePointDetector()
-        self._setInitialPose = True
 
 
     def findPoseResult_th(self, singlecam_curr_pose, singlecam_curr_pose_que):
@@ -49,7 +47,11 @@ class SingleCameraPoseEstimator():
             singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
             print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5) # MUST BE HERE
-            #singlecam_curr_pose = self.GetPose()
+            #try:
+                #singlecam_curr_pose = self.getPose()
+            #except exc.MissingReferenceFrameException as refErr:
+                #print(refErr.msg)
+
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
             #timestart = time.time()
@@ -75,7 +77,7 @@ class SingleCameraPoseEstimator():
         Estimate the model pose from a single image.
         :param imagePoints: Image coordinates of the point location, given in number of pixels. Order is not essential. Given as 4x2 matrix. If
         point is not found, its x's and y's are set to -1. Image origo is top left, +y is downwards.
-        :param x0: Initial guess of object pose. NB! y can not be set to 0 as this will cause errors.
+        :param x0: Initial guess of object pose. NB! y can not be set to 0 as this will cause divide by 0 exception.
         :return: pose of the object with respect to the camera 6x1 matrix object [ax; ay; az; tx; ty; tz]
         and the object to camera transformation matrix 4x4
         '''
@@ -83,11 +85,16 @@ class SingleCameraPoseEstimator():
         if x0 is None:
             x0 = np.matrix([0,0,0,0,0,1]).T
 
+        if self._intrCamMtrx is None:
+            raise exc.MissingIntrinsicCameraParametersException('Missing intrinsic camera parameters, camera not calibrated')
+
+
         # checking if all image points are present in input
         for i in range(4):
             for j in range(2):
                 if imagePoints[i,j] == -1:
                     raise exc.MissingImagePointException('One or more image points not found, cannot estimate pose')
+
 
         # Points in image (y0)
         y0 = imagePoints.T
@@ -116,9 +123,9 @@ class SingleCameraPoseEstimator():
             tM = np.vstack((tM, tz))
 
             # Rotation Matrix R from model pose
-            Rx = np.matrix([[1, 0, 0], [0, math.cos(ax), -math.sin(ax)], [0, math.sin(ax), math.cos(ax)]])
-            Ry = np.matrix([[math.cos(ay), 0, math.sin(ay)], [0, 1, 1], [-math.sin(ay), 0, math.cos(ay)]])
-            Rz = np.matrix([[math.cos(az), -math.sin(az), 0], [math.sin(az), math.cos(az), 0], [0, 0, 1]])
+            Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]])
+            Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 1], [-np.sin(ay), 0, np.cos(ay)]])
+            Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]])
             Rzy = np.matmul(Rz, Ry)
             R = np.matmul(Rzy, Rx)
 
@@ -169,7 +176,7 @@ class SingleCameraPoseEstimator():
             # updating pose estimate
             x = x + dx
 
-        # getting  translation matrixand pose
+        # getting  translation matrix and pose
         _, transformMatrix = fProject(x, pm, self._intrCamMtrx)
         pose = x
 
@@ -206,7 +213,8 @@ class SingleCameraPoseEstimator():
 
     def tansformMatrixToPose(self, transformMatrix):
         '''
-        Calculate the 6DOF pose [ax; ay; az; tx; ty; tz] from 4x4 transformation matrix
+        Calculate the 6DOF pose [ax; ay; az; tx; ty; tz] from 4x4 transformation matrix.
+        cos(ay) can not be 0 (angle 90/180 deg) as this will cause divide by 0 exception
         :param transformMatrix:
         :return: Pose [ax; ay; az; tx; ty; tz]
         '''
@@ -226,24 +234,57 @@ class SingleCameraPoseEstimator():
         Set reference frame to the current model pose. Takes an image of the current model position
         and calculates the inverse of the model to camera transformation matrix.
         '''
-
-        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame, self.lower_bounds, self.upper_bounds)
+        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame, self._lowerBounds, self._upperBounds)
+        A = self._SFPD.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
         imgPts = np.matrix(A[:, 0:2])
-        _, tMtx = self.estimateModelPose(imgPts)
-        self.ref = self.inverseTransform(tMtx)
+        try:
+            _, tMtx = self.estimateModelPose(imgPts)
+            self._ref = self.inverseTransform(tMtx)
+        except exc.MissingIntrinsicCameraParametersException as intErr:
+            print(intErr.msg)
+        except exc.MissingImagePointException as imgErr:
+            print(imgErr.msg)
 
-    def GetPose(self):
+
+    def setLowerBounds(self, newLowerBounds):
         '''
-        Get the pose of current model position relative to reference frame
-        :return: Pose relative to reference
+        Set lower bounds for image detection color
+        :param newLowerBounds:
         '''
         # Getting model pose relative to camera
-        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame(), self.lower_bounds, self.upper_bounds)
+        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
         imgPts = np.matrix(A[:, 0:2])
         _, tMtx = self.estimateModelPose(imgPts)
         # Getting model pose relative to reference
-        pose = self.tansformMatrixToPose(tMtx*self.ref)
+        pose = self.tansformMatrixToPose(tMtx*self._ref)
+        self._lowerBounds = newLowerBounds
 
-        return pose
+    def setUpperBounds(self, newUpperBounds):
+        '''
+        Set upper bounds for image detection color
+        :param newUpperBounds:
+        '''
+        self._upperBounds = newUpperBounds
+
+    def getPose(self):
+        '''
+        Get the pose of current model position relative to reference frame. NB! angles in radians
+        :return: Pose relative to reference
+        '''
+        if self._ref is not None:
+            # Getting model pose relative to camera
+            A = self._SFPD.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
+            imgPts = np.matrix(A[:, 0:2])
+            try:
+                _, tMtx = self.estimateModelPose(imgPts)
+                # Getting model pose relative to reference
+                pose = self.tansformMatrixToPose(tMtx * self._ref)
+                return pose
+            except exc.MissingIntrinsicCameraParametersException as intErr:
+                print(intErr.msg)
+            except exc.MissingImagePointException as imgErr:
+                print(imgErr.msg)
+        else:
+            raise exc.MissingReferenceFrameException('Reference frame not set')
 
 
