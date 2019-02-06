@@ -231,7 +231,7 @@ class SingleCameraPoseEstimator():
         cv2.imwrite('boat.jpg', frame)
         frame = self._OTCam.getSingleFrame()
         print(frame)
-        A = self._SFPD.findBallPoints(frame, self._lowerBounds, self._upperBounds)
+        A = self._SFPD.findBallPoints(frame)
         imgPts = np.matrix(A[:, 0:2])
         try:
             _, tMtx = self.estimateModelPose(imgPts)
@@ -263,6 +263,7 @@ class SingleCameraPoseEstimator():
         '''
         if self._ref is not None:
             # Getting model pose relative to camera
+            if self._OTCam.notInitedHsv
             A = self._SFPD.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
             imgPts = np.matrix(A[:, 0:2])
             try:
