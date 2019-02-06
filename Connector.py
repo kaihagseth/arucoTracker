@@ -40,6 +40,8 @@ class Connector():
         :return: None
         '''
         camlist = self.cg.initConnectedCams(includeDefaultCam)
+        return camlist
+    def initSCPEs(self, camlist):
         self.PE.initSCPEs(camlist)
 
     def getImgFromSingleCam(self, camId):

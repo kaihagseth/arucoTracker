@@ -243,3 +243,60 @@
 [2019-02-06 12:58:23,375 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
 [2019-02-06 12:58:36,877 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
 [2019-02-06 12:58:36,878 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:05:36,842 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:05:36,843 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:05:53,385 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:06:26,139 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:06:26,140 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:09:15,466 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:09:15,467 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:09:33,130 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:09:41,251 Cl:TextUI Fx:startApplication Line:44 ] INFO: Starting application
+[2019-02-06 13:09:41,252 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:09:41,253 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:09:41,253 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 13:13:43,972 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:13:43,972 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:14:02,619 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:14:21,492 Cl:TextUI Fx:startApplication Line:44 ] INFO: Starting application
+[2019-02-06 13:14:21,492 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:14:21,494 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:14:21,494 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 13:19:19,641 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:19:19,642 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:19:36,567 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:20:44,630 Cl:TextUI Fx:startApplication Line:44 ] INFO: Starting application
+[2019-02-06 13:20:44,630 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:20:44,632 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:20:44,632 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 13:20:44,993 Cl:SingleCameraPoseEstimator Fx:estimateModelPose Line:77 ] ERROR: Missing intrinsic camera parameters, camera not calibrated
+[2019-02-06 13:21:18,035 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:21:18,036 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:21:34,567 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:22:10,604 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:22:10,605 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:22:27,413 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:22:27,426 Cl:Camera Fx:set_intrinsic_params Line:43 ] INFO: Intrinsic param set.
+[2019-02-06 13:22:30,910 Cl:TextUI Fx:startApplication Line:44 ] INFO: Starting application
+[2019-02-06 13:22:30,910 Cl:PoseEstimator Fx:getPoseFromCams Line:29 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:22:30,912 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:22:30,912 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 13:22:31,281 Cl:SingleCameraPoseEstimator Fx:estimateModelPose Line:77 ] ERROR: Missing intrinsic camera parameters, camera not calibrated
+[2019-02-06 13:30:05,678 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:30:05,680 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:30:08,090 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:30:08,090 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:30:25,046 Cl:Camera Fx:set_intrinsic_params Line:43 ] INFO: Intrinsic param set.
+[2019-02-06 13:30:25,046 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:30:37,234 Cl:TextUI Fx:startApplication Line:45 ] INFO: Starting application
+[2019-02-06 13:30:37,234 Cl:PoseEstimator Fx:getPoseFromCams Line:30 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:30:37,235 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:30:37,235 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
+[2019-02-06 13:31:40,603 Cl:CameraGroup Fx:findConnectedCams Line:106 ] INFO: Inside findConnectedCams()
+[2019-02-06 13:31:40,603 Cl:CameraGroup Fx:findConnectedCams Line:107 ] INFO: Using a hack. Hardcoded index list in return.
+[2019-02-06 13:31:57,656 Cl:Camera Fx:set_intrinsic_params Line:43 ] INFO: Intrinsic param set.
+[2019-02-06 13:31:57,656 Cl:PoseEstimator Fx:initSCPEs Line:19 ] INFO: Running 
+[2019-02-06 13:32:00,302 Cl:TextUI Fx:startApplication Line:45 ] INFO: Starting application
+[2019-02-06 13:32:00,303 Cl:PoseEstimator Fx:getPoseFromCams Line:30 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:32:00,304 Cl:SingleCameraPoseEstimator Fx:findPoseResult_th Line:44 ] INFO: Starting getPoseFromCams()
+[2019-02-06 13:32:00,304 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()

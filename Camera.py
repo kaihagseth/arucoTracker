@@ -1,4 +1,6 @@
 import numpy as np
+import logging
+
 from WebcamVideoStream import WebcamVideoStream
 import cv2
 from IntrinsicCalibration import IntrinsicCalibration
@@ -38,6 +40,8 @@ class Camera():
     def set_intrinsic_params(self, new_mtrx):
         '''Set intrinsic params for the camera'''
         self._intri_cam_mtrx = new_mtrx
+        logging.info('Intrinsic param set.')
+
 
     def set_dist_coeff(self, new_dist_coeff):
         self._dist_coeff = new_dist_coeff

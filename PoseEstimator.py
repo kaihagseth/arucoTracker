@@ -19,6 +19,7 @@ class PoseEstimator():
         logging.info('Running ')
         for cam in cams:
             SCPE = SingleCameraPoseEstimator(cam)
+            #if cam._intr
             self.SCPEs.append(SCPE)
     def getPoseFromCams(self):
         '''

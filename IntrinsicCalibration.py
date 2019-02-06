@@ -40,7 +40,7 @@ class IntrinsicCalibration():
         self._curr_dist_coeff = npzfile['dist']
         self._curr_newcamera_mtx = npzfile['newcameramtx']
         self._curr_roi = npzfile['roi']
-
+        self._parr_cam.set_intrinsic_params(npzfile['mtx'])
     def calibCam(self, frames):
         '''
         Calibrate the camera lens.
@@ -113,7 +113,7 @@ class IntrinsicCalibration():
             filename = 'IntriCalib{0}'.format(camID)
             np.savez(filename, ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
-            self._parr_cam.set_intrinsic_param(mtx)
+            self._parr_cam.set_intrinsic_params(mtx)
             self._curr_ret = ret
             self._curr_camera_matrix = mtx
             self._curr_dist_coeff = dist

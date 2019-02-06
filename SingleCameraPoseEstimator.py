@@ -28,7 +28,7 @@ class SingleCameraPoseEstimator():
         self._OTCam = otcam
         self._intrCamMtrx = self._OTCam._intri_cam_mtrx
         if modelParam is None:
-            self._modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
+            self._modelParam = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]])
         else:
             self._modelParam = modelParam
         self._SFPD = SingleFramePointDetector()
@@ -55,23 +55,10 @@ class SingleCameraPoseEstimator():
             time.sleep(0.5) # MUST BE HERE
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
-            #timestart = time.time()
-            #for i in range(1, 10000000, 1):
-             #   v = 10*i+i
-                #ret, frame = self.OTCam.getSingleFrame()
-            #    cv2.imshow('Frame', frame)
+            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+            time.sleep(0.5)  # MUST BE HERE
+            singlecam_curr_pose_que.put(singlecam_curr_pose)
 
-            #ballPoints = self._SFPD.findBallPoints(frame, [0, 0, 0], [250, 250, 250])
-            #modPose = self.estimateModelPose(ballPoints)
-            #timetaken = time.time()-timestart
-            #print('Time taken: ', timetaken)
-            #time.sleep(0.1)
-            # Find pose
-#            pose = None
-
- #           self.curr_pose = pose
-  #          if self._setInitialPose:  # First round
-   #             self.setReference()
 
     def estimateModelPose(self, imagePoints, x0=None):
         '''
@@ -87,11 +74,13 @@ class SingleCameraPoseEstimator():
             x0 = np.matrix([0,0,0,0,0,1]).T
 
         if self._intrCamMtrx is None:
+            logging.error('Missing intrinsic camera parameters, camera not calibrated')
             raise exc.MissingIntrinsicCameraParametersException('Missing intrinsic camera parameters, camera not calibrated')
 
 
+
         # checking if all image points are present in input
-        for i in range(4):
+        for i in range(3):
             for j in range(2):
                 if imagePoints[i,j] == -1:
                     raise exc.MissingImagePointException('One or more image points not found, cannot estimate pose')
@@ -164,7 +153,7 @@ class SingleCameraPoseEstimator():
             j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, self._intrCamMtrx)[0] - y), e)
 
             # reshaping to match y so we can find dY
-            y0 = np.reshape(y0, (8, 1), order='c')
+            y0 = np.reshape(y0, (-1, 1), order='c')
             dy = y0 - y
 
             # dX from pseudo inverse of jakobian
@@ -190,12 +179,9 @@ class SingleCameraPoseEstimator():
         :param transformMatrix: Transformation matrix for system B represented in system A
         :return: Transformation matrix for system A represented in system B
         '''
-
-
         Rab = transformMatrix[0:3, 0:3].T
         Pbaorg = -Rab*transformMatrix[0:3, 3]
-        Tab = np.vstack(np.hstack(Rab, Pbaorg), [[0, 0, 0, 1]])
-
+        Tab = np.vstack(np.hstack(Rab, Pbaorg), np.matrix([[0, 0, 0, 1]]))
         return Tab
 
 
