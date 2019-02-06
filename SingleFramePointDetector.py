@@ -20,7 +20,6 @@ class SingleFramePointDetector:
         self.upper_value = 255
         self.NUMBER_OF_POINTS = 3
 
-
     def setHSVValues(self, lower_values, upper_values):
         """
         :param lower_values: List of lower bound hsv values.

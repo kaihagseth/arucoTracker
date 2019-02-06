@@ -8,6 +8,7 @@ import random, time, logging
 '''
 Class for doing all analysis and filtering on a single-OTcam image stream.
 Thus, all analysis involving images from more than one camera, is not done here.
+
 '''
 
 class SingleCameraPoseEstimator():

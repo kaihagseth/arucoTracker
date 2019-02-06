@@ -12,9 +12,11 @@ cv2.destroyAllWindows()
 
 
 
-class IntrinsicCalibration():
+class IntrinsicCalibrator:
     '''
     Do intrinsic calibration on cameras.
+    Returns a
+    # TODO: Refactoring: Remove all references to parent camera.
     '''
 
     def __init__(self, parr_cam=None):
