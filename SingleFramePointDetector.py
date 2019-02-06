@@ -21,6 +21,7 @@ class SingleFramePointDetector:
         4 largest circles in the frame. In cases where less circles are detected,
         remaining rows will returns with -1 """
         # blur image to remove hf-noise
+        NUMBER_OF_POINTS = 3
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         lower_bounds = np.array(lower_bounds)
         upper_bounds = np.array(upper_bounds)
@@ -47,7 +48,7 @@ class SingleFramePointDetector:
         contours = imutils.grab_contours(contours)
 
         # only proceed if at least one contour was found
-        enclosed_circles = np.ones((4, 3)) * -1
+        enclosed_circles = np.ones((NUMBER_OF_POINTS, 3)) * -1
         if len(contours) == 0:
             return enclosed_circles
         all_circles = []
@@ -65,8 +66,8 @@ class SingleFramePointDetector:
         # centroids
         if len(all_circles) == 0:
             return enclosed_circles
-        elif len(all_circles) > 4:
-            largest_circles = nlargest(4, all_circles, key=cv2.contourArea)
+        elif len(all_circles) > NUMBER_OF_POINTS:
+            largest_circles = nlargest(NUMBER_OF_POINTS, all_circles, key=cv2.contourArea)
         else:
             largest_circles = [0]*len(all_circles)
             for (num, circle) in enumerate(all_circles):
