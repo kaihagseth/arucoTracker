@@ -28,7 +28,7 @@ class SingleCameraPoseEstimator():
         self._OTCam = otcam
         self._intrCamMtrx = self._OTCam._intri_cam_mtrx
         if modelParam is None:
-            self._modelParam = np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1]])
+            self._modelParam = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]])
         else:
             self._modelParam = modelParam
         self._SFPD = SingleFramePointDetector()
@@ -43,34 +43,19 @@ class SingleCameraPoseEstimator():
         '''
         logging.info('Starting getPoseFromCams()')
         run = True
+        self.setReference()
         while run:
-            singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
+
+            try:
+                singlecam_curr_pose = self.getPose()
+            except exc.MissingReferenceFrameException as refErr:
+                print(refErr.msg)
+
             print('Singlecam_curr_pose: ', singlecam_curr_pose)
-            time.sleep(0.5) # MUST BE HERE
-            #try:
-                #singlecam_curr_pose = self.getPose()
-            #except exc.MissingReferenceFrameException as refErr:
-                #print(refErr.msg)
+            time.sleep(0.5)  # MUST BE HERE
 
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
-            #timestart = time.time()
-            for i in range(1, 10000000, 1):
-                v = 10*i+i
-                #ret, frame = self.OTCam.getSingleFrame()
-            #    cv2.imshow('Frame', frame)
-
-            #ballPoints = self._SFPD.findBallPoints(frame, [0, 0, 0], [250, 250, 250])
-            #modPose = self.estimateModelPose(ballPoints)
-            #timetaken = time.time()-timestart
-            #print('Time taken: ', timetaken)
-            #time.sleep(0.1)
-            # Find pose
-#            pose = None
-
- #           self.curr_pose = pose
-  #          if self._setInitialPose:  # First round
-   #             self.setReference()
 
     def estimateModelPose(self, imagePoints, x0=None):
         '''
@@ -90,8 +75,8 @@ class SingleCameraPoseEstimator():
 
 
         # checking if all image points are present in input
-        for i in range(4):
-            for j in range(2):
+        for i in range(np.shape(imagePoints[1])):
+            for j in range(np.shape(imagePoints)[0]):
                 if imagePoints[i,j] == -1:
                     raise exc.MissingImagePointException('One or more image points not found, cannot estimate pose')
 
@@ -163,7 +148,7 @@ class SingleCameraPoseEstimator():
             j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]]), pm, self._intrCamMtrx)[0] - y), e)
 
             # reshaping to match y so we can find dY
-            y0 = np.reshape(y0, (8, 1), order='c')
+            y0 = np.reshape(y0, (-1, 1), order='c')
             dy = y0 - y
 
             # dX from pseudo inverse of jakobian
@@ -192,7 +177,7 @@ class SingleCameraPoseEstimator():
 
         Rab = transformMatrix[0:3, 0:3].T
         Pbaorg = -Rab*transformMatrix[0:3, 3]
-        Tab = np.vstack(np.hstack(Rab, Pbaorg), [[0, 0, 0, 1]])
+        Tab = np.vstack(np.hstack(Rab, Pbaorg), np.matrix([[0, 0, 0, 1]]))
 
         return Tab
 
@@ -234,7 +219,6 @@ class SingleCameraPoseEstimator():
         Set reference frame to the current model pose. Takes an image of the current model position
         and calculates the inverse of the model to camera transformation matrix.
         '''
-        A = self._OTCam.findBallPoints(self._OTCam.getSingleFrame, self._lowerBounds, self._upperBounds)
         A = self._SFPD.findBallPoints(self._OTCam.getSingleFrame(), self._lowerBounds, self._upperBounds)
         imgPts = np.matrix(A[:, 0:2])
         try:
