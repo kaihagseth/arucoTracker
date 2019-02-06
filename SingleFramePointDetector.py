@@ -1,25 +1,29 @@
 from heapq import nlargest
-import cv2, imutils
+import cv2
+import imutils
 import numpy as np
 
 
-
-
-class SingleFramePointDetector():
+class SingleFramePointDetector:
     '''
     Detect points in a single frame.
     '''
     def __init__(self):
         pass
 
-    def findBallPoints(self, frame, lower_bounds, upper_bounds):
-        # frame - BGR-image to analyze
-        # lower bounds - hsv lower bounds np array
-        # upper bounds - hsv lower bounds np array
-
-        # construct the argument parse and parse the arguments
+    @staticmethod
+    def findBallPoints(frame, lower_bounds, upper_bounds):
+        """" Finds center points and radii of the largest circles in the image.
+        :param frame: BGR-image to analyze
+        :param lower_bounds: hsv lower bounds np array ex(170, 100, 100) for red
+        :param upper_bounds: hsv lower bounds np array ex(40, 255, 255) for red
+        :return: numpy array of size (3, 4) with x, y coordinate and radius of the
+        4 largest circles in the frame. In cases where less circles are detected,
+        remaining rows will returns with -1 """
+        # blur image to remove hf-noise
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-
+        lower_bounds = np.array(lower_bounds)
+        upper_bounds = np.array(upper_bounds)
         # Hack to bypass inRange's limitation of looping around 0 in the H-channel in HSV.
         if lower_bounds[0] < upper_bounds[0]:
             hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -37,36 +41,35 @@ class SingleFramePointDetector():
 
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
-        contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
+        contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = imutils.grab_contours(contours)
-        cv2.drawContours(blurred, contours, -1, (0, 255, 0), 3)
-        cv2.imshow('mask', blurred)
 
         # only proceed if at least one contour was found
-        if len(contours) > 0:
-            circles = []
-            # Check each blob if it is circular enough.
-            for contour in contours:
-                perimeter = cv2.arcLength(contour, True)
-                area = cv2.contourArea(contour)
-                if perimeter == 0:
-                    break
-                circularity = 4 * np.pi * (area / (perimeter * perimeter))
-                if 0.7 < circularity < 1.2:
-                    circles.append(contour)
-
-            # find the largest circles in the mask, then use
-            # it to compute the minimum enclosing circles and
-            # centroids
-            if len(circles) == 0:
-                return []
-            elif len(circles) > 3:
-                largest_circles = nlargest(3, circles, key=cv2.contourArea)
-            else:
-                largest_circles = nlargest(len(circles), circles, key=cv2.contourArea)
-            enclosed_circles = np.zeros((len(largest_circles), 3))
-            for (num, circle) in enumerate(largest_circles):
-                ((x, y), radius) = cv2.minEnclosingCircle(circle)
-                enclosed_circles[num, :] = x, y, radius
+        enclosed_circles = np.ones((4, 3)) * -1
+        if len(contours) == 0:
             return enclosed_circles
-        return []
+        all_circles = []
+        # Check each blob if it is circular enough.
+        for contour in contours:
+            perimeter = cv2.arcLength(contour, True)
+            area = cv2.contourArea(contour)
+            if perimeter == 0:
+                break
+            circularity = 4 * np.pi * (area / (perimeter * perimeter))
+            if 0.7 < circularity < 1.2:
+                all_circles.append(contour)
+        # find the largest circles in the mask, then use
+        # it to compute the minimum enclosing circles and
+        # centroids
+        if len(all_circles) == 0:
+            return enclosed_circles
+        elif len(all_circles) > 4:
+            largest_circles = nlargest(4, all_circles, key=cv2.contourArea)
+        else:
+            largest_circles = [0]*len(all_circles)
+            for (num, circle) in enumerate(all_circles):
+                largest_circles[num] = circle
+        for (num, circle) in enumerate(largest_circles):
+            ((x, y), radius) = cv2.minEnclosingCircle(circle)
+            enclosed_circles[num, :] = x, y, radius
+        return enclosed_circles
