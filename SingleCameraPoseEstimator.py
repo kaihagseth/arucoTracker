@@ -69,7 +69,7 @@ class SingleCameraPoseEstimator():
         '''
 
         if x0 is None:
-            x0 = np.matrix([0,0,0,0,0,1]).T
+            x0 = np.matrix([0, 0, 0, 0, 0, 1]).T
 
         if self._intrCamMtrx is None:
             raise exc.MissingIntrinsicCameraParametersException('Missing intrinsic camera parameters, camera not calibrated')

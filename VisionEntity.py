@@ -12,62 +12,60 @@ class VisionEntity:
     """
 
     def __init__(self):
-        self.camera = Camera()
-        self.single_frame_point_detector = SingleFramePointDetector
-        self.intrinsic_calibrator = IntrinsicCalibrator
-        self.single_camera_pose_estimator = SingleCameraPoseEstimator
+        self._camera = Camera()
+        self._single_frame_point_detector = SingleFramePointDetector()
+        self._intrinsic_calibrator = IntrinsicCalibrator()
+        self._single_camera_pose_estimator = SingleCameraPoseEstimator()
 
     def detectPoints(self):
         """
+        Finds x, y and radius of circles in current video stream frame from camera.
         :return: A list of the largest circles found in cameras frame (x,y,r)
         """
-        return self.single_frame_point_detector.findBallPoints(self.getFrame())
+        return self._single_frame_point_detector.findBallPoints(self._camera.getSingleFrame())
 
     def calibrateCameraWithTool(self):
         """
+        # TODO: This function is not yet created in camera Class.
         Calibrates intrinsic matrix and distortion coefficients for camera.
         :return: None
         """
-        self.camera.calibrateCamera()
+        self._camera.calibrateCamera()
 
-     def calibrateCameraWithImages(self, images):
-         """
-         Calibrates intrinsic matrix and distortion coefficients for camera.
-         :return: None
-         """
-         self.camera.calibrateCam(images)
+    def calibrateCameraWithImages(self, images):
+        """
+        Calibrates the cameras Intrinsic matrix and distortion coefficients from a collection of images.
+        :param images: Images to use to use for camera calibration
+        :return: None
+        """
+        self._camera.calibrateCam(images)
 
     def setCameraIntrinsicParameters(self, intrinsic_parameters):
         """
         Calibrates intrinsic matrix and distortion coefficients for camera.
         :return: None
         """
-        self.camera.set_intrinsic_params(intrinsic_parameters)
+        self._camera.set_intrinsic_params(intrinsic_parameters)
 
     def setCameraDistortionCoefficents(self, distortion_coefficients):
         """
         Calibrates intrinsic matrix and distortion coefficients for camera.
         :return: None
         """
-        self.camera.set_distortion_coefficients(distortion_coefficients)
+        self._camera.set_distortion_coefficients(distortion_coefficients)
 
     def calibratePointDetector(self):
         """
         Opens color calibration tool for image segmentation.
         :return: None
         """
-        self.single_frame_point_detector.calibrate(self.camera.getStream())
+        self._single_frame_point_detector.calibrate(self._camera.getStream())
 
     def getObjectPose(self):
         """
+        Returns Object pose
         :return: A list of the six axis of the model.
         """
         # get points from point detector, then plug points into pose estimator to get six axis
-        return self.single_camera_pose_estimator.estimateModelPose(self.detectPoints())
+        return self._single_camera_pose_estimator.estimateModelPose(self.detectPoints())
 
-    def getFrame(self):
-        """
-        Returns the current frame from camera.
-        :return: A frame from this object's camera object.
-        """
-        return self.camera.getFrame()
