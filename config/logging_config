@@ -17,7 +17,7 @@
 
         "info_file_handler": {
             "class": "logging.handlers.RotatingFileHandler",
-            "level": "INFO",
+            "level": "ERROR",
             "formatter": "simple",
             "filename": "config/info.log",
             "maxBytes": 10485760,

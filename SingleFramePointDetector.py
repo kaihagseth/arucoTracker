@@ -68,7 +68,7 @@ class SingleFramePointDetector:
             else:
                 hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
                 lower_hsv = np.array([self.lower_hue - 90, self.lower_saturation, self.lower_value])
-                higher_hsv = np.array([self.higher_hue + 90, self.upper_saturation, self.upper_value])
+                higher_hsv = np.array([self.upper_hue + 90, self.upper_saturation, self.upper_value])
             mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
 
             image = cv2.bitwise_and(frame, frame, mask=mask)
@@ -97,7 +97,7 @@ class SingleFramePointDetector:
         else:
             hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
             lower_bounds = np.array([self.lower_hue - 90, self.lower_saturation, self.lower_value])
-            upper_bounds = np.array([self.higher_hue + 90, self.upper_saturation, self.upper_value])
+            upper_bounds = np.array([self.upper_hue + 90, self.upper_saturation, self.upper_value])
 
 
 
@@ -107,8 +107,7 @@ class SingleFramePointDetector:
         mask = cv2.inRange(hsv, lower_bounds, upper_bounds)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
-
-
+        cv2.imwrite('mask.jpg',mask)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -126,7 +125,7 @@ class SingleFramePointDetector:
             if perimeter == 0:
                 break
             circularity = 4 * np.pi * (area / (perimeter * perimeter))
-            if 0.7 < circularity < 1.2:
+            if 0.0 < circularity < 5:
                 all_circles.append(contour)
         # find the largest circles in the mask, then use
         # it to compute the minimum enclosing circles and
@@ -143,3 +142,15 @@ class SingleFramePointDetector:
             ((x, y), radius) = cv2.minEnclosingCircle(circle)
             enclosed_circles[num, :] = x, y, radius
         return enclosed_circles
+
+if __name__ == '__main__':
+    sfpd = SingleFramePointDetector()
+    cap = cv2.VideoCapture(1)
+    #
+    sfpd.calibrate(cap)
+    ret, frame = cap.read()
+    points = sfpd.findBallPoints(frame)
+    print('Points: ', points)
+    cv2.imshow('Frame',frame)
+    cv2.waitKey(0)
+    cv2.imwrite('images\\boat_axiscross.jpg', frame)

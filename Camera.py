@@ -1,4 +1,6 @@
 import numpy as np
+import logging
+
 from WebcamVideoStream import WebcamVideoStream
 import cv2
 from IntrinsicCalibrator import IntrinsicCalibrator
@@ -43,6 +45,11 @@ class Camera():
     def getFrame(self):
         '''Get frame from vidthread.'''
         self._vidstreamthread.read()
+
+    def set_intrinsic_params(self, new_mtrx):
+        '''Set intrinsic params for the camera'''
+        self._intri_cam_mtrx = new_mtrx
+        logging.info('Intrinsic param set.')
 
     def set_intrinsic_params(self, intrinsic_params):
         """

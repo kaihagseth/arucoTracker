@@ -24,6 +24,8 @@ class PoseEstimator():
         logging.info('Running ')
         for cam in cams:
             SCPE = SingleCameraPoseEstimator(cam)
+
+            #if cam._intr
             self.SCPEs.append(SCPE)
     def getPoseFromCams(self):
         '''
@@ -54,7 +56,7 @@ class PoseEstimator():
         :return: threadInfopList
         '''
         print(self.threadInfoList)
-        print('Pose: ', self.threadInfoList[1][2].get())
+        print('Pose: ', self.threadInfoList[0][2].get())
         #singlecam_poses = self.threadInfoList[:,2]
         #print(singlecam_poses)
         time.sleep(1)

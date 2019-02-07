@@ -8,7 +8,7 @@ class TextUI():
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = False # If True, do some obvious things for fast forward initialisation.
+        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
         self.c = connector
 
     '''
@@ -19,16 +19,11 @@ class TextUI():
         while not stopProgram:
             if self.DEBUG:
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
-                self.c.initConnectedCams(includeDefaultCam=True)
+                camlist = self.c.initConnectedCams(includeDefaultCam=True)
                 #self.calibCameras()
                 cam = self.c.getCamFromIndex(0)
                 cam.loadSavedCalibValues()
-                orgimg = cam.getSingleFrame()
-                img = cam._IC.undistort_image(orgimg)
-                print(img)
-                cv2.imshow('frame', img )
-                cv2.imshow('Frame org', orgimg)
-                cv2.waitKey(0)
+                self.c.initSCPEs(camlist)
                 print('\n DEBUG MODE. Cameras initialised.')
             print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
@@ -73,7 +68,8 @@ class TextUI():
               '5. Calibrate cameras \n'
               '6. Test cameras \n'
               '7. Videotest cameras \n'
-              '8. Show current calib params, index 0'
+              '8. Show current calib params, index 0 \n'
+              '9. Fix HSV-calibration'
               )
         choice = int(input('Type: '))
         if choice is 1:
@@ -93,6 +89,8 @@ class TextUI():
         elif choice is 8:
             print('Printing parameters')
             self.c.getCamFromIndex(0)._IC.printCurrParams()
+        elif choice is 9:
+            self.doHSVCalib()
         else: #Invalid typing
             print('Bad typing. Try again.')
             self.configCameras()
@@ -194,3 +192,11 @@ class TextUI():
                     break
             except cv2.error:
                 print('OpenCV failed. Trying again.')
+
+    def doHSVCalib(self):
+        print('What camera to calibrate? Camera index')
+        choice = int(input('Type:'))
+        cam = self.c.getCamFromIndex(choice)
+        # Do HSV calibration
+        cam._
+

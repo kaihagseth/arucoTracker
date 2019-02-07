@@ -45,7 +45,7 @@ class IntrinsicCalibrator:
         self._curr_dist_coeff = npzfile['dist']
         self._curr_newcamera_mtx = npzfile['newcameramtx']
         self._curr_roi = npzfile['roi']
-
+        self._parr_cam.set_intrinsic_params(npzfile['mtx'])
     def calibCam(self, frames):
         '''
         Calibrate the camera lens.
@@ -56,7 +56,7 @@ class IntrinsicCalibrator:
         #Save the images to a distinct camera folder
         i = 1
         cb_n_width = 7
-        cb_n_height = 9
+        cb_n_height = 5
         camID = 0
         ''' Make sure we don't use invalid ID.  '''
         if self._parr_cam is None:

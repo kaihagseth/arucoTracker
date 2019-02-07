@@ -42,6 +42,16 @@ class CameraGroup():
         if wantedCam is None:
             logging.error('No cam found.')
         return wantedCam
+    def getCamByListIndex(self, index):
+        '''
+        Get a cam based on number ()
+        :param ID: Number of the camera
+        :return: OTCam
+        '''
+        wantedCam = self._camReg[index]
+        if wantedCam is None:
+            logging.error('No cam found.')
+        return wantedCam
 
 
     def takeSimultaneousImg(self):
@@ -108,7 +118,7 @@ class CameraGroup():
         ''' #TODO: Find new algorithm, this thing is sloooow.
         logging.info('Inside findConnectedCams()')
         logging.info('Using a hack. Hardcoded index list in return.')
-        num_cams = 4
+        num_cams = 2
         ilist = []
         for i in range(num_cams):
             ilist.append(i)
