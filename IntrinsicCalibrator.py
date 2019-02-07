@@ -33,6 +33,7 @@ class IntrinsicCalibrator:
     def loadSavedValues(self, filename='IntriCalib.npz'):
         '''
         Load values to be used in calibration.
+        # TODO: Remove
         This process is just needed if you don't want to do a new calibration,
         but use old values instead.
         :param filename: Filename to get values from.
@@ -63,7 +64,7 @@ class IntrinsicCalibrator:
             logging.error('CameraID not found!')
         else:
             camID = self._parr_cam._ID
-        ''' Add all images in folder ''' #TODO: Fix this
+        ''' Add all images in folder ''' # TODO: Fix this
         for frame in frames:
             path = 'images/cam_{0}/calib_img{1}.png'.format(camID, i)
             cv2.imwrite(path, frame)
@@ -140,6 +141,7 @@ class IntrinsicCalibrator:
         print('_curr_roi : ', self._curr_roi)
 
     def undistort_image(self, image):
+        # TODO: Rename to getUndistortedFrame
         img =  cv2.undistort(image, self._curr_camera_matrix, self._curr_dist_coeff,
                              newCameraMatrix=self._curr_newcamera_mtx)
         logging.debug('Image: ', img)
@@ -150,6 +152,7 @@ class IntrinsicCalibrator:
         #return cv2.undistort(image, self.camera_matrix, self.dist_coeffs,
         #                     newCameraMatrix=self.new_camera_matrix)
     def undistortImage(self, img):
+        # TODO: Rename to getUndistortedFrame
         '''
         Goal: Insert a distored image and get a undistorted image back.
         :param img: Distorted image
