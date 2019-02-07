@@ -99,8 +99,6 @@ class SingleFramePointDetector:
             lower_bounds = np.array([self.lower_hue - 90, self.lower_saturation, self.lower_value])
             upper_bounds = np.array([self.upper_hue + 90, self.upper_saturation, self.upper_value])
 
-
-
         # construct a mask for the color, then perform
         # a series of dilations and erosions to remove any small
         # blobs left in the mask
@@ -142,6 +140,14 @@ class SingleFramePointDetector:
             ((x, y), radius) = cv2.minEnclosingCircle(circle)
             enclosed_circles[num, :] = x, y, radius
         return enclosed_circles
+
+    def getHSVValues(self):
+        """
+        :return: lower HSV values and upper HSV values used to threshold image segmentation
+        """
+        lower_values = (self.lower_hue, self.lower_saturation, self.lower_value)
+        upper_values = (self.upper_hue,  self.upper_saturation, self.upper_value)
+        return lower_values, upper_values
 
 if __name__ == '__main__':
     sfpd = SingleFramePointDetector()
