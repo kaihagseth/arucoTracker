@@ -100,7 +100,7 @@ class SingleCameraPoseEstimator():
             p = np.matrix(np.reshape(ph, (-1, 1), order='F'), dtype=float)
 
             # Homogenus transformation matrix
-            transform_matrix = np.vstack(mExt, np.matrix([[0, 0, 0, 1]], dtype=float))
+            transform_matrix = np.vstack((mExt, np.matrix([[0, 0, 0, 1]], dtype=float)))
             return p, transform_matrix
 
         for i in range(0, 10):
@@ -110,7 +110,7 @@ class SingleCameraPoseEstimator():
 
             # Jakobian
             e = 0.000001
-            j = np.matrix(np.empty((8, 6)))
+            j = np.matrix(np.empty((6, 6)))
             j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
@@ -148,7 +148,7 @@ class SingleCameraPoseEstimator():
         '''
         Rab = transformMatrix[0:3, 0:3].T
         Pbaorg = -Rab*transformMatrix[0:3, 3]
-        Tab = np.vstack(np.hstack(Rab, Pbaorg), np.matrix([[0, 0, 0, 1]], dtype=float))
+        Tab = np.vstack((np.hstack((Rab, Pbaorg)), np.matrix([[0, 0, 0, 1]], dtype=float)))
         return Tab
 
     def _tansformMatrixToPose(self, transformMatrix):
@@ -193,7 +193,7 @@ class SingleCameraPoseEstimator():
         '''
         self._model_param = model_params
 
-    def getPose(self, intr_cam_matrix, image_points, guess_pose):
+    def getPose(self, intr_cam_matrix, image_points, guess_pose=None):
         '''
         Get the pose of current model position relative to reference frame. NB! angles in radians
         :return: Pose relative to reference
