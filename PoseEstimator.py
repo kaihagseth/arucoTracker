@@ -66,3 +66,11 @@ class PoseEstimator():
         #print(singlecam_poses)
         time.sleep(1)
         return self.threadInfoList
+    def getCamById(self, camID):
+        for VE in self.VisionEntityList:
+            cam = VE.getCam()
+            if cam._src is camID:
+                wantedCam = cam
+                return wantedCam
+        # If not found, log error.
+        logging.error('Camera not found on given index. ')

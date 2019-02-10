@@ -1,4 +1,4 @@
-from CameraGroup import CameraGroup
+
 import os
 import json
 import logging
@@ -26,11 +26,6 @@ class Connector():
             doAbort = doAbortFx()
         print('Ended')
 
-    def addCamera(self, cam):
-        self.cg.addSingleCam(cam)
-
-    def getConnectedCams(self):
-        return self.cg.findConnectedCams()
 
     def initConnectedCams(self, includeDefaultCam):
         '''
@@ -42,10 +37,8 @@ class Connector():
         self.PE.createVisionEntities()
 
     def getImgFromSingleCam(self, camId):
-        return self.cg.getSingleImg(camId)
+        return self.PE.getCamById(camId).getSingleImg()
 
-    def getCamFromIndex(self, index):
-        return self.cg.getCamByListIndex(index)
 
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'

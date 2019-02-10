@@ -198,5 +198,5 @@ class TextUI():
         choice = int(input('Type:'))
         cam = self.c.getCamFromIndex(choice)
         # Do HSV calibration
-        cam._
+
 

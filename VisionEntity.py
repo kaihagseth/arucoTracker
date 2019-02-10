@@ -156,3 +156,5 @@ class VisionEntity:
         """
         self.intrinsic_matrix = intrinsic_matrix
         self._camera.set_distortion_coefficients(distortion_coefficients)
+    def getCam(self):
+        return self._camera
