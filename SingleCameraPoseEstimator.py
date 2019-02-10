@@ -78,7 +78,7 @@ class SingleCameraPoseEstimator():
 
             # Rotation Matrix R from model pose
             Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
-            Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 1], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
+            Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
             Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
             #Rzy = np.matmul(Rz, Ry)
             #R = np.matmul(Rzy, Rx)
@@ -205,7 +205,8 @@ class SingleCameraPoseEstimator():
                 else:
                     _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points, guess_pose)
                 # Getting model pose relative to reference
-                pose = self._tansformMatrixToPose(transform_matrix * self._ref)
+                #pose = self._tansformMatrixToPose(transform_matrix * self._ref)
+                pose = self._tansformMatrixToPose(self._ref*transform_matrix)
                 return pose
             except exc.MissingIntrinsicCameraParametersException as intErr:
                 print(intErr.msg)
