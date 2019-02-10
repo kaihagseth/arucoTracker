@@ -1,4 +1,4 @@
-from CameraGroup import CameraGroup
+
 import os
 import json
 import logging
@@ -12,11 +12,11 @@ class Connector():
     '''
 
     def __init__(self):
-        self.cg = CameraGroup()
+        #self.cg = CameraGroup()
         self.logging_setup()
         self.PE = PoseEstimator()
     def startApplication(self, dispResFx, doAbortFx):
-        self.PE.getPoseFromCams()
+        self.PE.runPoseEstimator() # Create all threads and start them
         logging.info('Running startApplication()')
         doAbort = doAbortFx()
         while not doAbort:
@@ -26,11 +26,6 @@ class Connector():
             doAbort = doAbortFx()
         print('Ended')
 
-    def addCamera(self, cam):
-        self.cg.addSingleCam(cam)
-
-    def getConnectedCams(self):
-        return self.cg.findConnectedCams()
 
     def initConnectedCams(self, includeDefaultCam):
         '''
@@ -39,16 +34,11 @@ class Connector():
         :param includeDefaultCam: If True, include the inbuilt webcam.
         :return: None
         '''
-        camlist = self.cg.initConnectedCams(includeDefaultCam)
-        return camlist
-    def initSCPEs(self, camlist):
-        self.PE.initSCPEs(camlist)
+        self.PE.createVisionEntities()
 
     def getImgFromSingleCam(self, camId):
-        return self.cg.getSingleImg(camId)
+        return self.PE.getCamById(camId).getSingleImg()
 
-    def getCamFromIndex(self, index):
-        return self.cg.getCamByListIndex(index)
 
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'
