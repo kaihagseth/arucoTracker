@@ -8,7 +8,7 @@ class TextUI():
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
+        self.DEBUG = False # If True, do some obvious things for fast forward initialisation.
         self.c = connector
 
     '''

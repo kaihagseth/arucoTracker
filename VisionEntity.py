@@ -1,10 +1,11 @@
+import time
 from Camera import Camera
 from SingleFramePointDetector import SingleFramePointDetector
 from IntrinsicCalibrator import IntrinsicCalibrator
 from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import numpy as np
-
-
+import exceptions as exc
+import logging
 
 class VisionEntity:
     """
@@ -12,12 +13,43 @@ class VisionEntity:
     stream.
     """
 
-    def __init__(self):
-        self.intrinsic_matrix = np.matrix()
-        self._camera = Camera()
+    def __init__(self, cv2_index):
+        self.intrinsic_matrix = None
+        self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
         self._single_frame_point_detector = SingleFramePointDetector()
         self._intrinsic_calibrator = IntrinsicCalibrator()
         self._single_camera_pose_estimator = SingleCameraPoseEstimator()
+
+
+    def findPoseResult_th(self, singlecam_curr_pose, singlecam_curr_pose_que):
+        '''
+        Function to thread.
+        :param singlecam_curr_pose:
+        :param singlecam_curr_pose_que:
+        :return:
+        '''
+        logging.info('Starting getPoseFromCams()')
+        useNonThreadedDistortedCam = True
+        run = True
+        while run:
+            #singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
+
+            try:
+                if useNonThreadedDistortedCam:
+                    frame = self._camera.getSingleFrame()
+                else:
+                    frame = self._camera.getUndistortedFrame()
+                img_points = self._single_frame_point_detector.findBallPoints(frame)
+                singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self._camera.getIntrinsicParams(),img_points,None)
+            except exc.MissingReferenceFrameException as refErr:
+                print('ERROR: ',refErr.msg)
+            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+            time.sleep(0.5) # MUST BE HERE
+            singlecam_curr_pose_que.put(singlecam_curr_pose)
+
+            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+            time.sleep(0.5)  # MUST BE HERE
+            singlecam_curr_pose_que.put(singlecam_curr_pose)
 
     def getFramePoints(self):
         """

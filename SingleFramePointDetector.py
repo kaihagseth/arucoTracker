@@ -1,3 +1,4 @@
+import logging
 from heapq import nlargest
 import cv2
 import imutils
@@ -88,6 +89,8 @@ class SingleFramePointDetector:
         :return: numpy array of size (3, 4) with x, y coordinate and radius of the
         4 largest circles in the frame. In cases where less circles are detected,
         remaining rows will returns with -1 """
+        logging.info('Running findBallPoints()')
+        print('Frame: ', frame)
         # blur image to remove hf-noise
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         if self.lower_hue < self.upper_hue:

@@ -12,11 +12,11 @@ class Connector():
     '''
 
     def __init__(self):
-        self.cg = CameraGroup()
+        #self.cg = CameraGroup()
         self.logging_setup()
         self.PE = PoseEstimator()
     def startApplication(self, dispResFx, doAbortFx):
-        self.PE.getPoseFromCams()
+        self.PE.runPoseEstimator() # Create all threads and start them
         logging.info('Running startApplication()')
         doAbort = doAbortFx()
         while not doAbort:
@@ -39,10 +39,7 @@ class Connector():
         :param includeDefaultCam: If True, include the inbuilt webcam.
         :return: None
         '''
-        camlist = self.cg.initConnectedCams(includeDefaultCam)
-        return camlist
-    def initSCPEs(self, camlist):
-        self.PE.initSCPEs(camlist)
+        self.PE.createVisionEntities()
 
     def getImgFromSingleCam(self, camId):
         return self.cg.getSingleImg(camId)

@@ -15,17 +15,19 @@ class Camera():
     Class for Camera.
     # TODO: Refactoring
     """
-    def __init__(self, cam_name = "Cam0", cam_id = 0, src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None):
+    def __init__(self, cam_name = "Cam0", cam_id = 0, src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None, activateSavedValues = False):
         '''Create a cam '''
         print("Creating OTCam")
         self._ID = cam_id # A distinct number for each camera.
         self._name = cam_name
         self._intrinsic_camera_matrix = intrinsic_camera_matrix
-        self._distortion_coefficients
+        self._distortion_coefficients = None
         self._cam_pose = camera_pose_matrix
         self._src = src_index
         self._vidCap = cv2.VideoCapture(self._src)
         self._IC = IntrinsicCalibrator(self)
+        if activateSavedValues:
+            self.activateSavedValues()
 
     def startVideoStream(self):
         '''
@@ -50,7 +52,8 @@ class Camera():
         '''Set intrinsic params for the camera'''
         self._intri_cam_mtrx = new_mtrx
         logging.info('Intrinsic param set.')
-
+    def getIntrinsicParams(self):
+        return self._intrinsic_camera_matrix
     def set_intrinsic_params(self, intrinsic_params):
         """
         :param intrinsic_params: New intrinsic matrix
@@ -88,9 +91,15 @@ class Camera():
     def loadSavedCalibValues(self):
         self._IC.loadSavedValues()
 
+    def getUndistortedFrame(self):
+        "Get threaded, undistorted frame. "
+        img = self.undistort(self.getFrame())
+        return img
+
     def undistort(self, img):
         '''Return a undistorted version of a distorted image. '''
         self._IC.undistort_image(img)
+
     def activateSavedValues(self, filename='IntriCalib.npz'):
         '''Load and use the earlier saved intrinsic parameters from a file.
         :param filename: Name of file to get params from.
