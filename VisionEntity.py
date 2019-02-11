@@ -13,11 +13,11 @@ class VisionEntity:
     """
 
     def __init__(self):
-        self.intrinsic_matrix = np.matrix()
         self._camera = Camera()
         self._single_frame_point_detector = SingleFramePointDetector()
         self._intrinsic_calibrator = IntrinsicCalibrator()
         self._single_camera_pose_estimator = SingleCameraPoseEstimator()
+        self.intrinsic_matrix = np.matrix()
 
     def getFramePoints(self):
         """
@@ -33,6 +33,7 @@ class VisionEntity:
         :return: None
         """
         self._camera.calibrateCamera()
+        raise NotImplementedError("calibrateCameraWithTool has not yet been implemented")
 
     def calibrateCameraWithImages(self, images):
         """

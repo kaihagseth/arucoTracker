@@ -36,6 +36,8 @@ class SingleFramePointDetector:
 
     def calibrate(self, cap):
         """
+        TODO: This function should probably only be used in a early stage of developement, and be replaced by a
+            function in the GUI that calls the "setHSVValues" function in this class.
         :param cap: Videocapture-stream from camera to be calibrated
         :return: None
         """
