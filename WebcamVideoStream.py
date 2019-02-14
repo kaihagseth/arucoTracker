@@ -15,6 +15,7 @@ class WebcamVideoStream:
         # be stopped
         self.stopped = False
         self.threadname =   "ImgGrab_ {0}".format(camName)
+
     def start(self):
         # start the thread to read frames from the video stream
         Thread(target=self.update, name=self.threadname, args=()).start()

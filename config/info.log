@@ -548,3 +548,22 @@
 [2019-02-06 15:41:03,296 Cl:Connector Fx:startApplication Line:20 ] INFO: Running startApplication()
 [2019-02-06 15:41:03,608 Cl:SingleCameraPoseEstimator Fx:estimateModelPose Line:77 ] ERROR: Missing intrinsic camera parameters, camera not calibrated
 [2019-02-06 15:41:03,663 Cl:SingleCameraPoseEstimator Fx:estimateModelPose Line:87 ] ERROR: One or more image points not found, cannot estimate pose
+[2019-02-10 17:19:53,102 Cl:Camera Fx:getSingleFrame Line:85 ] ERROR: Camera grabbed unsuccesfully.
+[2019-02-14 09:30:15,030 Cl:Camera Fx:__init__ Line:30 ] ERROR: Camera not opened!!
+[2019-02-14 09:31:33,960 Cl:Camera Fx:__init__ Line:30 ] ERROR: Camera not opened!!
+[2019-02-14 09:45:10,536 Cl:Camera Fx:__init__ Line:30 ] ERROR: Camera not opened!!
+[2019-02-14 09:45:50,227 Cl:Camera Fx:__init__ Line:30 ] ERROR: Camera not opened!!
+[2019-02-14 09:46:20,517 Cl:Camera Fx:__init__ Line:30 ] ERROR: Camera not opened!!
+[2019-02-14 09:46:26,475 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 
+[2019-02-14 10:07:00,427 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 
+[2019-02-14 10:13:56,132 Cl:Camera Fx:getSingleFrame Line:85 ] ERROR: Camera grabbed unsuccesfully.
+[2019-02-14 10:42:51,936 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 
+[2019-02-14 12:19:37,406 Cl:SingleCameraPoseEstimator Fx:_estimateModelPose Line:49 ] ERROR: One or more image points not found, cannot estimate pose
+[2019-02-14 12:19:37,407 Cl:VisionEntity Fx:findPoseResult_th Line:56 ] ERROR: Unsuccesfull setting reference frame. Did not find the ball points.
+[2019-02-14 12:20:00,309 Cl:SingleCameraPoseEstimator Fx:_estimateModelPose Line:49 ] ERROR: One or more image points not found, cannot estimate pose
+[2019-02-14 12:20:00,310 Cl:VisionEntity Fx:findPoseResult_th Line:56 ] ERROR: Unsuccesfull setting reference frame. Did not find the ball points.
+[2019-02-14 12:20:01,541 Cl:SingleCameraPoseEstimator Fx:_estimateModelPose Line:49 ] ERROR: One or more image points not found, cannot estimate pose
+[2019-02-14 12:20:01,545 Cl:VisionEntity Fx:findPoseResult_th Line:56 ] ERROR: Unsuccesfull setting reference frame. Did not find the ball points.
+[2019-02-14 12:20:02,926 Cl:SingleCameraPoseEstimator Fx:_estimateModelPose Line:49 ] ERROR: One or more image points not found, cannot estimate pose
+[2019-02-14 12:20:02,927 Cl:VisionEntity Fx:findPoseResult_th Line:56 ] ERROR: Unsuccesfull setting reference frame. Did not find the ball points.
+[2019-02-14 13:28:09,895 Cl:Camera Fx:getSingleFrame Line:85 ] ERROR: Camera grabbed unsuccesfully.

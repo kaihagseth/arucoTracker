@@ -4,17 +4,18 @@ import numpy as np
 import cv2
 import glob
 from exceptions import FailedCalibrationException
+
 images = glob.glob('*.jpg')
-
-
-
 cv2.destroyAllWindows()
 
 
-
-class IntrinsicCalibration():
+class IntrinsicCalibrator:
     '''
     Do intrinsic calibration on cameras.
+    Returns a
+    # TODO: Refactoring: Remove all references to parent camera. This class should handle and return calibration.
+    # TODO: Moving the undistort function to the vision entity-class would loosen coupling.
+    #
     '''
 
     def __init__(self, parr_cam=None):
@@ -26,10 +27,12 @@ class IntrinsicCalibration():
         self._curr_newcamera_mtx = None
         self._curr_roi = None
         self._parr_cam = parr_cam
+
     def loadSavedValues(self, filename='IntriCalib.npz'):
         '''
         Load values to be used in calibration.
-        This procvess is just needed if you don't want to do a new calibration,
+        # TODO: Remove
+        This process is just needed if you don't want to do a new calibration,
         but use old values instead.
         :param filename: Filename to get values from.
         :return: None
@@ -41,6 +44,7 @@ class IntrinsicCalibration():
         self._curr_newcamera_mtx = npzfile['newcameramtx']
         self._curr_roi = npzfile['roi']
         self._parr_cam.set_intrinsic_params(npzfile['mtx'])
+
     def calibCam(self, frames):
         '''
         Calibrate the camera lens.
@@ -59,7 +63,7 @@ class IntrinsicCalibration():
             logging.error('CameraID not found!')
         else:
             camID = self._parr_cam._ID
-        ''' Add all images in folder ''' #TODO: Fix this
+        ''' Add all images in folder ''' # TODO: Fix this
         for frame in frames:
             path = 'images/cam_{0}/calib_img{1}.png'.format(camID, i)
             cv2.imwrite(path, frame)
@@ -127,6 +131,7 @@ class IntrinsicCalibration():
          #   print('OpenCV failed. ')
           #  print('MSG: ', e)
            # raise FailedCalibrationException(msg=e)
+
     def printCurrParams(self):
         print('_curr_ret : ', self._curr_ret)
         print('_curr_mtx : ', self._curr_camera_matrix)
@@ -136,6 +141,7 @@ class IntrinsicCalibration():
         print('_curr_roi : ', self._curr_roi)
 
     def undistort_image(self, image):
+        # TODO: Rename to getUndistortedFrame
         img =  cv2.undistort(image, self._curr_camera_matrix, self._curr_dist_coeff,
                              newCameraMatrix=self._curr_newcamera_mtx)
         logging.debug('Image: ', img)
@@ -145,7 +151,9 @@ class IntrinsicCalibration():
         # def undistort_image(self, image):
         #return cv2.undistort(image, self.camera_matrix, self.dist_coeffs,
         #                     newCameraMatrix=self.new_camera_matrix)
+
     def undistortImage(self, img):
+        # TODO: Rename to getUndistortedFrame
         '''
         Goal: Insert a distored image and get a undistorted image back.
         :param img: Distorted image

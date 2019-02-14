@@ -3,12 +3,13 @@ from exceptions import FailedCalibrationException
 import time
 import logging
 
+
 class TextUI():
     '''
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
+        self.DEBUG = False # If True, do some obvious things for fast forward initialisation.
         self.c = connector
 
     '''
@@ -41,10 +42,12 @@ class TextUI():
                 self.configCameras()
             elif choice is 4:
                 stopProgram = True
+
     def startApplication(self):
         logging.info('Starting application')
         runApp = True
         self.c.startApplication(self.dispContiniusResults, self.doAbortApp)
+
     def doAbortApp(self):
         intext = True
         if intext is 'Q':
@@ -56,8 +59,10 @@ class TextUI():
 
     def dispContiniusResults(self, result):
         print(result)
+
     def abortFunction(self):
         pass
+
     def configCameras(self):
         print('\n'
               'Please make your choice: \n'
@@ -70,6 +75,7 @@ class TextUI():
               '7. Videotest cameras \n'
               '8. Show current calib params, index 0 \n'
               '9. Fix HSV-calibration'
+              '10. Load HSV-values'
               )
         choice = int(input('Type: '))
         if choice is 1:
@@ -91,9 +97,12 @@ class TextUI():
             self.c.getCamFromIndex(0)._IC.printCurrParams()
         elif choice is 9:
             self.doHSVCalib()
+        elif choice is 10:
+            self.loadHSVValues()
         else: #Invalid typing
             print('Bad typing. Try again.')
             self.configCameras()
+
     def calibCameras(self):
         '''
         Menu for selecting what cameras to calibrate.
@@ -159,7 +168,6 @@ class TextUI():
                 #else:
                  #   notFinished = True
 
-
     def testCameras(self):
         print('\n'
                 'Please make your choice: \n'
@@ -196,7 +204,17 @@ class TextUI():
     def doHSVCalib(self):
         print('What camera to calibrate? Camera index')
         choice = int(input('Type:'))
-        cam = self.c.getCamFromIndex(choice)
+        VE = self.c.getVEFromCamIndex(choice)
         # Do HSV calibration
-        cam._
+        #cv2.VideoCapture(choice)
+        VE.calibratePointDetector()
+        VE.saveHSVValues()
+
+    def loadHSVValues(self):
+        print('What camera to get values for? Camera index')
+        choice = int(input('Type:'))
+        VE = self.c.getVEFromCamIndex(choice)
+        # Do HSV calibration
+        #cv2.VideoCapture(choice)
+        VE.loadHSVValues()
 
