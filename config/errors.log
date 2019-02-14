@@ -47,3 +47,4 @@
 [2019-02-14 14:32:26,552 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 
 [2019-02-14 15:14:54,659 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 
 [2019-02-14 15:24:02,294 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 
+[2019-02-14 16:15:07,209 Cl:PoseEstimator Fx:getVEById Line:91 ] ERROR: Camera not found on given index, VE returned None. 

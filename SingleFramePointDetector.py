@@ -81,11 +81,16 @@ class SingleFramePointDetector:
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
                 lower_hsv = np.array([self.lower_hue, self.lower_saturation, self.lower_value])
                 higher_hsv = np.array([self.upper_hue, self.upper_saturation, self.upper_value])
+                mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
             else:
-                hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-                lower_hsv = np.array([self.lower_hue - 90, self.lower_saturation, self.lower_value])
-                higher_hsv = np.array([self.upper_hue + 90, self.upper_saturation, self.upper_value])
-            mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                lower_hsv = np.array([self.lower_hue, self.lower_saturation, self.lower_value])
+                higher_hsv = np.array([180, self.upper_saturation, self.upper_value])
+                lower_hsv2 = np.array([0, self.lower_saturation, self.lower_value])
+                higher_hsv2 = np.array([self.upper_hue, self.upper_saturation, self.upper_value])
+                lower_mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
+                higher_mask = cv2.inRange(hsv, lower_hsv2, higher_hsv2)
+                mask = cv2.add(lower_mask, higher_mask)
 
             image = cv2.bitwise_and(frame, frame, mask=mask)
 
