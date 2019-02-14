@@ -103,7 +103,7 @@ class SingleCameraPoseEstimator():
             transform_matrix = np.vstack((mExt, np.matrix([[0, 0, 0, 1]], dtype=float)))
             return p, transform_matrix
 
-        for i in range(0, 10):
+        for i in range(0, 100):
 
             # Predicted image points
             y, _ = fProject(x, pm, intr_cam_matrix)
@@ -177,13 +177,10 @@ class SingleCameraPoseEstimator():
         :param image_points: Image coordinates of the point location, given in number of pixels. Order is not essential. Given as 4x2 matrix. If
         point is not found, its x's and y's are set to -1. Image origo is top left, +y is downwards.
         '''
-        try:
-            _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points)
-            self._ref = self._inverseTransform(transform_matrix)
-        except exc.MissingIntrinsicCameraParametersException as intErr:
-            print(intErr.msg)
-        except exc.MissingImagePointException as imgErr:
-            print(imgErr.msg)
+        logging.info("Setting reference frame.")
+        _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points)
+        self._ref = self._inverseTransform(transform_matrix)
+
 
 
     def setModelParams(self, model_params):
@@ -198,6 +195,7 @@ class SingleCameraPoseEstimator():
         Get the pose of current model position relative to reference frame. NB! angles in radians
         :return: Pose relative to reference
         '''
+        print('Intrinsic cam matrix: ', intr_cam_matrix)
         if self._ref is not None:
             try:
                 if guess_pose is None:
@@ -216,3 +214,6 @@ class SingleCameraPoseEstimator():
             raise exc.MissingReferenceFrameException('Reference frame not set')
 
 
+#if __name__ == '__main__':
+    # Test functions:
+    #img_point =

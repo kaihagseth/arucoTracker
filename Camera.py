@@ -15,16 +15,19 @@ class Camera():
     Class for Camera.
     # TODO: Refactoring
     """
-    def __init__(self, cam_name = "Cam0", cam_id = 0, src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None, activateSavedValues = False):
+    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None, activateSavedValues = False):
         '''Create a cam '''
         print("Creating OTCam")
-        self._ID = cam_id # A distinct number for each camera.
+        #self._ID = cam_id # A distinct number for each camera.
         self._name = cam_name
         self._intrinsic_camera_matrix = intrinsic_camera_matrix
         self._distortion_coefficients = None
         self._cam_pose = camera_pose_matrix
         self._src = src_index
         self._vidCap = cv2.VideoCapture(self._src)
+        # Test
+        if not self._vidCap.open(self._src):
+            logging.error('Camera not opened!!')
         self._IC = IntrinsicCalibrator(self)
         if activateSavedValues:
             self.activateSavedValues()
@@ -78,6 +81,8 @@ class Camera():
     def getSingleFrame(self):
         '''Get non-threaded camera frame.'''
         grabbed, frame = self._vidCap.read()
+        if not grabbed:
+            logging.error('Camera grabbed unsuccesfully.')
         return frame
 
     def calibrateCam(self, cbFrames):
@@ -109,7 +114,7 @@ class Camera():
     # Code based upon this guide: https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
     # import the necessary packages
 
-#otc1 = OTCam()
+#otc1 = Camera(src_index=0)
 #otc2 = OTCam(camName="Cam2",srcIndex=1)
 #time.sleep(1)
 #frame = otc1.getFrame()

@@ -26,13 +26,20 @@ class PoseEstimator():
         Find all cams connected to system.  
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
+        return [1] #A hack
+        includeDefWebCam = True
         logging.info('Inside findConnectedCams()')
         logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 2
         ilist = []
+        if not includeDefWebCam:
+            for i in range(1,num_cams,1):
+                ilist.append(i)
+                return ilist
         for i in range(num_cams):
             ilist.append(i)
-        return ilist
+            return ilist
+        return None
     def runPoseEstimator(self):
         '''
         Do poseestimation for every VisionEntity.
@@ -74,3 +81,11 @@ class PoseEstimator():
                 return wantedCam
         # If not found, log error.
         logging.error('Camera not found on given index. ')
+    def getVEById(self, camID):
+        for VE in self.VisionEntityList:
+            cam = VE.getCam()
+            if cam._src is camID:
+                wantedVE = VE
+                return wantedVE
+        # If not found, log error.
+        logging.error('Camera not found on given index, VE returned None. ')

@@ -39,7 +39,8 @@ class Connector():
     def getImgFromSingleCam(self, camId):
         return self.PE.getCamById(camId).getSingleImg()
 
-
+    def getVEFromCamIndex(self, index):
+        return self.PE.getVEById(index)
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'
         #l = logging.getLogger()

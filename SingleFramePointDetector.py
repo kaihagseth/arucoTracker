@@ -3,6 +3,7 @@ from heapq import nlargest
 import cv2
 import imutils
 import numpy as np
+import time
 
 
 def callback(x):
@@ -34,8 +35,20 @@ class SingleFramePointDetector:
         self.upper_saturation = upper_values(1)
         self.upper_value = upper_values(2)
 
-
-    def calibrate(self, cap):
+    def saveHSVValues(self):
+        filename = 'HSVValues'
+        np.savez(filename, lh=self.lower_hue, uh=self.upper_hue, ls=self.lower_saturation, us=self.upper_saturation, lv=self.lower_value, uv=self.upper_value)
+    def loadHSVValues(self):
+        filename = 'HSVValues.NPZ'
+        print('Loading old parameters from file ', filename)
+        npzfile = np.load(filename)
+        self.lower_hue = npzfile['lh']
+        self.lower_saturation = npzfile['ls']
+        self.lower_value = npzfile['lv']
+        self.upper_hue = npzfile['uh']
+        self.upper_saturation = npzfile['us']
+        self.upper_value = npzfile['uv']
+    def calibrate(self, camera):
         """
         :param cap: Videocapture-stream from camera to be calibrated
         :return: None
@@ -52,8 +65,10 @@ class SingleFramePointDetector:
 
         while (True):
             # grab the frame
-            ret, frame = cap.read()
-
+            #ret, frame = cap.read()
+            frame = camera.getSingleFrame()
+            frame = camera.getSingleFrame()
+            frame = camera.getSingleFrame()
             # get trackbar positions
             self.lower_hue = cv2.getTrackbarPos('lowH', 'image')
             self.upper_hue = cv2.getTrackbarPos('highH', 'image')
@@ -90,7 +105,9 @@ class SingleFramePointDetector:
         4 largest circles in the frame. In cases where less circles are detected,
         remaining rows will returns with -1 """
         logging.info('Running findBallPoints()')
-        print('Frame: ', frame)
+        cv2.imshow('frame', frame)
+        cv2.waitKey(0)
+        #print('Frame: ', frame)
         # blur image to remove hf-noise
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         if self.lower_hue < self.upper_hue:
@@ -109,6 +126,9 @@ class SingleFramePointDetector:
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
         cv2.imwrite('mask.jpg',mask)
+        cv2.imshow('frame',mask)
+        cv2.waitKey(0)
+#        time.sleep(0, 1)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
