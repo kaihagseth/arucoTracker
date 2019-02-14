@@ -1,11 +1,11 @@
 import logging
-
 import cv2
 import os
 import time
 from Camera import Camera
 import time
 from infi.devicemanager import DeviceManager #DM to
+
 
 class CameraGroup():
     def __init__(self):
@@ -25,6 +25,7 @@ class CameraGroup():
 
     def addSingleCam(self, cam):
         self._camReg.append(cam)
+
     def getCamByID(self, ID):
         '''
         Get a cam based on number ()
@@ -39,6 +40,7 @@ class CameraGroup():
         if wantedCam is None:
             logging.error('No cam found.')
         return wantedCam
+
     def getCamByListIndex(self, index):
         '''
         Get a cam based on number ()
@@ -49,7 +51,6 @@ class CameraGroup():
         if wantedCam is None:
             logging.error('No cam found.')
         return wantedCam
-
 
     def takeSimultaneousImg(self):
         '''
@@ -83,6 +84,7 @@ class CameraGroup():
         cap = cv2.VideoCapture(sourceNumber)
         if cap is None or not cap.isOpened():
             print('Warning: unable to open video source: ', sourceNumber)
+
     def findConnectedCams2(self):
         '''
         Find all cams connected to system.  
@@ -140,7 +142,6 @@ class CameraGroup():
         #    time.sleep(0.5)
         #return arr
 
-
     def initConnectedCams(self, includeDefaultCam=False):
         self._includeDefCam = includeDefaultCam
         conCams = self.findConnectedCams()
@@ -150,7 +151,7 @@ class CameraGroup():
                 conCams.remove(0)
                 print(conCams)
         for i in conCams:
-            cam = Camera(('Cam',i),i,i)
+            cam = Camera(('Cam', i), i, i)
             self.addSingleCam(cam)
         return self._camReg
 
@@ -158,6 +159,7 @@ class CameraGroup():
         cam = self.getCamByID(index)
         frame = cam.getSingleFrame()
         return frame
+
 
 if __name__ == '__main__':
     #CG = CameraGroup()

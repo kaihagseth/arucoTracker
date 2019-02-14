@@ -5,6 +5,7 @@ import logging
 from logging.config import dictConfig
 from PoseEstimator import PoseEstimator
 
+
 class Connector():
     '''
     Connect the UI with rest of the application.
@@ -15,6 +16,7 @@ class Connector():
         self.cg = CameraGroup()
         self.logging_setup()
         self.PE = PoseEstimator()
+
     def startApplication(self, dispResFx, doAbortFx):
         self.PE.getPoseFromCams()
         logging.info('Running startApplication()')
@@ -41,6 +43,7 @@ class Connector():
         '''
         camlist = self.cg.initConnectedCams(includeDefaultCam)
         return camlist
+
     def initSCPEs(self, camlist):
         self.PE.initSCPEs(camlist)
 
@@ -50,16 +53,16 @@ class Connector():
     def getCamFromIndex(self, index):
         return self.cg.getCamByListIndex(index)
 
-    def logging_setup(self,path='config\logging.json'):
+    def logging_setup(self, path='config\logging.json'):
         path = 'config\logging_config'
-        #l = logging.getLogger()
-        #l.debug('HELLO DEBUG')
+        # l = logging.getLogger()
+        # l.debug('HELLO DEBUG')
         with open(path) as f:
             config = json.load(f)
         logging.config.dictConfig(config)
 
 
 if __name__ == '__main__':
-    #logging_setup()
+    # logging_setup()
     l = logging.getLogger()
     l.info('Hello')

@@ -1,6 +1,8 @@
 from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import threading, queue, logging
 import time
+
+
 class PoseEstimator():
     '''
     Collect pose and info from all cameras, and find the best estimated pose possible.
