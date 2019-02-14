@@ -1,36 +1,52 @@
 import numpy as np
+import logging
+
 from WebcamVideoStream import WebcamVideoStream
 import cv2
-from IntrinsicCalibration import IntrinsicCalibration
+from IntrinsicCalibrator import IntrinsicCalibrator
 import imutils
 from heapq import nlargest
 from math import pi
 import time
 
-'''
-Class for Object Tracking Camera.
-'''
+
 class Camera():
-    def __init__(self,camName="Cam0", camID=0, srcIndex=0, cam_loca=False, cam_pose_mtrc=None, aov=False, intri_cam_mtrx=None):
+    """
+    Class for Camera.
+    # TODO: Refactoring
+    """
+    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None, activateSavedValues = False):
         '''Create a cam '''
         print("Creating OTCam")
-        self._ID = camID # A distinct number for each camera.
-        self._name = camName
-        self._intri_cam_mtrx = intri_cam_mtrx
-        self._cam_loca = cam_loca
-        self._cam_pose = cam_pose_mtrc
-        self._src = srcIndex
+        #self._ID = cam_id # A distinct number for each camera.
+        self._name = cam_name
+        self._intrinsic_camera_matrix = intrinsic_camera_matrix
+        self._distortion_coefficients = None
+        self._cam_pose = camera_pose_matrix
+        self._src = src_index
         self._vidCap = cv2.VideoCapture(self._src)
-        self._aov = aov
-        self._IC = IntrinsicCalibration(self)
+        # Test
+        if not self._vidCap.open(self._src):
+            logging.error('Camera not opened!!')
+        self._IC = IntrinsicCalibrator(self)
+        if activateSavedValues:
+            self.activateSavedValues()
 
-    def startVidStream(self):
+    def startVideoStream(self):
         '''
         Start threaded vidstream. Needs more work.
         :return:
         '''
-        self._vidstreamthread = WebcamVideoStream(src=0,camName=self._name)
-        self._vidstreamthread.start()
+        self._video_stream_thread = WebcamVideoStream(src=0, camName=self._name)
+        self._video_stream_thread.start()
+
+    def getStream(self):
+        """
+        Returns video stream
+        :return: Video stream
+        """
+        return self._vidCap
+
     def getFrame(self):
         '''Get frame from vidthread.'''
         self._vidstreamthread.read()
@@ -38,9 +54,22 @@ class Camera():
     def set_intrinsic_params(self, new_mtrx):
         '''Set intrinsic params for the camera'''
         self._intri_cam_mtrx = new_mtrx
+        logging.info('Intrinsic param set.')
+    def getIntrinsicParams(self):
+        return self._intrinsic_camera_matrix
+    def set_intrinsic_params(self, intrinsic_params):
+        """
+        :param intrinsic_params: New intrinsic matrix
+        :return: None
+        """
+        self._intrinsic_camera_matrix = intrinsic_params
 
-    def set_dist_coeff(self, new_dist_coeff):
-        self._dist_coeff = new_dist_coeff
+    def set_distortion_coefficients(self, distortion_coefficients):
+        """
+        :param distortion_coefficients: new distortion coefficients
+        :return: None
+        """
+        self._distortion_coefficients = distortion_coefficients
 
 
     def calibrateCamera(self):
@@ -52,6 +81,8 @@ class Camera():
     def getSingleFrame(self):
         '''Get non-threaded camera frame.'''
         grabbed, frame = self._vidCap.read()
+        if not grabbed:
+            logging.error('Camera grabbed unsuccesfully.')
         return frame
 
     def calibrateCam(self, cbFrames):
@@ -61,12 +92,19 @@ class Camera():
         :return:
         '''
         self._IC.calibCam(cbFrames)
+
     def loadSavedCalibValues(self):
         self._IC.loadSavedValues()
+
+    def getUndistortedFrame(self):
+        "Get threaded, undistorted frame. "
+        img = self.undistort(self.getFrame())
+        return img
 
     def undistort(self, img):
         '''Return a undistorted version of a distorted image. '''
         self._IC.undistort_image(img)
+
     def activateSavedValues(self, filename='IntriCalib.npz'):
         '''Load and use the earlier saved intrinsic parameters from a file.
         :param filename: Name of file to get params from.
@@ -76,7 +114,7 @@ class Camera():
     # Code based upon this guide: https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
     # import the necessary packages
 
-#otc1 = OTCam()
+#otc1 = Camera(src_index=0)
 #otc2 = OTCam(camName="Cam2",srcIndex=1)
 #time.sleep(1)
 #frame = otc1.getFrame()

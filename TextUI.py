@@ -19,16 +19,11 @@ class TextUI():
         while not stopProgram:
             if self.DEBUG:
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
-                self.c.initConnectedCams(includeDefaultCam=True)
+                camlist = self.c.initConnectedCams(includeDefaultCam=True)
                 #self.calibCameras()
                 cam = self.c.getCamFromIndex(0)
                 cam.loadSavedCalibValues()
-                orgimg = cam.getSingleFrame()
-                img = cam._IC.undistort_image(orgimg)
-                print(img)
-                cv2.imshow('frame', img )
-                cv2.imshow('Frame org', orgimg)
-                cv2.waitKey(0)
+                self.c.initSCPEs(camlist)
                 print('\n DEBUG MODE. Cameras initialised.')
             print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
@@ -73,7 +68,10 @@ class TextUI():
               '5. Calibrate cameras \n'
               '6. Test cameras \n'
               '7. Videotest cameras \n'
-              '8. Show current calib params, index 0'
+              '8. Show current calib params, index 0 \n'
+              '9. Fix HSV-calibration \n'
+              '10. Load HSV-values \n'
+              '11. Go back.'
               )
         choice = int(input('Type: '))
         if choice is 1:
@@ -93,6 +91,12 @@ class TextUI():
         elif choice is 8:
             print('Printing parameters')
             self.c.getCamFromIndex(0)._IC.printCurrParams()
+        elif choice is 9:
+            self.doHSVCalib()
+        elif choice is 10:
+            self.loadHSVValues()
+        elif choice is 11:
+            self.start()
         else: #Invalid typing
             print('Bad typing. Try again.')
             self.configCameras()
@@ -104,6 +108,7 @@ class TextUI():
               'Please make your choice: \n'
               '1. Calibrate a desired camera \n'
               '2. Calibrate all cameras one by one \n'
+              '3. Abort and go back.'
               )
         choice = int(input('Type:'))
         if choice is 1:
@@ -119,6 +124,11 @@ class TextUI():
             camIDs = self.c.getConnectedCams()
             for ID in camIDs:
                 self._calibSingleCam(ID, numbImg)
+        elif choice is 3:
+            self.start()
+        else:
+            print('Wrong typing')
+            self.calibCameras()
 
     def _calibSingleCam(self, ID, numbImg):
         '''
@@ -194,3 +204,20 @@ class TextUI():
                     break
             except cv2.error:
                 print('OpenCV failed. Trying again.')
+
+    def doHSVCalib(self):
+        print('What camera to calibrate? Camera index')
+        choice = int(input('Type:'))
+        VE = self.c.getVEFromCamIndex(choice)
+        # Do HSV calibration
+        #cv2.VideoCapture(choice)
+        VE.calibratePointDetector()
+        VE.saveHSVValues()
+    def loadHSVValues(self):
+        print('What camera to get values for? Camera index')
+        choice = int(input('Type:'))
+        VE = self.c.getVEFromCamIndex(choice)
+        # Do HSV calibration
+        #cv2.VideoCapture(choice)
+        VE.loadHSVValues()
+
