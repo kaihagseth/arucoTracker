@@ -566,3 +566,4 @@
 [2019-02-14 12:20:01,545 Cl:VisionEntity Fx:findPoseResult_th Line:56 ] ERROR: Unsuccesfull setting reference frame. Did not find the ball points.
 [2019-02-14 12:20:02,926 Cl:SingleCameraPoseEstimator Fx:_estimateModelPose Line:49 ] ERROR: One or more image points not found, cannot estimate pose
 [2019-02-14 12:20:02,927 Cl:VisionEntity Fx:findPoseResult_th Line:56 ] ERROR: Unsuccesfull setting reference frame. Did not find the ball points.
+[2019-02-14 13:28:09,895 Cl:Camera Fx:getSingleFrame Line:85 ] ERROR: Camera grabbed unsuccesfully.

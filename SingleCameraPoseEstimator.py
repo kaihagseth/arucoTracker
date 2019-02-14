@@ -161,7 +161,7 @@ class SingleCameraPoseEstimator():
 
         T = transformMatrix
 
-        ay = np.arctan2(-T[2, 0], np.sqrt(np.square(T[0, 0])+np.square(T[1, 2])))
+        ay = np.arctan2(-T[2, 0], np.sqrt(np.square(T[0, 0])+np.square(T[1, 0])))
         az = np.arctan2(T[1, 0]/np.cos(ay), T[0, 0]/np.cos(ay))
         ax = np.arctan2(T[2, 1] / np.cos(ay), T[2, 2] / np.cos(ay))
 
@@ -214,6 +214,11 @@ class SingleCameraPoseEstimator():
             raise exc.MissingReferenceFrameException('Reference frame not set')
 
 
-#if __name__ == '__main__':
+if __name__ == '__main__':
     # Test functions:
-    #img_point =
+    img_point = np.matrix([[434.5, 296.0 ], [348.5, 264.0 ], [428.5, 201.0 ]], dtype=float)
+    intr_mtrx = np.matrix([[608.61731842,0.,386.76756026],[  0.,607.85949167, 275.21371718], [  0.,0.,1.]], dtype=float)
+    s = SingleCameraPoseEstimator()
+    s.setReference(intr_mtrx,image_points=img_point)
+    pose = s.getPose(intr_mtrx,img_point)
+    print(pose)

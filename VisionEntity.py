@@ -45,7 +45,7 @@ class VisionEntity:
 
                 img_points = img_points[:, 0:2]  # Don't include circle radius in matrix.
                 #singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self._camera.getIntrinsicParams(),
-                 #                                                                img_points, None)
+                 # img_points, None)
                 self._single_camera_pose_estimator.setReference(self.intrinsic_matrix, image_points=img_points)
                 logging.info('Referenceframe is set.')
                 referenceNotSet = False
