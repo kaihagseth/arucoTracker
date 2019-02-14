@@ -69,8 +69,9 @@ class TextUI():
               '6. Test cameras \n'
               '7. Videotest cameras \n'
               '8. Show current calib params, index 0 \n'
-              '9. Fix HSV-calibration'
-              '10. Load HSV-values'
+              '9. Fix HSV-calibration \n'
+              '10. Load HSV-values \n'
+              '11. Go back.'
               )
         choice = int(input('Type: '))
         if choice is 1:
@@ -94,6 +95,8 @@ class TextUI():
             self.doHSVCalib()
         elif choice is 10:
             self.loadHSVValues()
+        elif choice is 11:
+            self.start()
         else: #Invalid typing
             print('Bad typing. Try again.')
             self.configCameras()
@@ -105,6 +108,7 @@ class TextUI():
               'Please make your choice: \n'
               '1. Calibrate a desired camera \n'
               '2. Calibrate all cameras one by one \n'
+              '3. Abort and go back.'
               )
         choice = int(input('Type:'))
         if choice is 1:
@@ -120,6 +124,11 @@ class TextUI():
             camIDs = self.c.getConnectedCams()
             for ID in camIDs:
                 self._calibSingleCam(ID, numbImg)
+        elif choice is 3:
+            self.start()
+        else:
+            print('Wrong typing')
+            self.calibCameras()
 
     def _calibSingleCam(self, ID, numbImg):
         '''
