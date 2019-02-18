@@ -71,8 +71,8 @@ class PoseEstimator():
         print('Pose: ', self.threadInfoList[0][2].get())
         #singlecam_poses = self.threadInfoList[:,2]
         #print(singlecam_poses)
-        time.sleep(1)
-        return self.threadInfoList
+        time.sleep(0.1)
+        return self.threadInfoList[0][2].get()
     def getCamById(self, camID):
         for VE in self.VisionEntityList:
             cam = VE.getCam()
