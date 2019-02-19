@@ -7,7 +7,7 @@ import time
 import warnings
 
 
-def callback():
+def callback(x):
     pass
 
 class SingleFramePointDetector:
@@ -69,12 +69,12 @@ class SingleFramePointDetector:
         :return: None
         """
         cv2.namedWindow('image')
-        cv2.createTrackbar('lowH', 'image', 0, 179, callback)
-        cv2.createTrackbar('highH', 'image', 179, 179, callback)
-        cv2.createTrackbar('lowS', 'image', 0, 255, callback)
-        cv2.createTrackbar('highS', 'image', 255, 255, callback)
-        cv2.createTrackbar('lowV', 'image', 0, 255, callback)
-        cv2.createTrackbar('highV', 'image', 255, 255, callback)
+        cv2.createTrackbar('lower Hue', 'image', 0, 179, callback)
+        cv2.createTrackbar('upper Hue', 'image', 179, 179, callback)
+        cv2.createTrackbar('lower Saturation', 'image', 0, 255, callback)
+        cv2.createTrackbar('upper Saturation', 'image', 255, 255, callback)
+        cv2.createTrackbar('lower Value', 'image', 0, 255, callback)
+        cv2.createTrackbar('higher Value', 'image', 255, 255, callback)
 
         while (True):
             # grab the frame
