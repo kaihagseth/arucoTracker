@@ -72,11 +72,11 @@ class VisionEntity:
                 singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix,img_points,None)
             except exc.MissingReferenceFrameException as refErr:
                 print('ERROR: ',refErr.msg)
-            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+           # print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5) # MUST BE HERE
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
-            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+            #print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5)  # MUST BE HERE
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
