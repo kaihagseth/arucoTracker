@@ -143,18 +143,19 @@ class TextUI():
 
         while notFinished: #Hasn't got decent calib result for cam yet
             try:
-                cam = self.c.getCamFromIndex(ID)
+                cam = self.c.getVEFromCamIndex(ID).getCam()
                 frame = cam.getSingleFrame()
                 cv2.imshow('Calibrate cam', frame)
-            except cv2.error:
+            except cv2.error as e:
                 print('Cam capture failed. Trying again.')
-
+                print(str(e))
                 #raise FailedCalibrationException(msg='Couldn\'t acces camera.')
             key = cv2.waitKey(20)
             if key == 32:  # exit on Space
                 try: # Catch error with calib algo / bad picture
-                    cam.calibrateCam([frame])
+                    # cam.calibrateCam([frame])
                     frames.append(frame)
+                    cam.calibrateCam(frames)
                     print('Captured, image nr {0} of {1}'.format(len(frames), numbImg))
                 except FailedCalibrationException:
                     print('Calibration failed, trying again.')
@@ -166,7 +167,7 @@ class TextUI():
                         print('Calibration of cam ', ID, 'is finished.')
                         notFinished = False  # Calibration was successful, go to next cam.
                     except FailedCalibrationException:
-                        frames = []
+                        #frames = []
                         print('Calibration failed, trying again.')
                 #else:
                  #   notFinished = True
