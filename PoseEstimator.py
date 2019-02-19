@@ -14,7 +14,6 @@ class PoseEstimator():
         self.VisionEntityList = [] # List for holding VEs
         self.threadInfoList = [] # List for reading results from VEs.
 
-
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
