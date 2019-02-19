@@ -7,7 +7,7 @@ import time
 import warnings
 
 
-def callback(x):
+def callback():
     pass
 
 class SingleFramePointDetector:
@@ -39,15 +39,27 @@ class SingleFramePointDetector:
         self._hsv_is_calibrated = True
 
     def saveHSVValues(self):
+        """
+        Save the current HSV values to a file.
+        :return: None
+        """
         filename = 'HSVValues'
         lower_values, upper_values = self.getHSVValues()
         np.savez(filename, lh=lower_values[0], uh=upper_values[0], ls=lower_values[1], us=upper_values[1],
                  lv=lower_values[2], uv=upper_values[2],)
 
     def loadHSVValues(self):
+        """
+        Load HSV values from the saved file
+        :return: None
+        """
         filename = 'HSVValues.NPZ'
-        print('Loading old parameters from file ', filename)
-        npzfile = np.load(filename)
+        try:
+            print('Loading old parameters from file ', filename)
+            npzfile = np.load(filename)
+        except FileNotFoundError as e:
+            print("HSVValues.NPZ was not found. Create the file before loading it.")
+            return
         self.setHSVValues((npzfile['lh'], npzfile['ls'], npzfile['lv']), (npzfile['uh'], npzfile['us'], npzfile['uv']))
 
 
@@ -58,11 +70,11 @@ class SingleFramePointDetector:
         """
         cv2.namedWindow('image')
         cv2.createTrackbar('lowH', 'image', 0, 179, callback)
-        cv2.createTrackbar('highH', 'image', 0, 179, callback)
+        cv2.createTrackbar('highH', 'image', 179, 179, callback)
         cv2.createTrackbar('lowS', 'image', 0, 255, callback)
-        cv2.createTrackbar('highS', 'image', 0, 255, callback)
+        cv2.createTrackbar('highS', 'image', 255, 255, callback)
         cv2.createTrackbar('lowV', 'image', 0, 255, callback)
-        cv2.createTrackbar('highV', 'image', 0, 255, callback)
+        cv2.createTrackbar('highV', 'image', 255, 255, callback)
 
         while (True):
             # grab the frame
