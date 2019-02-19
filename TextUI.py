@@ -2,7 +2,7 @@ import cv2
 from exceptions import FailedCalibrationException
 import time
 import logging
-
+import numpy as np
 class TextUI():
     '''
     Recieve and snd text commands from user.
@@ -21,9 +21,9 @@ class TextUI():
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
                 camlist = self.c.initConnectedCams(includeDefaultCam=True)
                 #self.calibCameras()
-                cam = self.c.getCamFromIndex(0)
-                cam.loadSavedCalibValues()
-                self.c.initSCPEs(camlist)
+                #cam = self.c.getCamFromIndex(0)
+                #cam.loadSavedCalibValues()
+                #self.c.initSCPEs(camlist)
                 print('\n DEBUG MODE. Cameras initialised.')
             print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
@@ -51,11 +51,21 @@ class TextUI():
             print('doAbortFx is True')
             return True
         else:
-            print('dpAbortApp() is False')
+            #print('dpAbortApp() is False')
             return False
 
     def dispContiniusResults(self, result):
-        print(result)
+        try:
+            print("#####  Display current result:  ######")
+            print(result)
+            print("Rotation x - roll: ", result[0]*180.0/np.pi)
+            print("Rotation y - pitch: ", result[1]*180.0/np.pi)
+            print("Rotation z - yaw: ", result[2]*180.0/np.pi)
+            print("Translation x: ", result[3], ' mm')
+            print("Translation y: ", result[4], ' mm')
+            print("Translation z: ", result[5], ' mm')
+        except Exception:
+            print("Could not print.")
     def abortFunction(self):
         pass
     def configCameras(self):
@@ -145,6 +155,7 @@ class TextUI():
             try:
                 cam = self.c.getVEFromCamIndex(ID).getCam()
                 frame = cam.getSingleFrame()
+                frame = cam.getSingleFrame()
                 cv2.imshow('Calibrate cam', frame)
             except cv2.error as e:
                 print('Cam capture failed. Trying again.')
@@ -155,7 +166,6 @@ class TextUI():
                 try: # Catch error with calib algo / bad picture
                     # cam.calibrateCam([frame])
                     frames.append(frame)
-                    cam.calibrateCam(frames)
                     print('Captured, image nr {0} of {1}'.format(len(frames), numbImg))
                 except FailedCalibrationException:
                     print('Calibration failed, trying again.')

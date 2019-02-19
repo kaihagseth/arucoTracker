@@ -26,7 +26,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        includeDefWebCam = False
+        includeDefWebCam = True
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -49,7 +49,7 @@ class PoseEstimator():
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
-            singlecam_curr_pose = 10
+            singlecam_curr_pose = [10,10,10,10,10,10]
             #Create a thread-safe variable to save pose to.
             singlecam_curr_pose_que = queue.Queue()
             singlecam_curr_pose_que.put(singlecam_curr_pose)
@@ -67,8 +67,8 @@ class PoseEstimator():
         In future: Get all output from the poseestimation here.
         :return: threadInfopList
         '''
-        print(self.threadInfoList)
-        print('Pose: ', self.threadInfoList[0][2].get())
+        #print(self.threadInfoList)
+        #print('Pose: ', self.threadInfoList[0][2].get())
         #singlecam_poses = self.threadInfoList[:,2]
         #print(singlecam_poses)
         time.sleep(0.1)

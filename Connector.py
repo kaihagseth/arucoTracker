@@ -20,7 +20,7 @@ class Connector():
         logging.info('Running startApplication()')
         doAbort = doAbortFx()
         while not doAbort:
-            print('Running dispResFx')
+            #print('Running dispResFx')
             res = self.PE.collectPoses()
             dispResFx(res)
             doAbort = doAbortFx()

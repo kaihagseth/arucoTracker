@@ -42,7 +42,7 @@ class SingleCameraPoseEstimator():
 
 
         # checking if all image points are present in input
-        print('Image_points: ', image_points)
+        #print('Image_points: ', image_points)
         for i in range(3):
             for j in range(2):
                 if image_points[i, j] == -1:
@@ -195,7 +195,7 @@ class SingleCameraPoseEstimator():
         Get the pose of current model position relative to reference frame. NB! angles in radians
         :return: Pose relative to reference
         '''
-        print('Intrinsic cam matrix: ', intr_cam_matrix)
+        #print('Intrinsic cam matrix: ', intr_cam_matrix)
         if self._ref is not None:
             try:
                 if guess_pose is None:
