@@ -21,7 +21,7 @@ class SingleCameraPoseEstimator():
 
 
         if model_param is None:
-            self._model_param = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]], dtype=float)
+            self._model_param = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]], dtype=float) # in mm
         else:
             self._model_param = model_param
 
@@ -80,16 +80,12 @@ class SingleCameraPoseEstimator():
             Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
             Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
             Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
-            #Rzy = np.matmul(Rz, Ry)
-            #R = np.matmul(Rzy, Rx)
             R = Rz*Ry*Rx
 
             # Extrinsic camera matrix
             mExt = np.hstack((R, tM))
 
             # Points to project
-            #ph = np.matmul(K, mExt)
-            #ph = np.matmul(ph, pm)
             ph = K*mExt*pm
 
             # Divide Through 3rd elements
@@ -123,7 +119,6 @@ class SingleCameraPoseEstimator():
             dy = y0 - y
 
             # dX from pseudo inverse of jakobian
-            #dx = np.matmul(np.linalg.pinv(j), dy)
             dx = np.linalg.pinv(j)*dy
 
             # stop if no changes in parameter
