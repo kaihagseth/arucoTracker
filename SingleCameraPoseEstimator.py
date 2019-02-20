@@ -1,5 +1,6 @@
 import numpy as np
 import exceptions as exc
+import cv2
 import random, time, logging
 
 '''
@@ -177,6 +178,43 @@ class SingleCameraPoseEstimator():
         _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points)
         self._ref = self._inverseTransform(transform_matrix)
 
+    def testSetReference(self, intr_cam_matrix, image_points):
+        '''
+        Test function for solvePNP
+        :param intr_cam_matrix:
+        :param image_points:
+        :return:
+        '''
+
+        retval, rvec, tvec = cv2.solvePnP(self._model_param, image_points, intr_cam_matrix)
+        ax, ay, az = rvec[0], rvec[1], rvec[2]
+        Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
+        Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
+        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
+        R = Rz * Ry * Rx
+        ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
+        ext = np.vstack([ext, [0, 0, 0, 1]])
+        self.ref = self._inverseTransform(ext)
+
+    def testGetPose(self, intr_cam_matrix, image_points, guess_pose=None):
+        '''
+        Test function for solvePnP
+        :param intr_cam_matrix:
+        :param image_points: 
+        :param guess_pose:
+        :return:
+        '''
+        retval, rvec, tvec = cv2.solvePnP(self._model_param, image_points, intr_cam_matrix)
+        ax, ay, az = rvec[0], rvec[1], rvec[2]
+        Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
+        Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
+        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
+        R = Rz * Ry * Rx
+        ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
+        ext = np.vstack([ext, [0, 0, 0, 1]])
+        guess_pose = np.hstack([np.asmatrix(rvec, dtype=float), np.asmatrix(tvec, dtype=float)])
+        pose = self._transformMatrixToPose(self._ref*ext)
+        return pose, guess_pose
 
 
     def setModelParams(self, model_params):
