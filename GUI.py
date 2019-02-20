@@ -7,13 +7,13 @@ import cv2
 from PIL import ImageTk, Image
 from Camera import *
 from CameraGroup import *
-import time
 
 # Camera variables
 counter = 0
 show_video = False
-#global camera_index
-global cap
+
+# Global camera_index
+global video_streams
 
 
 def fileClicked():
@@ -69,10 +69,10 @@ menu.add_cascade(label='Edit', menu=edit_menu)
 # Configure setup
 root.config(menu=menu)
 
-main_label = Label(page_1, text='Stream')
+main_label = Label(page_1, text='Camera Views')
 main_label.grid(column=0, row=0)
 
-second_label = Label(page_2, text='Stream')
+second_label = Label(page_2, text='Camera Calibration')
 second_label.grid(column=0, row=0)
 
 style = ttk.Style()
@@ -125,7 +125,7 @@ def videoStream():
 
     global show_video
     if show_video is True:
-        currCap = cap[var.get()]
+        currCap = video_streams[int(var.get())]
         _, frame = currCap.read()
         # Check if the webcam is opened correctly
         if not currCap.isOpened():
@@ -159,26 +159,35 @@ def saveFrame():
     cv2.imwrite('images/frame%d.jpg' % counter, videoStream())
 
 
-def changeCameraStream(camera_index):
-    cap = cv2.VideoCapture(camera_index)
+def changeCameraStream(video_stream):
+    cap = video_stream
 
 
 # Start and stop button setup
 start_btn = Button(page_1, text='Start', command=startClicked)
 stop_btn = Button(page_1, text='Stop', command=stopClicked)
+calibrate_btn = Button(page_2, text='Calibrate', command=None)
+
 check_var = IntVar()
 check_list = Checkbutton(page_2, text='Test', variable=check_var)
 check_list.grid(column=0, row=2)
 start_btn.grid(column=0, row=1)
+calibrate_btn.grid(column=3, row=3)
 
-# Radio button for selecting camera
-var = IntVar()
-R1 = Radiobutton(page_1, text='Cam 1', variable=var, value=0, command=changeCameraStream(0))
-R2 = Radiobutton(page_1, text='Cam 2', variable=var, value=1, command=changeCameraStream(1))
-R1.grid(column=0, row=5)
-R2.grid(column=0, row=6)
+# Camera temp variables.
+cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
+var = StringVar()
+var.set(cam_list[0])
+n = 0
 
 # Array for added cameras. Future improvements is getting the list of cameras connected.
-cap = [cv2.VideoCapture(0), cv2.VideoCapture(1)]
+video_streams = [cv2.VideoCapture(0), cv2.VideoCapture(1), cv2.VideoCapture(2)]
+
+# Creating a radio button for each camera connected.
+for i, video_stream in enumerate(video_streams):
+    radio_button = Radiobutton(page_1, text='Cam '+str(i), variable=var, value=n, command=changeCameraStream(video_stream))
+    radio_button.grid(column=0, row=5+i)
+    n += 1
+
 
 root.mainloop()
