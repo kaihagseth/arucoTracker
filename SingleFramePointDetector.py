@@ -111,10 +111,6 @@ class SingleFramePointDetector:
         mask = self.getHSVmask(blurred)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
-        if showImg:
-            cv2.imshow('Frame', frame)
-            cv2.imshow('Mask', mask)
-            cv2.waitKey(0)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -149,6 +145,16 @@ class SingleFramePointDetector:
         for (num, circle) in enumerate(largest_circles):
             ((x, y), radius) = cv2.minEnclosingCircle(circle)
             enclosed_circles[num, :] = x, y, radius
+        if showImg:
+            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+            for circle in enclosed_circles:
+                mask = cv2.putText(mask, ("[" + str(circle[0]) + ", " + str(circle[1]) + "]"),
+                        (int(circle[0]), int(circle[1])) ,cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0))
+                print(circle)
+                mask = cv2.circle(mask, (int(circle[0]), int(circle[1])), int(circle[2]), (0, 255, 0), 1)
+            cv2.imshow('Frame', frame)
+            cv2.imshow('Mask', mask)
+            cv2.waitKey(0)
         return enclosed_circles
 
     def getHSVValues(self):
@@ -186,12 +192,7 @@ class SingleFramePointDetector:
 
 if __name__ == '__main__':
     sfpd = SingleFramePointDetector()
-    cap = cv2.VideoCapture(1)
-    #
-    sfpd.calibrate(cap)
-    ret, frame = cap.read()
+    sfpd.loadHSVValues()
+    frame = cv2.imread("images/red_circles.jpg")
+    #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     points = sfpd.findBallPoints(frame)
-    print('Points: ', points)
-    cv2.imshow('Frame',frame)
-    cv2.waitKey(0)
-    cv2.imwrite('images\\boat_axiscross.jpg', frame)
