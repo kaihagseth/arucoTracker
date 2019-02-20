@@ -186,8 +186,19 @@ class SingleCameraPoseEstimator():
         :return:
         '''
 
-        retval, rvec, tvec = cv2.solvePnP(self._model_param, image_points, intr_cam_matrix)
-        ax, ay, az = rvec[0], rvec[1], rvec[2]
+        model_param = np.ascontiguousarray((np.asarray(self._model_param[0:3, :]).T).reshape((-1, 3)))
+        image_points = np.ascontiguousarray(image_points.reshape((-1, 2)))
+
+        print('Model params: ')
+        print(model_param)
+        print('image_points: ')
+        print(image_points)
+        print('intr_cam_matrix: ')
+        print(intr_cam_matrix)
+        distCoeffs = np.zeros((5, 1))
+        retval, rvec, tvec = cv2.solvePnP(model_param, image_points, intr_cam_matrix, distCoeffs, flags=cv2.SOLVEPNP_ITERATIVE, useExtrinsicGuess=True)
+        print(rvec)
+        ax, ay, az = rvec(0), rvec(1), rvec(2)
         Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
         Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
         Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
@@ -204,7 +215,7 @@ class SingleCameraPoseEstimator():
         :param guess_pose:
         :return:
         '''
-        retval, rvec, tvec = cv2.solvePnP(self._model_param, image_points, intr_cam_matrix)
+        retval, rvec, tvec = cv2.solvePnP(self._model_param[0:3,:], image_points.T, intr_cam_matrix,  distCoeffs=None, flags=cv2.SOLVEPNP_ITERATIVE, useExtrinsicGuess=True)
         ax, ay, az = rvec[0], rvec[1], rvec[2]
         Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
         Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
