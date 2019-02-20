@@ -146,7 +146,7 @@ class SingleCameraPoseEstimator():
         Tab = np.vstack((np.hstack((Rab, Pbaorg)), np.matrix([[0, 0, 0, 1]], dtype=float)))
         return Tab
 
-    def _tansformMatrixToPose(self, transformMatrix):
+    def _transformMatrixToPose(self, transformMatrix):
         '''
         Calculate the 6DOF pose [ax; ay; az; tx; ty; tz] from 4x4 transformation matrix.
         cos(ay) can not be 0 (angle 90/180 deg) as this will cause divide by 0 exception
@@ -199,8 +199,9 @@ class SingleCameraPoseEstimator():
                     _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points, guess_pose)
                 # Getting model pose relative to reference
                 #pose = self._tansformMatrixToPose(transform_matrix * self._ref)
-                pose = self._tansformMatrixToPose(self._ref*transform_matrix)
-                return pose
+                guess_pose = self._transformMatrixToPose(transform_matrix)
+                pose = self._transformMatrixToPose(self._ref * transform_matrix)
+                return pose, guess_pose
             except exc.MissingIntrinsicCameraParametersException as intErr:
                 print(intErr.msg)
             except exc.MissingImagePointException as imgErr:

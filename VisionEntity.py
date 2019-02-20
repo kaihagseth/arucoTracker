@@ -13,6 +13,8 @@ class VisionEntity:
     stream.
     """
 
+    _guess_pose = None
+
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
@@ -69,7 +71,9 @@ class VisionEntity:
                     frame = self._camera.getUndistortedFrame()
                 img_points = self._single_frame_point_detector.findBallPoints(frame)
                 img_points = img_points[:, 0:2] # Don't include circle radius in matrix.
-                singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix,img_points,None)
+                singlecam_curr_pose, self._guess_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix, img_points, guess_pose=self._guess_pose)
+                msg = "Guess pose: ", str(self._guess_pose)
+                logging.debug(msg)
             except exc.MissingReferenceFrameException as refErr:
                 print('ERROR: ',refErr.msg)
            # print('Singlecam_curr_pose: ', singlecam_curr_pose)
