@@ -10,14 +10,15 @@ class TextUI():
     def __init__(self, connector):
         self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
         self.c = connector
-
+        self.notInitialised = True
     '''
     Launching the UI.
     '''
     def start(self):
         stopProgram = False
         while not stopProgram:
-            if self.DEBUG:
+            if self.DEBUG and self.notInitialised:
+                self.notInitialised = False
                 logging.debug("DEBUG MODE ACTIVATED. Cameras initialised")
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
                 self.c.initConnectedCams(includeDefaultCam=True)

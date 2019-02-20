@@ -74,20 +74,19 @@ class SingleFramePointDetector:
         cv2.createTrackbar('lower Saturation', 'image', 0, 255, callback)
         cv2.createTrackbar('upper Saturation', 'image', 255, 255, callback)
         cv2.createTrackbar('lower Value', 'image', 0, 255, callback)
-        cv2.createTrackbar('higher Value', 'image', 255, 255, callback)
+        cv2.createTrackbar('upper Value', 'image', 255, 255, callback)
 
         while (True):
             # grab the frame
-            frame = camera.getSingleFrame()
+            cframe = camera.getSingleFrame()
             # get trackbar positions
-            lower_values = (cv2.getTrackbarPos('lowH', 'image'), cv2.getTrackbarPos('lowS', 'image'),
-                            cv2.getTrackbarPos('lowV', 'image'))
-            upper_values = (cv2.getTrackbarPos('highH', 'image'), cv2.getTrackbarPos('highS', 'image'),
-                            cv2.getTrackbarPos('highV', 'image'))
+            lower_values = (cv2.getTrackbarPos('lower Hue', 'image'), cv2.getTrackbarPos('lower Saturation', 'image'),
+                            cv2.getTrackbarPos('lower Value', 'image'))
+            upper_values = (cv2.getTrackbarPos('upper Hue', 'image'), cv2.getTrackbarPos('upper Saturation', 'image'),
+                            cv2.getTrackbarPos('upper Value', 'image'))
             self.setHSVValues(lower_values, upper_values)
-            mask = self.getHSVmask(frame)
-            image = cv2.bitwise_and(frame, frame, mask=mask)
-
+            mask = self.getHSVmask(cframe)
+            image = cv2.bitwise_and(cframe, cframe, mask=mask)
             # show thresholded image
             cv2.imshow('image', image)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -115,7 +114,6 @@ class SingleFramePointDetector:
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = imutils.grab_contours(contours)
-
         # only proceed if at least one contour was found
         enclosed_circles = np.ones((self.NUMBER_OF_POINTS, 3)) * -1
         if len(contours) == 0:
@@ -191,8 +189,12 @@ class SingleFramePointDetector:
         return mask
 
 if __name__ == '__main__':
+    from Camera import Camera
     sfpd = SingleFramePointDetector()
-    sfpd.loadHSVValues()
-    frame = cv2.imread("images/red_circles.jpg")
-    #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    points = sfpd.findBallPoints(frame)
+    cam = Camera()
+    sfpd.calibrate(cam)
+    stream = cam.getStream()
+    ret, frame = stream.read()
+    if ret:
+        cv2.imshow('frame', frame)
+        cv2.waitKey(5000)
