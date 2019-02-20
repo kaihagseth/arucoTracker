@@ -104,12 +104,17 @@ class SingleFramePointDetector:
         4 largest circles in the frame. In cases where less circles are detected,
         remaining rows will returns with -1 """
         logging.info('Running findBallPoints()')
+        showImg = True
         # blur image to remove hf-noise)
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         # construct a mask for the color, then perform morphology to remove noise
         mask = self.getHSVmask(blurred)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
+        if showImg:
+            cv2.imshow('Frame', frame)
+            cv2.imshow('Mask', mask)
+            cv2.waitKey(0)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

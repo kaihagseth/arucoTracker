@@ -57,14 +57,14 @@ class TextUI():
     def dispContiniusResults(self, result):
         try:
             print("#####  Display current result:  ######")
-            print(result)
-            print("Rotation x - roll: ", result[0]*180.0/np.pi)
-            print("Rotation y - pitch: ", result[1]*180.0/np.pi)
-            print("Rotation z - yaw: ", result[2]*180.0/np.pi)
+            #print(result)
+            print("Rotation x - roll: ", result[0]*180.0/np.pi," grader")
+            print("Rotation y - pitch: ", result[1]*180.0/np.pi," grader")
+            print("Rotation z - yaw: ", result[2]*180.0/np.pi," grader")
             print("Translation x: ", result[3], ' mm')
             print("Translation y: ", result[4], ' mm')
             print("Translation z: ", result[5], ' mm')
-        except Exception:
+        except TypeError:
             print("Could not print.")
     def abortFunction(self):
         pass
@@ -84,32 +84,36 @@ class TextUI():
               '11. Go back.'
               )
         choice = int(input('Type: '))
-        if choice is 1:
-            self.c.initConnectedCams(includeDefaultCam=True)
-        elif choice is 2:
-            self.c.initConnectedCams(includeDefaultCam=False)
+        try:
+            if choice is 1:
+                self.c.initConnectedCams(includeDefaultCam=True)
+            elif choice is 2:
+                self.c.initConnectedCams(includeDefaultCam=False)
 
-        elif choice is 3:
-            print('Cameras is on index: ', self.c.getConnectedCams())
-            print('Number of cameras: ', len(self.c.getConnectedCams()))
-        elif choice is 5:
-            self.calibCameras()
-        elif choice is 6:
-            self.testCameras()
-        elif choice is 7:
-            self.videoTest(0)
-        elif choice is 8:
-            print('Printing parameters')
-            self.c.getCamFromIndex(0)._IC.printCurrParams()
-        elif choice is 9:
-            self.doHSVCalib()
-        elif choice is 10:
-            self.loadHSVValues()
-        elif choice is 11:
+            elif choice is 3:
+                print('Cameras is on index: ', self.c.getConnectedCams())
+                print('Number of cameras: ', len(self.c.getConnectedCams()))
+            elif choice is 5:
+                self.calibCameras()
+            elif choice is 6:
+                self.testCameras()
+            elif choice is 7:
+                self.videoTest(0)
+            elif choice is 8:
+                print('Printing parameters')
+                self.c.getCamFromIndex(0)._IC.printCurrParams()
+            elif choice is 9:
+                self.doHSVCalib()
+            elif choice is 10:
+                self.loadHSVValues()
+            elif choice is 11:
+                self.start()
+            else: #Invalid typing
+                print('Bad typing. Try again.')
+                self.configCameras()
+        except Exception:
+            logging.error("Error occurred, try again.")
             self.start()
-        else: #Invalid typing
-            print('Bad typing. Try again.')
-            self.configCameras()
     def calibCameras(self):
         '''
         Menu for selecting what cameras to calibrate.
