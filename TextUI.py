@@ -21,10 +21,10 @@ class TextUI():
                 logging.debug("DEBUG MODE ACTIVATED. Cameras initialised")
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
                 self.c.initConnectedCams(includeDefaultCam=True)
-                VE = self.c.getVEFromCamIndex(1)
+                #VE = self.c.getVEFromCamIndex(1)
                 # Do HSV calibration
                 # cv2.VideoCapture(choice)
-                VE.loadHSVValues() # Load values to testcam
+                #VE.loadHSVValues() # Load values to testcam
                 #self.calibCameras()
                 #cam = self.c.getCamFromIndex(0)
                 #cam.loadSavedCalibValues()

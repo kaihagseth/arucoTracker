@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import exceptions as exc
 import cv2
@@ -22,7 +24,7 @@ class SingleCameraPoseEstimator():
 
 
         if model_param is None:
-            self._model_param = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]], dtype=float) # in mm
+            self._model_param = np.matrix([[97, 0, 0, -78], [0, 92, 0, 0], [0, 0, 80, 0], [1, 1, 1, 1]], dtype=float) # in mm
         else:
             self._model_param = model_param
 
@@ -44,7 +46,7 @@ class SingleCameraPoseEstimator():
 
         # checking if all image points are present in input
         #print('Image_points: ', image_points)
-        for i in range(3):
+        for i in range(4):
             for j in range(2):
                 if image_points[i, j] == -1:
                     logging.error('One or more image points not found, cannot estimate pose')
@@ -98,23 +100,24 @@ class SingleCameraPoseEstimator():
 
             # Homogenus transformation matrix
             transform_matrix = np.vstack((mExt, np.matrix([[0, 0, 0, 1]], dtype=float)))
+            print("Algo estimated image coords: ", p)
             return p, transform_matrix
 
-        for i in range(0, 100):
+        for i in range(0, 1000):
 
             # Predicted image points
             y, _ = fProject(x, pm, intr_cam_matrix)
 
             # Jakobian
-            e = 0.000001
-            j = np.matrix(np.empty((6, 6)))
+            e = 0.01
+            j = np.matrix(np.empty((8, 6)))
             j[:, 0] = np.divide((fProject(x + np.matrix([[e], [0], [0], [0], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 1] = np.divide((fProject(x + np.matrix([[0], [e], [0], [0], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 2] = np.divide((fProject(x + np.matrix([[0], [0], [e], [0], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 3] = np.divide((fProject(x + np.matrix([[0], [0], [0], [e], [0], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 4] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [e], [0]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
             j[:, 5] = np.divide((fProject(x + np.matrix([[0], [0], [0], [0], [0], [e]], dtype=float), pm, intr_cam_matrix)[0] - y), e)
-
+            print("j matrix: \n", j)
             # reshaping to match y so we can find dY
             y0 = np.reshape(y0, (-1, 1), order='c')
             dy = y0 - y
@@ -124,10 +127,16 @@ class SingleCameraPoseEstimator():
 
             # stop if no changes in parameter
             if abs(np.divide(np.linalg.norm(dx), np.linalg.norm(x))) < 0.000001:
+                warnings.warn("dx less than error.7")
                 break
 
             # updating pose estimate
             x = x + dx
+            print(" \n New iteration:")
+            print("y: ", y)
+            print("dy: ", dy)
+            print("dx: ", dx)
+            print("x: ", x)
 
         # getting  translation matrix and pose
         _, transformMatrix = fProject(x, pm, intr_cam_matrix)
@@ -178,56 +187,6 @@ class SingleCameraPoseEstimator():
         _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points)
         self._ref = self._inverseTransform(transform_matrix)
 
-    def testSetReference(self, intr_cam_matrix, image_points):
-        '''
-        Test function for solvePNP
-        :param intr_cam_matrix:
-        :param image_points:
-        :return:
-        '''
-
-        model_param = np.ascontiguousarray((np.asarray(self._model_param[0:3, :]).T).reshape((-1, 3)))
-        image_points = np.ascontiguousarray(image_points.reshape((-1, 2)))
-
-        print('Model params: ')
-        print(model_param)
-        print('image_points: ')
-        print(image_points)
-        print('intr_cam_matrix: ')
-        print(intr_cam_matrix)
-        distCoeffs = np.zeros((5, 1))
-        retval, rvec, tvec = cv2.solvePnP(model_param, image_points, intr_cam_matrix, distCoeffs, flags=cv2.SOLVEPNP_ITERATIVE, useExtrinsicGuess=True)
-        print(rvec)
-        ax, ay, az = rvec(0), rvec(1), rvec(2)
-        Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
-        Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
-        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
-        R = Rz * Ry * Rx
-        ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
-        ext = np.vstack([ext, [0, 0, 0, 1]])
-        self.ref = self._inverseTransform(ext)
-
-    def testGetPose(self, intr_cam_matrix, image_points, guess_pose=None):
-        '''
-        Test function for solvePnP
-        :param intr_cam_matrix:
-        :param image_points:
-        :param guess_pose:
-        :return:
-        '''
-        retval, rvec, tvec = cv2.solvePnP(self._model_param[0:3,:], image_points.T, intr_cam_matrix,  distCoeffs=None, flags=cv2.SOLVEPNP_ITERATIVE, useExtrinsicGuess=True)
-        ax, ay, az = rvec[0], rvec[1], rvec[2]
-        Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
-        Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
-        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
-        R = Rz * Ry * Rx
-        ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
-        ext = np.vstack([ext, [0, 0, 0, 1]])
-        guess_pose = np.hstack([np.asmatrix(rvec, dtype=float), np.asmatrix(tvec, dtype=float)])
-        pose = self._transformMatrixToPose(self._ref*ext)
-        return pose, guess_pose
-
-
     def setModelParams(self, model_params):
         '''
         Set model parameters
@@ -268,4 +227,4 @@ if __name__ == '__main__':
     s = SingleCameraPoseEstimator()
     s.setReference(intr_mtrx,image_points=img_point)
     pose = s.getPose(intr_mtrx,img_point)
-    print(pose)
+    print("The pose is: \n ", pose)

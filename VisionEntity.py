@@ -48,7 +48,7 @@ class VisionEntity:
                 #singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self._camera.getIntrinsicParams(),
                  # img_points, None)
                 #self._single_camera_pose_estimator.setReference(self.intrinsic_matrix, image_points=img_points)
-                self._single_camera_pose_estimator.testSetReference(self.intrinsic_matrix, image_points=img_points)
+                self._single_camera_pose_estimator.setReference(self.intrinsic_matrix, image_points=img_points)
                 logging.info('Referenceframe is set.')
                 referenceNotSet = False
             except exc.MissingIntrinsicCameraParametersException as intErr:
@@ -68,7 +68,7 @@ class VisionEntity:
                 img_points = self._single_frame_point_detector.findBallPoints(frame)
                 img_points = img_points[:, 0:2] # Don't include circle radius in matrix.
                 #singlecam_curr_pose, self._guess_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix, img_points, guess_pose=self._guess_pose)
-                singlecam_curr_pose, self._guess_pose = self._single_camera_pose_estimator.testGetPose(self.intrinsic_matrix, img_points, guess_pose=self._guess_pose)
+                singlecam_curr_pose, self._guess_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix, img_points, guess_pose=self._guess_pose)
                 print("Guess_pose: ", self._guess_pose)
                 result = self._guess_pose
                 try:
