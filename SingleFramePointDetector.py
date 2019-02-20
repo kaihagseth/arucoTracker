@@ -150,7 +150,7 @@ class SingleFramePointDetector:
             for circle in enclosed_circles:
                 mask = cv2.putText(mask, ("[" + str(circle[0]) + ", " + str(circle[1]) + "]"),
                         (int(circle[0]), int(circle[1])) ,cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0))
-                print(circle)
+                #print(circle)
                 mask = cv2.circle(mask, (int(circle[0]), int(circle[1])), int(circle[2]), (0, 255, 0), 1)
             cv2.imshow('Frame', frame)
             cv2.imshow('Mask', mask)
