@@ -200,7 +200,7 @@ class SingleCameraPoseEstimator():
         '''
         Test function for solvePnP
         :param intr_cam_matrix:
-        :param image_points: 
+        :param image_points:
         :param guess_pose:
         :return:
         '''

@@ -8,7 +8,7 @@ class TextUI():
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = False # If True, do some obvious things for fast forward initialisation.
+        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
         self.c = connector
 
     '''
@@ -18,13 +18,17 @@ class TextUI():
         stopProgram = False
         while not stopProgram:
             if self.DEBUG:
+                logging.debug("DEBUG MODE ACTIVATED. Cameras initialised")
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
-                camlist = self.c.initConnectedCams(includeDefaultCam=True)
+                self.c.initConnectedCams(includeDefaultCam=True)
+                VE = self.c.getVEFromCamIndex(1)
+                # Do HSV calibration
+                # cv2.VideoCapture(choice)
+                VE.loadHSVValues() # Load values to testcam
                 #self.calibCameras()
                 #cam = self.c.getCamFromIndex(0)
                 #cam.loadSavedCalibValues()
                 #self.c.initSCPEs(camlist)
-                print('\n DEBUG MODE. Cameras initialised.')
             print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
                   '1. Start application \n'
