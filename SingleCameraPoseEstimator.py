@@ -202,7 +202,7 @@ class SingleCameraPoseEstimator():
                 #pose = self._tansformMatrixToPose(transform_matrix * self._ref)
                 #  TODO: better solution for returning the model to camera pose for next getPose() call
                 guess_pose = self._transformMatrixToPose(transform_matrix)
-                pose = self._tansformMatrixToPose(self._ref*transform_matrix)
+                pose = self._transformMatrixToPose(self._ref*transform_matrix)
                 return pose, guess_pose
             except exc.MissingIntrinsicCameraParametersException as intErr:
                 print(intErr.msg)
