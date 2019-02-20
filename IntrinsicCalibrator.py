@@ -80,15 +80,13 @@ class IntrinsicCalibrator:
         # Arrays to store object points and image points from all the images.
         objpoints = []  # 3d point in real world space
         imgpoints = []  # 2d points in image plane.
-        print("Length of frames list: ", len(frames))
+        corners = False
         try: # If cv2 fails, raise FailedCalibrationException
             gray = None
             img = frames[0]
             ''' For each frame in list, find cb-corners and add object and image points in a list. '''
             for frame in frames:
-                print('Frame: ', frame)
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
                 # Find the chess board corners
                 ret, corners = cv2.findChessboardCorners(gray, (cb_n_height, cb_n_width), None)
                 ''' If found, add object points, image points (after refining them) '''
@@ -96,7 +94,7 @@ class IntrinsicCalibrator:
                     objpoints.append(objp)
                     cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     imgpoints.append(corners)
-                    ''' Draw and display the corners '''
+                    ''' Draw and d isplay the corners '''
                     cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
                     cv2.imshow('img', frame)
                     cv2.waitKey(500)

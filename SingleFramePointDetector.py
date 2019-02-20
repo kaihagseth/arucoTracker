@@ -39,15 +39,27 @@ class SingleFramePointDetector:
         self._hsv_is_calibrated = True
 
     def saveHSVValues(self):
+        """
+        Save the current HSV values to a file.
+        :return: None
+        """
         filename = 'HSVValues'
         lower_values, upper_values = self.getHSVValues()
         np.savez(filename, lh=lower_values[0], uh=upper_values[0], ls=lower_values[1], us=upper_values[1],
                  lv=lower_values[2], uv=upper_values[2],)
 
     def loadHSVValues(self):
+        """
+        Load HSV values from the saved file
+        :return: None
+        """
         filename = 'HSVValues.NPZ'
-        print('Loading old parameters from file ', filename)
-        npzfile = np.load(filename)
+        try:
+            print('Loading old parameters from file ', filename)
+            npzfile = np.load(filename)
+        except FileNotFoundError as e:
+            print("HSVValues.NPZ was not found. Create the file before loading it.")
+            return
         self.setHSVValues((npzfile['lh'], npzfile['ls'], npzfile['lv']), (npzfile['uh'], npzfile['us'], npzfile['uv']))
 
 
@@ -57,12 +69,12 @@ class SingleFramePointDetector:
         :return: None
         """
         cv2.namedWindow('image')
-        cv2.createTrackbar('lowH', 'image', 0, 179, callback)
-        cv2.createTrackbar('highH', 'image', 0, 179, callback)
-        cv2.createTrackbar('lowS', 'image', 0, 255, callback)
-        cv2.createTrackbar('highS', 'image', 0, 255, callback)
-        cv2.createTrackbar('lowV', 'image', 0, 255, callback)
-        cv2.createTrackbar('highV', 'image', 0, 255, callback)
+        cv2.createTrackbar('lower Hue', 'image', 0, 179, callback)
+        cv2.createTrackbar('upper Hue', 'image', 179, 179, callback)
+        cv2.createTrackbar('lower Saturation', 'image', 0, 255, callback)
+        cv2.createTrackbar('upper Saturation', 'image', 255, 255, callback)
+        cv2.createTrackbar('lower Value', 'image', 0, 255, callback)
+        cv2.createTrackbar('higher Value', 'image', 255, 255, callback)
 
         while (True):
             # grab the frame
@@ -92,12 +104,17 @@ class SingleFramePointDetector:
         4 largest circles in the frame. In cases where less circles are detected,
         remaining rows will returns with -1 """
         logging.info('Running findBallPoints()')
+        showImg = True
         # blur image to remove hf-noise)
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         # construct a mask for the color, then perform morphology to remove noise
         mask = self.getHSVmask(blurred)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
+        if showImg:
+            cv2.imshow('Frame', frame)
+            cv2.imshow('Mask', mask)
+            cv2.waitKey(0)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

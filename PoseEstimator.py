@@ -26,20 +26,19 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        includeDefWebCam = False
+        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
         ilist = []
-        if not includeDefWebCam:
-            for i in range(1,num_cams):
+        for i in range(num_cams):
+            if i not in unwantedCams:
                 ilist.append(i)
-                return ilist
-        else:
-            for i in range(num_cams):
-                ilist.append(i)
-                return ilist
-        return None
+            else:
+                msg = 'Webcam on index {0} not included.'.format(i)
+                logging.info(msg)
+        return ilist
+
     def runPoseEstimator(self):
         '''
         Do poseestimation for every VisionEntity.
@@ -49,7 +48,7 @@ class PoseEstimator():
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
-            singlecam_curr_pose = 10
+            singlecam_curr_pose = [10.0,10.0,10.0,10.0,10.0,10.0]
             #Create a thread-safe variable to save pose to.
             singlecam_curr_pose_que = queue.Queue()
             singlecam_curr_pose_que.put(singlecam_curr_pose)
@@ -67,8 +66,8 @@ class PoseEstimator():
         In future: Get all output from the poseestimation here.
         :return: threadInfopList
         '''
-        print(self.threadInfoList)
-        print('Pose: ', self.threadInfoList[0][2].get())
+        #print(self.threadInfoList)
+        #print('Pose: ', self.threadInfoList[0][2].get())
         #singlecam_poses = self.threadInfoList[:,2]
         #print(singlecam_poses)
         time.sleep(0.1)
@@ -81,6 +80,14 @@ class PoseEstimator():
                 return wantedCam
         # If not found, log error.
         logging.error('Camera not found on given index. ')
+    def removeVEFromListByIndex(self, index):
+        '''
+        Remove the camera given by index from list of VEs.
+        :param index: Index of VE cam
+        :return:
+        '''
+        VE = self.getVEById(index)
+        self.VisionEntityList.remove(VE)
     def getVEById(self, camID):
         for VE in self.VisionEntityList:
             cam = VE.getCam()

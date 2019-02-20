@@ -2,7 +2,7 @@ import cv2
 from exceptions import FailedCalibrationException
 import time
 import logging
-
+import numpy as np
 class TextUI():
     '''
     Recieve and snd text commands from user.
@@ -21,9 +21,9 @@ class TextUI():
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
                 camlist = self.c.initConnectedCams(includeDefaultCam=True)
                 #self.calibCameras()
-                cam = self.c.getCamFromIndex(0)
-                cam.loadSavedCalibValues()
-                self.c.initSCPEs(camlist)
+                #cam = self.c.getCamFromIndex(0)
+                #cam.loadSavedCalibValues()
+                #self.c.initSCPEs(camlist)
                 print('\n DEBUG MODE. Cameras initialised.')
             print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
@@ -51,11 +51,21 @@ class TextUI():
             print('doAbortFx is True')
             return True
         else:
-            print('dpAbortApp() is False')
+            #print('dpAbortApp() is False')
             return False
 
     def dispContiniusResults(self, result):
-        print(result)
+        try:
+            print("#####  Display current result:  ######")
+            #print(result)
+            print("Rotation x - roll: ", result[0]*180.0/np.pi," grader")
+            print("Rotation y - pitch: ", result[1]*180.0/np.pi," grader")
+            print("Rotation z - yaw: ", result[2]*180.0/np.pi," grader")
+            print("Translation x: ", result[3], ' mm')
+            print("Translation y: ", result[4], ' mm')
+            print("Translation z: ", result[5], ' mm')
+        except TypeError:
+            print("Could not print.")
     def abortFunction(self):
         pass
     def configCameras(self):
@@ -74,32 +84,36 @@ class TextUI():
               '11. Go back.'
               )
         choice = int(input('Type: '))
-        if choice is 1:
-            self.c.initConnectedCams(includeDefaultCam=True)
-        elif choice is 2:
-            self.c.initConnectedCams(includeDefaultCam=False)
+        try:
+            if choice is 1:
+                self.c.initConnectedCams(includeDefaultCam=True)
+            elif choice is 2:
+                self.c.initConnectedCams(includeDefaultCam=False)
 
-        elif choice is 3:
-            print('Cameras is on index: ', self.c.getConnectedCams())
-            print('Number of cameras: ', len(self.c.getConnectedCams()))
-        elif choice is 5:
-            self.calibCameras()
-        elif choice is 6:
-            self.testCameras()
-        elif choice is 7:
-            self.videoTest(0)
-        elif choice is 8:
-            print('Printing parameters')
-            self.c.getCamFromIndex(0)._IC.printCurrParams()
-        elif choice is 9:
-            self.doHSVCalib()
-        elif choice is 10:
-            self.loadHSVValues()
-        elif choice is 11:
+            elif choice is 3:
+                print('Cameras is on index: ', self.c.getConnectedCams())
+                print('Number of cameras: ', len(self.c.getConnectedCams()))
+            elif choice is 5:
+                self.calibCameras()
+            elif choice is 6:
+                self.testCameras()
+            elif choice is 7:
+                self.videoTest(0)
+            elif choice is 8:
+                print('Printing parameters')
+                self.c.getCamFromIndex(0)._IC.printCurrParams()
+            elif choice is 9:
+                self.doHSVCalib()
+            elif choice is 10:
+                self.loadHSVValues()
+            elif choice is 11:
+                self.start()
+            else: #Invalid typing
+                print('Bad typing. Try again.')
+                self.configCameras()
+        except Exception:
+            logging.error("Error occurred, try again.")
             self.start()
-        else: #Invalid typing
-            print('Bad typing. Try again.')
-            self.configCameras()
     def calibCameras(self):
         '''
         Menu for selecting what cameras to calibrate.
@@ -145,6 +159,7 @@ class TextUI():
             try:
                 cam = self.c.getVEFromCamIndex(ID).getCam()
                 frame = cam.getSingleFrame()
+                frame = cam.getSingleFrame()
                 cv2.imshow('Calibrate cam', frame)
             except cv2.error as e:
                 print('Cam capture failed. Trying again.')
@@ -155,7 +170,6 @@ class TextUI():
                 try: # Catch error with calib algo / bad picture
                     # cam.calibrateCam([frame])
                     frames.append(frame)
-                    cam.calibrateCam(frames)
                     print('Captured, image nr {0} of {1}'.format(len(frames), numbImg))
                 except FailedCalibrationException:
                     print('Calibration failed, trying again.')
