@@ -141,9 +141,10 @@ class SingleCameraPoseEstimator():
         :param transformMatrix: Transformation matrix for system B represented in system A
         :return: Transformation matrix for system A represented in system B
         '''
-        Rab = transformMatrix[0:3, 0:3].T
-        Pbaorg = -Rab*transformMatrix[0:3, 3]
-        Tab = np.vstack((np.hstack((Rab, Pbaorg)), np.matrix([[0, 0, 0, 1]], dtype=float)))
+        #Rab = transformMatrix[0:3, 0:3].T
+        #Pbaorg = -Rab*transformMatrix[0:3, 3]
+        #ab = np.vstack((np.hstack((Rab, Pbaorg)), np.matrix([[0, 0, 0, 1]], dtype=float)))
+        Tab = np.linalg.inv(transformMatrix)
         return Tab
 
     def _transformMatrixToPose(self, transformMatrix):
@@ -199,8 +200,9 @@ class SingleCameraPoseEstimator():
                     _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points, guess_pose)
                 # Getting model pose relative to reference
                 #pose = self._tansformMatrixToPose(transform_matrix * self._ref)
+                #  TODO: better solution for returning the model to camera pose for next getPose() call
                 guess_pose = self._transformMatrixToPose(transform_matrix)
-                pose = self._transformMatrixToPose(self._ref * transform_matrix)
+                pose = self._tansformMatrixToPose(self._ref*transform_matrix)
                 return pose, guess_pose
             except exc.MissingIntrinsicCameraParametersException as intErr:
                 print(intErr.msg)
