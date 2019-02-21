@@ -3,49 +3,77 @@ import os
 from GUI import RunMain
 
 
-def delete2():
+def deleteWindows():
+    '''
+    Delete the windows not used when running GUI
+    :return: None
+    '''
     screen3.destroy()
     screen2.destroy()
     main_window.destroy()
     RunMain()
 
-def delete3():
+
+def deleteWrongPassWindow():
+    '''
+    Delete the popup box for wrong user/pass
+    :return: None
+    '''
     screen4.destroy()
 
 
-def delete4():
+def deleteWrongUserWindow():
+    '''
+    Delete the popup box for wrong username/password
+    :return: None
+    '''
     screen5.destroy()
 
 
-# Popup that gives user a confirmation that login was successful
 def loginSuccessful():
+    '''
+    Popup that gives user a confirmation that login was successful
+    :return: None
+    '''
     global screen3
     screen3 = Toplevel(main_window)
     screen3.title('Success')
     screen3.geometry('150x100')
     Label(screen3, text='Login Success').pack()
-    Button(screen3, text='OK', command=delete2).pack()
+    Button(screen3, text='OK', command=deleteWindows).pack()
 
 
 def wrongPassword():
+    '''
+    Popup for wrong password/username
+    :return: None
+    '''
     global screen4
     screen4 = Toplevel(main_window)
     screen4.title('Success')
     screen4.geometry('150x100')
     Label(screen4, text='User Not Found or Wrong Password').pack()
-    Button(screen4, text='OK', command=delete3).pack()
+    Button(screen4, text='OK', command=deleteWrongPassWindow).pack()
 
 
 def userNotFound():
+    '''
+    Popup for wrong password/username
+    :return:
+    '''
     global screen5
     screen5 = Toplevel(main_window)
     screen5.title('Success')
     screen5.geometry('150x100')
     Label(screen5, text='User Not Found or Wrong Password').pack()
-    Button(screen5, text='OK', command=delete4).pack()
+    Button(screen5, text='OK', command=deleteWrongUserWindow).pack()
 
 
 def registerUser():
+    '''
+    Register a user so that you can login
+    :return:
+    '''
     print('working')
 
     username_info = username.get()
@@ -63,6 +91,10 @@ def registerUser():
 
 
 def loginVerify():
+    '''
+    Verify that the user and password match a registered use.
+    :return: None
+    '''
     username1 = username_verify.get()
     password1 = password_verify.get()
     username_entry1.delete(0, END)
@@ -83,6 +115,10 @@ def loginVerify():
 
 
 def register():
+    '''
+    Create a new window where the user can register.
+    :return: None
+    '''
     global screen1
     screen1 = Toplevel(main_window)
     screen1.title('Register')
@@ -109,6 +145,10 @@ def register():
 
 
 def login():
+    '''
+    Create a new window where the user can login.
+    :return: None
+    '''
     global screen2
     screen2 = Toplevel(main_window)
     screen2.title('Login')
@@ -137,6 +177,10 @@ def login():
 
 
 def mainScreen():
+    '''
+    Main window that shows when starting the app.
+    :return: None
+    '''
     global main_window
     main_window = Tk()
     main_window.geometry('300x250')

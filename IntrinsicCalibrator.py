@@ -51,23 +51,23 @@ class IntrinsicCalibrator:
         :param frames: List of frames to use in calibration.
         :return: None
         '''
-
-        #Save the images to a distinct camera folder
-        i = 1
-        cb_n_width = 7
-        cb_n_height = 5
+      #  i = 1
+        cb_n_width = 5
+        cb_n_height = 7
         camID = 0
+        #Save the images to a distinct camera folder
+
         ''' Make sure we don't use invalid ID.  '''
         if self._parr_cam is None:
             camID = '0'
             logging.error('CameraID not found!')
         else:
-            camID = self._parr_cam._ID
+            camID = self._parr_cam.getSrc()
         ''' Add all images in folder ''' # TODO: Fix this
-        for frame in frames:
-            path = 'images/cam_{0}/calib_img{1}.png'.format(camID, i)
-            cv2.imwrite(path, frame)
-            i = i+1
+       #  for (i, frame) in enumerate(frames):
+      #      path = 'images/cam_{0}/calib_img{1}.png'.format(camID, i)
+     #       cv2.imwrite(path, frame)
+    #
         # Termination criteria
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -78,6 +78,7 @@ class IntrinsicCalibrator:
         # Arrays to store object points and image points from all the images.
         objpoints = []  # 3d point in real world space
         imgpoints = []  # 2d points in image plane.
+        corners = False
         try: # If cv2 fails, raise FailedCalibrationException
             gray = None
             img = frames[0]
@@ -86,18 +87,24 @@ class IntrinsicCalibrator:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 # Find the chess board corners
                 ret, corners = cv2.findChessboardCorners(gray, (cb_n_height, cb_n_width), None)
-
                 ''' If found, add object points, image points (after refining them) '''
                 if ret == True:
                     objpoints.append(objp)
                     cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     imgpoints.append(corners)
-                    ''' Draw and display the corners '''
+                    ''' Draw and d isplay the corners '''
                     cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
                     cv2.imshow('img', frame)
                     cv2.waitKey(500)
+                else:
+                    logging.error('"ret" is not true. Could not find corners.')
             cv2.destroyAllWindows()
             '''Do the calibration:'''
+            if not objpoints:
+                print('Objpoints is none!')
+            if not imgpoints:
+                print('Imgpoints is none!')
+
             ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
             h, w = img.shape[:2]
             newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
@@ -109,6 +116,7 @@ class IntrinsicCalibrator:
             x, y, w, h = roi
             dst = dst[y:y + h, x:x + w]
             #cv2.imshow('Calib res', dst)
+
             #cv2.waitKey(0)
             '''Only write image if list is more a single frame.'''
             if len(frames) >= 2:
@@ -126,12 +134,19 @@ class IntrinsicCalibrator:
             self._curr_newcamera_mtx = newcameramtx
             self._curr_roi = roi
 
+<<<<<<< HEAD
         except IndexError:
             pass#cv2.error as e:
          #   print('OpenCV failed. ')
           #  print('MSG: ', e)
            # raise FailedCalibrationException(msg=e)
 
+=======
+        except cv2.error as e:
+            print('OpenCV failed. ')
+            print('MSG: ', e)
+            raise FailedCalibrationException(msg=e)
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
     def printCurrParams(self):
         print('_curr_ret : ', self._curr_ret)
         print('_curr_mtx : ', self._curr_camera_matrix)
@@ -176,9 +191,9 @@ if __name__ == "__main__":
     '''
     For debug only
     '''
-    ic = IntrinsicCalibration()
-    ic.loadSavedValues()
-    ic.pri
+    #ic = IntrinsicCalibration()
+    #ic.loadSavedValues()
+    #ic.pri
     #ic.calibCam([cv2.imread('images/img.jpg')])
 
     ''' print('Hello')

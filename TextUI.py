@@ -2,30 +2,39 @@ import cv2
 from exceptions import FailedCalibrationException
 import time
 import logging
+<<<<<<< HEAD
 
 
+=======
+import numpy as np
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 class TextUI():
     '''
     Recieve and snd text commands from user.
     '''
     def __init__(self, connector):
-        self.DEBUG = False # If True, do some obvious things for fast forward initialisation.
+        self.DEBUG = True # If True, do some obvious things for fast forward initialisation.
         self.c = connector
-
+        self.notInitialised = True
     '''
     Launching the UI.
     '''
     def start(self):
         stopProgram = False
         while not stopProgram:
-            if self.DEBUG:
+            if self.DEBUG and self.notInitialised:
+                self.notInitialised = False
+                logging.debug("DEBUG MODE ACTIVATED. Cameras initialised")
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
-                camlist = self.c.initConnectedCams(includeDefaultCam=True)
+                self.c.initConnectedCams(includeDefaultCam=True)
+                VE = self.c.getVEFromCamIndex(1)
+                # Do HSV calibration
+                # cv2.VideoCapture(choice)
+                VE.loadHSVValues() # Load values to testcam
                 #self.calibCameras()
-                cam = self.c.getCamFromIndex(0)
-                cam.loadSavedCalibValues()
-                self.c.initSCPEs(camlist)
-                print('\n DEBUG MODE. Cameras initialised.')
+                #cam = self.c.getCamFromIndex(0)
+                #cam.loadSavedCalibValues()
+                #self.c.initSCPEs(camlist)
             print('\n SHIP POSE ESTIMATOR @ NTNU 2019 \n'
                   'Please make your choice: \n'
                   '1. Start application \n'
@@ -54,12 +63,26 @@ class TextUI():
             print('doAbortFx is True')
             return True
         else:
-            print('dpAbortApp() is False')
+            #print('dpAbortApp() is False')
             return False
 
     def dispContiniusResults(self, result):
+<<<<<<< HEAD
         print(result)
 
+=======
+        try:
+            print("#####  Display current result:  ######")
+            #print(result)
+            print("Rotation x - roll: ", result[0]*180.0/np.pi," grader")
+            print("Rotation y - pitch: ", result[1]*180.0/np.pi," grader")
+            print("Rotation z - yaw: ", result[2]*180.0/np.pi," grader")
+            print("Translation x: ", result[3], ' mm')
+            print("Translation y: ", result[4], ' mm')
+            print("Translation z: ", result[5], ' mm')
+        except TypeError:
+            print("Could not print.")
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
     def abortFunction(self):
         pass
 
@@ -74,15 +97,18 @@ class TextUI():
               '6. Test cameras \n'
               '7. Videotest cameras \n'
               '8. Show current calib params, index 0 \n'
-              '9. Fix HSV-calibration'
-              '10. Load HSV-values'
+              '9. Fix HSV-calibration \n'
+              '10. Load HSV-values \n'
+              '11. Go back.'
               )
         choice = int(input('Type: '))
-        if choice is 1:
-            self.c.initConnectedCams(includeDefaultCam=True)
-        elif choice is 2:
-            self.c.initConnectedCams(includeDefaultCam=False)
+        try:
+            if choice is 1:
+                self.c.initConnectedCams(includeDefaultCam=True)
+            elif choice is 2:
+                self.c.initConnectedCams(includeDefaultCam=False)
 
+<<<<<<< HEAD
         elif choice is 3:
             print('Cameras is on index: ', self.c.getConnectedCams())
             print('Number of cameras: ', len(self.c.getConnectedCams()))
@@ -103,6 +129,32 @@ class TextUI():
             print('Bad typing. Try again.')
             self.configCameras()
 
+=======
+            elif choice is 3:
+                print('Cameras is on index: ', self.c.getConnectedCams())
+                print('Number of cameras: ', len(self.c.getConnectedCams()))
+            elif choice is 5:
+                self.calibCameras()
+            elif choice is 6:
+                self.testCameras()
+            elif choice is 7:
+                self.videoTest(0)
+            elif choice is 8:
+                print('Printing parameters')
+                self.c.getCamFromIndex(0)._IC.printCurrParams()
+            elif choice is 9:
+                self.doHSVCalib()
+            elif choice is 10:
+                self.loadHSVValues()
+            elif choice is 11:
+                self.start()
+            else: #Invalid typing
+                print('Bad typing. Try again.')
+                self.configCameras()
+        except Exception:
+            logging.error("Error occurred, try again.")
+            self.start()
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
     def calibCameras(self):
         '''
         Menu for selecting what cameras to calibrate.
@@ -111,6 +163,7 @@ class TextUI():
               'Please make your choice: \n'
               '1. Calibrate a desired camera \n'
               '2. Calibrate all cameras one by one \n'
+              '3. Abort and go back.'
               )
         choice = int(input('Type:'))
         if choice is 1:
@@ -126,6 +179,11 @@ class TextUI():
             camIDs = self.c.getConnectedCams()
             for ID in camIDs:
                 self._calibSingleCam(ID, numbImg)
+        elif choice is 3:
+            self.start()
+        else:
+            print('Wrong typing')
+            self.calibCameras()
 
     def _calibSingleCam(self, ID, numbImg):
         '''
@@ -140,17 +198,18 @@ class TextUI():
 
         while notFinished: #Hasn't got decent calib result for cam yet
             try:
-                cam = self.c.getCamFromIndex(ID)
+                cam = self.c.getVEFromCamIndex(ID).getCam()
+                frame = cam.getSingleFrame()
                 frame = cam.getSingleFrame()
                 cv2.imshow('Calibrate cam', frame)
-            except cv2.error:
+            except cv2.error as e:
                 print('Cam capture failed. Trying again.')
-
+                print(str(e))
                 #raise FailedCalibrationException(msg='Couldn\'t acces camera.')
             key = cv2.waitKey(20)
             if key == 32:  # exit on Space
                 try: # Catch error with calib algo / bad picture
-                    cam.calibrateCam([frame])
+                    # cam.calibrateCam([frame])
                     frames.append(frame)
                     print('Captured, image nr {0} of {1}'.format(len(frames), numbImg))
                 except FailedCalibrationException:
@@ -163,7 +222,7 @@ class TextUI():
                         print('Calibration of cam ', ID, 'is finished.')
                         notFinished = False  # Calibration was successful, go to next cam.
                     except FailedCalibrationException:
-                        frames = []
+                        #frames = []
                         print('Calibration failed, trying again.')
                 #else:
                  #   notFinished = True

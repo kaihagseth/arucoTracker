@@ -1,5 +1,6 @@
 import numpy as np
 import exceptions as exc
+import cv2
 import random, time, logging
 
 '''
@@ -21,7 +22,7 @@ class SingleCameraPoseEstimator():
 
 
         if model_param is None:
-            self._model_param = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]], dtype=float)
+            self._model_param = np.matrix([[130, 0, 0], [0, 118, 0], [0, 0, 138], [1, 1, 1]], dtype=float) # in mm
         else:
             self._model_param = model_param
 
@@ -42,7 +43,7 @@ class SingleCameraPoseEstimator():
 
 
         # checking if all image points are present in input
-        print('Image_points: ', image_points)
+        #print('Image_points: ', image_points)
         for i in range(3):
             for j in range(2):
                 if image_points[i, j] == -1:
@@ -80,16 +81,12 @@ class SingleCameraPoseEstimator():
             Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
             Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
             Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
-            #Rzy = np.matmul(Rz, Ry)
-            #R = np.matmul(Rzy, Rx)
             R = Rz*Ry*Rx
 
             # Extrinsic camera matrix
             mExt = np.hstack((R, tM))
 
             # Points to project
-            #ph = np.matmul(K, mExt)
-            #ph = np.matmul(ph, pm)
             ph = K*mExt*pm
 
             # Divide Through 3rd elements
@@ -123,7 +120,6 @@ class SingleCameraPoseEstimator():
             dy = y0 - y
 
             # dX from pseudo inverse of jakobian
-            #dx = np.matmul(np.linalg.pinv(j), dy)
             dx = np.linalg.pinv(j)*dy
 
             # stop if no changes in parameter
@@ -146,12 +142,13 @@ class SingleCameraPoseEstimator():
         :param transformMatrix: Transformation matrix for system B represented in system A
         :return: Transformation matrix for system A represented in system B
         '''
-        Rab = transformMatrix[0:3, 0:3].T
-        Pbaorg = -Rab*transformMatrix[0:3, 3]
-        Tab = np.vstack((np.hstack((Rab, Pbaorg)), np.matrix([[0, 0, 0, 1]], dtype=float)))
+        #Rab = transformMatrix[0:3, 0:3].T
+        #Pbaorg = -Rab*transformMatrix[0:3, 3]
+        #ab = np.vstack((np.hstack((Rab, Pbaorg)), np.matrix([[0, 0, 0, 1]], dtype=float)))
+        Tab = np.linalg.inv(transformMatrix)
         return Tab
 
-    def _tansformMatrixToPose(self, transformMatrix):
+    def _transformMatrixToPose(self, transformMatrix):
         '''
         Calculate the 6DOF pose [ax; ay; az; tx; ty; tz] from 4x4 transformation matrix.
         cos(ay) can not be 0 (angle 90/180 deg) as this will cause divide by 0 exception
@@ -181,6 +178,43 @@ class SingleCameraPoseEstimator():
         _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points)
         self._ref = self._inverseTransform(transform_matrix)
 
+    def testSetReference(self, intr_cam_matrix, image_points):
+        '''
+        Test function for solvePNP
+        :param intr_cam_matrix:
+        :param image_points:
+        :return:
+        '''
+
+        retval, rvec, tvec = cv2.solvePnP(self._model_param, image_points, intr_cam_matrix)
+        ax, ay, az = rvec[0], rvec[1], rvec[2]
+        Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
+        Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
+        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
+        R = Rz * Ry * Rx
+        ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
+        ext = np.vstack([ext, [0, 0, 0, 1]])
+        self.ref = self._inverseTransform(ext)
+
+    def testGetPose(self, intr_cam_matrix, image_points, guess_pose=None):
+        '''
+        Test function for solvePnP
+        :param intr_cam_matrix:
+        :param image_points:
+        :param guess_pose:
+        :return:
+        '''
+        retval, rvec, tvec = cv2.solvePnP(self._model_param, image_points, intr_cam_matrix)
+        ax, ay, az = rvec[0], rvec[1], rvec[2]
+        Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
+        Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
+        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
+        R = Rz * Ry * Rx
+        ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
+        ext = np.vstack([ext, [0, 0, 0, 1]])
+        guess_pose = np.hstack([np.asmatrix(rvec, dtype=float), np.asmatrix(tvec, dtype=float)])
+        pose = self._transformMatrixToPose(self._ref*ext)
+        return pose, guess_pose
 
 
     def setModelParams(self, model_params):
@@ -195,7 +229,7 @@ class SingleCameraPoseEstimator():
         Get the pose of current model position relative to reference frame. NB! angles in radians
         :return: Pose relative to reference
         '''
-        print('Intrinsic cam matrix: ', intr_cam_matrix)
+        #print('Intrinsic cam matrix: ', intr_cam_matrix)
         if self._ref is not None:
             try:
                 if guess_pose is None:
@@ -204,8 +238,10 @@ class SingleCameraPoseEstimator():
                     _, transform_matrix = self._estimateModelPose(intr_cam_matrix, image_points, guess_pose)
                 # Getting model pose relative to reference
                 #pose = self._tansformMatrixToPose(transform_matrix * self._ref)
-                pose = self._tansformMatrixToPose(self._ref*transform_matrix)
-                return pose
+                #  TODO: better solution for returning the model to camera pose for next getPose() call
+                guess_pose = self._transformMatrixToPose(transform_matrix)
+                pose = self._transformMatrixToPose(self._ref*transform_matrix)
+                return pose, guess_pose
             except exc.MissingIntrinsicCameraParametersException as intErr:
                 print(intErr.msg)
             except exc.MissingImagePointException as imgErr:

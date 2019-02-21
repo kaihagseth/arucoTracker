@@ -111,7 +111,8 @@ class Camera():
         :param filename: Name of file to get params from.
         '''
         self._IC.loadSavedValues(filename)
-
+    def getSrc(self):
+        return self._src
     # Code based upon this guide: https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
     # import the necessary packages
 

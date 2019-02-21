@@ -14,6 +14,8 @@ class VisionEntity:
     stream.
     """
 
+    _guess_pose = None
+
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
@@ -42,11 +44,11 @@ class VisionEntity:
                 else:
                     frame = self._camera.getUndistortedFrame()
                 img_points = self._single_frame_point_detector.findBallPoints(frame)
-
                 img_points = img_points[:, 0:2]  # Don't include circle radius in matrix.
                 #singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self._camera.getIntrinsicParams(),
                  # img_points, None)
-                self._single_camera_pose_estimator.setReference(self.intrinsic_matrix, image_points=img_points)
+                #self._single_camera_pose_estimator.setReference(self.intrinsic_matrix, image_points=img_points)
+                self._single_camera_pose_estimator.testSetReference(self.intrinsic_matrix, image_points=img_points)
                 logging.info('Referenceframe is set.')
                 reference_not_set = False
             except exc.MissingIntrinsicCameraParametersException as intErr:
@@ -57,11 +59,7 @@ class VisionEntity:
                 print(imgErr.msg)
 
 
-        # Find HSV-values for the cam.
-        #self._single_frame_point_detector.calibrate(self._camera.getVidCapObject())
-        while run:
-            #singlecam_curr_pose = singlecam_curr_pose + random.random() - 0.5
-
+        while run: # Run application and get pose results for real
             try:
                 if use_non_threaded_distorted_cam:
                     frame = self._camera.getSingleFrame()
@@ -69,14 +67,30 @@ class VisionEntity:
                     frame = self._camera.getUndistortedFrame()
                 img_points = self._single_frame_point_detector.findBallPoints(frame)
                 img_points = img_points[:, 0:2] # Don't include circle radius in matrix.
-                singlecam_curr_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix,img_points,None)
+                #singlecam_curr_pose, self._guess_pose = self._single_camera_pose_estimator.getPose(self.intrinsic_matrix, img_points, guess_pose=self._guess_pose)
+                singlecam_curr_pose, self._guess_pose = self._single_camera_pose_estimator.testGetPose(self.intrinsic_matrix, img_points, guess_pose=self._guess_pose)
+                print("Guess_pose: ", self._guess_pose)
+                result = self._guess_pose
+                try:
+                    print("#####  Guess_pose:  ###### ")
+                    # print(result)
+                    print("Rotation x - roll: ", result[0] * 180.0 / np.pi, " grader")
+                    print("Rotation y - pitch: ", result[1] * 180.0 / np.pi, " grader")
+                    print("Rotation z - yaw: ", result[2] * 180.0 / np.pi, " grader")
+                    print("Position x: ", result[3], ' mm')
+                    print("Position y: ", result[4], ' mm')
+                    print("Position z: ", result[5], ' mm')
+                except TypeError:
+                    print("Could not print.")
+                msg = "Guess pose: ", str(self._guess_pose)
+                logging.debug(msg)
             except exc.MissingReferenceFrameException as refErr:
                 print('ERROR: ',refErr.msg)
-            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+           # print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5) # MUST BE HERE
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 
-            print('Singlecam_curr_pose: ', singlecam_curr_pose)
+            #print('Singlecam_curr_pose: ', singlecam_curr_pose)
             time.sleep(0.5)  # MUST BE HERE
             singlecam_curr_pose_que.put(singlecam_curr_pose)
 

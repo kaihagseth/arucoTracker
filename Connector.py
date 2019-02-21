@@ -22,7 +22,7 @@ class Connector():
         logging.info('Running startApplication()')
         doAbort = doAbortFx()
         while not doAbort:
-            print('Running dispResFx')
+            #print('Running dispResFx')
             res = self.PE.collectPoses()
             dispResFx(res)
             doAbort = doAbortFx()
@@ -57,8 +57,12 @@ class Connector():
         with open(path) as f:
             config = json.load(f)
         logging.config.dictConfig(config)
-
-
+    def getConnectedCams(self):
+        camlist = []
+        for VE in self.PE.VisionEntityList:
+            i = VE.getCam().getSrc()
+            camlist.append(i)
+        return camlist
 if __name__ == '__main__':
     # logging_setup()
     l = logging.getLogger()

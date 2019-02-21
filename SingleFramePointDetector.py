@@ -4,6 +4,7 @@ import cv2
 import imutils
 import numpy as np
 import time
+import warnings
 
 
 def callback(x):
@@ -15,12 +16,13 @@ class SingleFramePointDetector:
     Detect a number of points in a single frame.
     '''
     def __init__(self):
-        self.lower_hue = 0
-        self.lower_saturation = 0
-        self.lower_value = 0
-        self.upper_hue = 180
-        self.upper_saturation = 255
-        self.upper_value = 255
+        self._lower_hue = 0
+        self._lower_saturation = 0
+        self._lower_value = 0
+        self._upper_hue = 180
+        self._upper_saturation = 255
+        self._upper_value = 255
+        self._hsv_is_calibrated = False
         self.NUMBER_OF_POINTS = 3
 
     def setHSVValues(self, lower_values, upper_values):
@@ -29,19 +31,35 @@ class SingleFramePointDetector:
         :param upper_values:  List of upper bound hsv values.
         :return: None
         """
-        self.lower_hue = lower_values(0)
-        self.lower_saturation = lower_values(1)
-        self.lower_value = lower_values(2)
-        self.upper_hue = upper_values(0)
-        self.upper_saturation = upper_values(1)
-        self.upper_value = upper_values(2)
+        self._lower_hue = lower_values[0]
+        self._lower_saturation = lower_values[1]
+        self._lower_value = lower_values[2]
+        self._upper_hue = upper_values[0]
+        self._upper_saturation = upper_values[1]
+        self._upper_value = upper_values[2]
+        self._hsv_is_calibrated = True
 
     def saveHSVValues(self):
+        """
+        Save the current HSV values to a file.
+        :return: None
+        """
         filename = 'HSVValues'
+<<<<<<< HEAD
         np.savez(filename, lh=self.lower_hue, uh=self.upper_hue, ls=self.lower_saturation, us=self.upper_saturation, lv=self.lower_value, uv=self.upper_value)
+=======
+        lower_values, upper_values = self.getHSVValues()
+        np.savez(filename, lh=lower_values[0], uh=upper_values[0], ls=lower_values[1], us=upper_values[1],
+                 lv=lower_values[2], uv=upper_values[2],)
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 
     def loadHSVValues(self):
+        """
+        Load HSV values from the saved file
+        :return: None
+        """
         filename = 'HSVValues.NPZ'
+<<<<<<< HEAD
         print('Loading old parameters from file ', filename)
         npzfile = np.load(filename)
         self.lower_hue = npzfile['lh']
@@ -50,6 +68,16 @@ class SingleFramePointDetector:
         self.upper_hue = npzfile['uh']
         self.upper_saturation = npzfile['us']
         self.upper_value = npzfile['uv']
+=======
+        try:
+            print('Loading old parameters from file ', filename)
+            npzfile = np.load(filename)
+        except FileNotFoundError as e:
+            print("HSVValues.NPZ was not found. Create the file before loading it.")
+            return
+        self.setHSVValues((npzfile['lh'], npzfile['ls'], npzfile['lv']), (npzfile['uh'], npzfile['us'], npzfile['uv']))
+
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 
     def calibrate(self, camera):
         """
@@ -57,41 +85,24 @@ class SingleFramePointDetector:
         :return: None
         """
         cv2.namedWindow('image')
-        cv2.createTrackbar('lowH', 'image', self.lower_hue, 179, callback)
-        cv2.createTrackbar('highH', 'image', self.upper_hue, 179, callback)
-
-        cv2.createTrackbar('lowS', 'image', self.lower_saturation, 255, callback)
-        cv2.createTrackbar('highS', 'image', self.upper_saturation, 255, callback)
-
-        cv2.createTrackbar('lowV', 'image', self.lower_value, 255, callback)
-        cv2.createTrackbar('highV', 'image', self.upper_value, 255, callback)
+        cv2.createTrackbar('lower Hue', 'image', 0, 179, callback)
+        cv2.createTrackbar('upper Hue', 'image', 179, 179, callback)
+        cv2.createTrackbar('lower Saturation', 'image', 0, 255, callback)
+        cv2.createTrackbar('upper Saturation', 'image', 255, 255, callback)
+        cv2.createTrackbar('lower Value', 'image', 0, 255, callback)
+        cv2.createTrackbar('upper Value', 'image', 255, 255, callback)
 
         while (True):
             # grab the frame
-            #ret, frame = cap.read()
-            frame = camera.getSingleFrame()
-            frame = camera.getSingleFrame()
-            frame = camera.getSingleFrame()
+            cframe = camera.getSingleFrame()
             # get trackbar positions
-            self.lower_hue = cv2.getTrackbarPos('lowH', 'image')
-            self.upper_hue = cv2.getTrackbarPos('highH', 'image')
-            self.lower_saturation = cv2.getTrackbarPos('lowS', 'image')
-            self.upper_saturation = cv2.getTrackbarPos('highS', 'image')
-            self.lower_value = cv2.getTrackbarPos('lowV', 'image')
-            self.upper_value = cv2.getTrackbarPos('highV', 'image')
-
-            if self.lower_hue < self.upper_hue:
-                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                lower_hsv = np.array([self.lower_hue, self.lower_saturation, self.lower_value])
-                higher_hsv = np.array([self.upper_hue, self.upper_saturation, self.upper_value])
-            else:
-                hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-                lower_hsv = np.array([self.lower_hue - 90, self.lower_saturation, self.lower_value])
-                higher_hsv = np.array([self.upper_hue + 90, self.upper_saturation, self.upper_value])
-            mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
-
-            image = cv2.bitwise_and(frame, frame, mask=mask)
-
+            lower_values = (cv2.getTrackbarPos('lower Hue', 'image'), cv2.getTrackbarPos('lower Saturation', 'image'),
+                            cv2.getTrackbarPos('lower Value', 'image'))
+            upper_values = (cv2.getTrackbarPos('upper Hue', 'image'), cv2.getTrackbarPos('upper Saturation', 'image'),
+                            cv2.getTrackbarPos('upper Value', 'image'))
+            self.setHSVValues(lower_values, upper_values)
+            mask = self.getHSVmask(cframe)
+            image = cv2.bitwise_and(cframe, cframe, mask=mask)
             # show thresholded image
             cv2.imshow('image', image)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -107,41 +118,24 @@ class SingleFramePointDetector:
         4 largest circles in the frame. In cases where less circles are detected,
         remaining rows will returns with -1 """
         logging.info('Running findBallPoints()')
-        cv2.imshow('frame', frame)
-        cv2.waitKey(0)
-        #print('Frame: ', frame)
-        # blur image to remove hf-noise
+        showImg = True
+        # blur image to remove hf-noise)
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-        if self.lower_hue < self.upper_hue:
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            lower_bounds = np.array([self.lower_hue, self.lower_saturation, self.lower_value])
-            upper_bounds = np.array([self.upper_hue, self.upper_saturation, self.upper_value])
-        else:
-            hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-            lower_bounds = np.array([self.lower_hue - 90, self.lower_saturation, self.lower_value])
-            upper_bounds = np.array([self.upper_hue + 90, self.upper_saturation, self.upper_value])
-
-        # construct a mask for the color, then perform
-        # a series of dilations and erosions to remove any small
-        # blobs left in the mask
-        mask = cv2.inRange(hsv, lower_bounds, upper_bounds)
+        # construct a mask for the color, then perform morphology to remove noise
+        mask = self.getHSVmask(blurred)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
-        cv2.imwrite('mask.jpg',mask)
-        cv2.imshow('frame',mask)
-        cv2.waitKey(0)
-#        time.sleep(0, 1)
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = imutils.grab_contours(contours)
-
         # only proceed if at least one contour was found
         enclosed_circles = np.ones((self.NUMBER_OF_POINTS, 3)) * -1
         if len(contours) == 0:
             return enclosed_circles
         all_circles = []
         # Check each blob if it is circular enough.
+        # TODO: Beware of the cirularity check! Currently disabled
         for contour in contours:
             perimeter = cv2.arcLength(contour, True)
             area = cv2.contourArea(contour)
@@ -164,25 +158,61 @@ class SingleFramePointDetector:
         for (num, circle) in enumerate(largest_circles):
             ((x, y), radius) = cv2.minEnclosingCircle(circle)
             enclosed_circles[num, :] = x, y, radius
+        if showImg:
+            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+            for circle in enclosed_circles:
+                mask = cv2.putText(mask, ("[" + str(circle[0]) + ", " + str(circle[1]) + "]"),
+                        (int(circle[0]), int(circle[1])) ,cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0))
+                #print(circle)
+                mask = cv2.circle(mask, (int(circle[0]), int(circle[1])), int(circle[2]), (0, 255, 0), 1)
+            cv2.imshow('Frame', frame)
+            cv2.imshow('Mask', mask)
+            cv2.waitKey(0)
         return enclosed_circles
 
     def getHSVValues(self):
         """
-        :return: lower HSV values and upper HSV values used to threshold image segmentation
+        :return: lower HSV values and upper HSV values used to threshold image segmentation in a numpy array
         """
-        lower_values = (self.lower_hue, self.lower_saturation, self.lower_value)
-        upper_values = (self.upper_hue,  self.upper_saturation, self.upper_value)
+        if not self._hsv_is_calibrated:
+            warnings.warn("HSV-values has not been calibrated or imported! No mask is applied.", UserWarning)
+        lower_values = np.array((self._lower_hue, self._lower_saturation, self._lower_value))
+        upper_values = np.array((self._upper_hue,  self._upper_saturation, self._upper_value))
         return lower_values, upper_values
 
+<<<<<<< HEAD
+=======
+    def getHSVmask(self, frame):
+        """
+        Returns a binary mask from a BGR-image and this objects hsv-thresholds
+        :param frame: BGR-image
+        :return: Binary mask based on input and this objects hsv-values
+        """
+        ((lower_hue, lower_saturation, lower_value), (upper_hue, upper_saturation, upper_value)) = self.getHSVValues()
+        # This code block allows looping around the hue channel.
+        if lower_hue < upper_hue:
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            lower_hsv, higher_hsv = self.getHSVValues()
+            mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
+        else:
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            lower_hsv = np.array([lower_hue, lower_saturation, lower_value])
+            higher_hsv = np.array([180, upper_saturation, upper_value])
+            lower_hsv2 = np.array([0, lower_saturation, lower_value])
+            higher_hsv2 = np.array([upper_hue, upper_saturation, upper_value])
+            lower_mask = cv2.inRange(hsv, lower_hsv, higher_hsv)
+            higher_mask = cv2.inRange(hsv, lower_hsv2, higher_hsv2)
+            mask = cv2.add(lower_mask, higher_mask)
+        return mask
+>>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 
 if __name__ == '__main__':
+    from Camera import Camera
     sfpd = SingleFramePointDetector()
-    cap = cv2.VideoCapture(1)
-    #
-    sfpd.calibrate(cap)
-    ret, frame = cap.read()
-    points = sfpd.findBallPoints(frame)
-    print('Points: ', points)
-    cv2.imshow('Frame',frame)
-    cv2.waitKey(0)
-    cv2.imwrite('images\\boat_axiscross.jpg', frame)
+    cam = Camera()
+    sfpd.calibrate(cam)
+    stream = cam.getStream()
+    ret, frame = stream.read()
+    if ret:
+        cv2.imshow('frame', frame)
+        cv2.waitKey(5000)
