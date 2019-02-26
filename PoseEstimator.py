@@ -17,7 +17,7 @@ class PoseEstimator():
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
-            VE = VisionEntity(cam_index)
+            VE = VisionEntity(cam_index, 3, 3, 50, 5)
             self.VisionEntityList.append(VE)
 
     def findConnectedCamIndexes(self):
@@ -26,7 +26,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -54,7 +54,7 @@ class PoseEstimator():
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
-            th = threading.Thread(target=VE.findPoseResult_th, args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
+            th = threading.Thread(target=VE.getModelPose(), args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
             logging.debug('Passing thread creation.')
             self.threadInfoList.append([VE, th, singlecam_curr_pose_que])
             print()
@@ -80,6 +80,7 @@ class PoseEstimator():
                 return wantedCam
         # If not found, log error.
         logging.error('Camera not found on given index. ')
+
     def removeVEFromListByIndex(self, index):
         '''
         Remove the camera given by index from list of VEs.
@@ -88,7 +89,12 @@ class PoseEstimator():
         '''
         VE = self.getVEById(index)
         self.VisionEntityList.remove(VE)
+
     def getVEById(self, camID):
+        """
+        :param camID: OpenCV camera ID
+        :return: Vision entity to be returned.
+        """
         for VE in self.VisionEntityList:
             cam = VE.getCam()
             if cam._src is camID:

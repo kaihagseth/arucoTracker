@@ -15,7 +15,8 @@ class Camera():
     Class for Camera.
     # TODO: Refactoring
     """
-    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None, activateSavedValues = False):
+    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None,
+                 activateSavedValues = False):
         '''Create a cam '''
         print("Creating OTCam")
         #self._ID = cam_id # A distinct number for each camera.
@@ -49,7 +50,7 @@ class Camera():
 
     def getFrame(self):
         '''Get frame from vidthread.'''
-        self._vidstreamthread.read()
+        return self._vidCap.read()[1]
 
     def set_intrinsic_params(self, new_mtrx):
         '''Set intrinsic params for the camera'''
@@ -70,6 +71,12 @@ class Camera():
         :return: None
         """
         self._distortion_coefficients = distortion_coefficients
+
+    def getDistortionCoefficients(self):
+        """
+        :return: distortion coefficients
+        """
+        return self._distortion_coefficients
 
 
     def calibrateCamera(self):
