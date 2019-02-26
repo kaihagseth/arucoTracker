@@ -52,7 +52,7 @@ class SingleCameraPoseEstimator():
 
 
         # Points in image (y0)
-        y0 = image_points.T
+        y0 = image_points
 
         # points in model coordinate system
         pm = self._model_param
@@ -74,8 +74,7 @@ class SingleCameraPoseEstimator():
             # Model Pose relative to camera
             # TODO: fikse dårlig slicing under
             ax, ay, az, tx, ty, tz = x[0], x[1], x[2], x[3], x[4], x[5]
-            tM = np.vstack((tx, ty))
-            tM = np.vstack((tM, tz))
+            tM = np.vstack((tx, ty, tz))
 
             # Rotation Matrix R from model pose
             Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
@@ -190,7 +189,7 @@ class SingleCameraPoseEstimator():
         ax, ay, az = rvec[0], rvec[1], rvec[2]
         Rx = np.matrix([[1, 0, 0], [0, np.cos(ax), -np.sin(ax)], [0, np.sin(ax), np.cos(ax)]], dtype=float)
         Ry = np.matrix([[np.cos(ay), 0, np.sin(ay)], [0, 1, 0], [-np.sin(ay), 0, np.cos(ay)]], dtype=float)
-        Rz = np.matrix([[np.cos(az), -np.sin(az), 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
+        Rz = np.matrix([[np.cos(az), -np.sin(az)        , 0], [np.sin(az), np.cos(az), 0], [0, 0, 1]], dtype=float)
         R = Rz * Ry * Rx
         ext = np.hstack([R, np.asmatrix(tvec.T, dtype=float)])
         ext = np.vstack([ext, [0, 0, 0, 1]])
