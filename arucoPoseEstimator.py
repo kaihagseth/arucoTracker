@@ -66,7 +66,7 @@ class ArucoPoseEstimator:
         print(frame)
         corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
         if len(corners) > 0:
-            retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self.board, camera_matrix, dist_coeff)
+            retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self._board, camera_matrix, dist_coeff)
             if self._R0 is None and retval:
                 self._R0 = np.matrix(cv2.Rodrigues(rvec)[0])
             if self._T0 is None and retval:

@@ -70,15 +70,15 @@ class VisionEntity:
         Returns six axis pose of model
         :return: Tuple of size 2 with numpy arrays (x, y, z) (pitch, yaw, roll) (angles in degrees)
         """
-        return self._arucoPoseEstimator.getModelPose(self.getFrame, self.intrinsic_matrix,
-                                                     self.getDistortionCoefficients)
+        return self._arucoPoseEstimator.getModelPose(self.getFrame(), self.intrinsic_matrix,
+                                                     self.getDistortionCoefficients())
 
     def getFrame(self):
         """
         Returns a raw frame from the camera
         :return: distortion coefficients of camera
         """
-        return self._camera.getFrame()
+        return self._camera.getSingleFrame()
 
     def getDistortionCoefficients(self):
         """
