@@ -56,7 +56,7 @@ class PoseEstimator():
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
-            th = threading.Thread(target=VE.runThreadedLoop(), args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
+            th = threading.Thread(target=VE.runThreadedLoop, args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
             logging.debug('Passing thread creation.')
             self.threadInfoList.append([VE, th, singlecam_curr_pose_que])
             print()
@@ -68,12 +68,24 @@ class PoseEstimator():
         In future: Get all output from the poseestimation here.
         :return: threadInfopList
         '''
-        #print(self.threadInfoList)
-        #print('Pose: ', self.threadInfoList[0][2].get())
-        #singlecam_poses = self.threadInfoList[:,2]
-        #print(singlecam_poses)
-        time.sleep(0.1)
-        return self.threadInfoList[0][2].get()
+        time.sleep(0.02)
+        try:
+            #print(self.threadInfoList)
+            useSingleCam = True
+            if useSingleCam is True:
+                poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
+                return poseque.get()
+            else:
+                posequelist = self.threadInfoList[:][2]  # Get list of the threadsafe variables
+                if posequelist >= 1:
+                    poselist = []  # Create list for poses
+                    for poseque in posequelist:
+                        poselist.append(poseque.get())
+                    print("Poses collected.")
+                return poselist
+        except IndexError as e:
+            logging.error(str(e))
+            return []
     def getCamById(self, camID):
         for VE in self.VisionEntityList:
             cam = VE.getCam()

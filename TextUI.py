@@ -59,14 +59,17 @@ class TextUI():
 
     def dispContiniusResults(self, result):
         try:
-            print("#####  Display current result:  ######")
-            #print(result)
-            print("Rotation x - roll: ", result[0]*180.0/np.pi," grader")
-            print("Rotation y - pitch: ", result[1]*180.0/np.pi," grader")
-            print("Rotation z - yaw: ", result[2]*180.0/np.pi," grader")
-            print("Translation x: ", result[3], ' mm')
-            print("Translation y: ", result[4], ' mm')
-            print("Translation z: ", result[5], ' mm')
+            #print("#####  Display current result:  ######")
+            showResult = False
+            if showResult:
+                print("############## RESULT: ###############")
+                print(result)
+            #print("Rotation x - roll: ", result[0]*180.0/np.pi," grader")
+            #print("Rotation y - pitch: ", result[1]*180.0/np.pi," grader")
+            #print("Rotation z - yaw: ", result[2]*180.0/np.pi," grader")
+            #print("Translation x: ", result[3], ' mm')
+            #print("Translation y: ", result[4], ' mm')
+            #print("Translation z: ", result[5], ' mm')
         except TypeError:
             print("Could not print.")
     def abortFunction(self):
