@@ -22,10 +22,12 @@ class VisionEntity:
         self._camera.loadSavedCalibValues()
         self.setIntrinsicCamParams()
 
-    def runThreadedLoop(self):
+    def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que):
         while True:
             frame = self.getFrame()
-            self.getModelPose(frame)
+            singlecam_curr_pose = self.getModelPose(frame)
+            singlecam_curr_pose_que.put(singlecam_curr_pose)
+         #   logging.info("Running threaded loop")
 
     def calibrateCameraWithTool(self):
         """
