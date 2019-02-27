@@ -28,6 +28,9 @@ class Connector():
         while not doAbort:
             # Get the pose(s) from all cams.
             rawpose = self.PE.collectPoses()
+            tvec = rawpose[0:3]
+            evec = rawpose[3:6]
+            self.PE.writeCsvLog(tvec, evec)
             # Display the pose(s).
             dispResFx(rawpose)
             # Check if we want to abort, function from GUI.

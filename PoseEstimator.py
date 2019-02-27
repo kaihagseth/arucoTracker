@@ -28,7 +28,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -107,16 +107,24 @@ class PoseEstimator():
 
     def writeCsvLog(self, tvec, evec):
         """
+        Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
         :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
-        :return:
+        :return: None
         """
-        with open('position_log.csv', mode='w') as csv_file:
-            if not self._writer:
+        print(tvec)
+        print(evec)
+        if not self._writer:
+            with open('position_log.csv', 'w') as csv_file:
                 fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
-                self._writer = csv.writer(csv_file, dialect='excel')
+                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
                 self._writer.writerow(fieldnames)
-            self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
+                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
+        else:
+            with open('position_log.csv', 'a') as csv_file:
+                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n',  dialect='excel')
+
+                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
 
     def getVEById(self, camID):
         """

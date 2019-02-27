@@ -93,11 +93,17 @@ class ArucoPoseEstimator:
                                 (0, 0, 255), 2)
                     cv2.putText(image_copy, 'yaw = ' + str(euler_angles[2]), (0, 250), cv2.FONT_HERSHEY_SIMPLEX, .6,
                                 (0, 0, 255), 2)
+
                 if showFrame:
                     cv2.imshow('out', image_copy)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         cv2.destroyAllWindows()
                 return relative_translation, euler_angles
+        if showFrame:
+            cv2.imshow('out', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+
 
     def writeBoardToPDF(self, width=160):
         """
