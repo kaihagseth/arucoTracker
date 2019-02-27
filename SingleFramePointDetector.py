@@ -45,13 +45,10 @@ class SingleFramePointDetector:
         :return: None
         """
         filename = 'HSVValues'
-<<<<<<< HEAD
         np.savez(filename, lh=self.lower_hue, uh=self.upper_hue, ls=self.lower_saturation, us=self.upper_saturation, lv=self.lower_value, uv=self.upper_value)
-=======
         lower_values, upper_values = self.getHSVValues()
         np.savez(filename, lh=lower_values[0], uh=upper_values[0], ls=lower_values[1], us=upper_values[1],
                  lv=lower_values[2], uv=upper_values[2],)
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 
     def loadHSVValues(self):
         """
@@ -59,7 +56,6 @@ class SingleFramePointDetector:
         :return: None
         """
         filename = 'HSVValues.NPZ'
-<<<<<<< HEAD
         print('Loading old parameters from file ', filename)
         npzfile = np.load(filename)
         self.lower_hue = npzfile['lh']
@@ -68,7 +64,6 @@ class SingleFramePointDetector:
         self.upper_hue = npzfile['uh']
         self.upper_saturation = npzfile['us']
         self.upper_value = npzfile['uv']
-=======
         try:
             print('Loading old parameters from file ', filename)
             npzfile = np.load(filename)
@@ -76,8 +71,6 @@ class SingleFramePointDetector:
             print("HSVValues.NPZ was not found. Create the file before loading it.")
             return
         self.setHSVValues((npzfile['lh'], npzfile['ls'], npzfile['lv']), (npzfile['uh'], npzfile['us'], npzfile['uv']))
-
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 
     def calibrate(self, camera):
         """
@@ -180,8 +173,6 @@ class SingleFramePointDetector:
         upper_values = np.array((self._upper_hue,  self._upper_saturation, self._upper_value))
         return lower_values, upper_values
 
-<<<<<<< HEAD
-=======
     def getHSVmask(self, frame):
         """
         Returns a binary mask from a BGR-image and this objects hsv-thresholds
@@ -204,7 +195,6 @@ class SingleFramePointDetector:
             higher_mask = cv2.inRange(hsv, lower_hsv2, higher_hsv2)
             mask = cv2.add(lower_mask, higher_mask)
         return mask
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
 
 if __name__ == '__main__':
     from Camera import Camera

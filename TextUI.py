@@ -2,8 +2,8 @@ import cv2
 from exceptions import FailedCalibrationException
 import time
 import logging
-import numpy as np
 
+import numpy as np
 class TextUI():
     '''
     Recieve and snd text commands from user.
@@ -63,8 +63,6 @@ class TextUI():
 
     def dispContiniusResults(self, result):
         print(result)
-
-
         try:
             print("#####  Display current result:  ######")
             #print(result)
