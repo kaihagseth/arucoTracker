@@ -15,6 +15,7 @@ class Connector():
         #self.cg = CameraGroup()
         self.logging_setup()
         self.PE = PoseEstimator()
+
     def startApplication(self, dispResFx, doAbortFx):
         self.PE.runPoseEstimator() # Create all threads and start them
         logging.info('Running startApplication()')
@@ -41,6 +42,7 @@ class Connector():
 
     def getVEFromCamIndex(self, index):
         return self.PE.getVEById(index)
+
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'
         #l = logging.getLogger()
@@ -48,6 +50,7 @@ class Connector():
         with open(path) as f:
             config = json.load(f)
         logging.config.dictConfig(config)
+
     def getConnectedCams(self):
         camlist = []
         for VE in self.PE.VisionEntityList:

@@ -86,7 +86,7 @@ class VisionEntity:
         Returns a raw frame from the camera
         :return: distortion coefficients of camera
         """
-        return self._camera.getFrame()
+        return self._camera.getSingleFrame()
 
     def getDistortionCoefficients(self):
         """
