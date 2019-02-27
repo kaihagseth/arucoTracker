@@ -1,6 +1,7 @@
 from tkinter import *
 import os
 from GUI import RunMain
+import re
 
 
 def deleteWindows():
@@ -36,6 +37,7 @@ def loginSuccessful():
     :return: None
     '''
     global screen3
+    global windows
     screen3 = Toplevel(main_window)
     screen3.title('Success')
     screen3.geometry('150x100')
@@ -52,7 +54,7 @@ def wrongPassword():
     screen4 = Toplevel(main_window)
     screen4.title('Success')
     screen4.geometry('150x100')
-    Label(screen4, text='User Not Found or Wrong Password').pack()
+    Label(screen4, text='Wrong Username or Password').pack()
     Button(screen4, text='OK', command=deleteWrongPassWindow).pack()
 
 
@@ -64,8 +66,8 @@ def userNotFound():
     global screen5
     screen5 = Toplevel(main_window)
     screen5.title('Success')
-    screen5.geometry('150x100')
-    Label(screen5, text='User Not Found or Wrong Password').pack()
+    screen5.geometry('200x100')
+    Label(screen5, text='Wrong Username or Password').pack()
     Button(screen5, text='OK', command=deleteWrongUserWindow).pack()
 
 
@@ -75,19 +77,23 @@ def registerUser():
     :return:
     '''
     print('working')
-
+    regex = r"\"?([-a-zA-Z0-9.`?{}]+@\w+\.\w+)\"?"
     username_info = username.get()
     password_info = password.get()
 
-    file = open(username_info, 'w')
-    file.write(username_info + '\n')
-    file.write(password_info)
-    file.close()
+    if regex is True:
+        file = open(username_info, 'w')
+        file.write(username_info + '\n')
+        file.write(password_info)
+        file.close()
+        username_entry.delete(0, END)
+        password_entry.delete(0, END)
+        Label(register_window, text='Registration Success', fg='green', font=('calibri', 11)).pack()
 
-    username_entry.delete(0, END)
-    password_entry.delete(0, END)
-
-    Label(screen1, text='Registration Success', fg='green', font=('calibri', 11)).pack()
+    elif regex is not True:
+        username_entry.delete(0, END)
+        password_entry.delete(0, END)
+        Label(register_window, text='Registration Failed', fg='green', font=('calibri', 11)).pack()
 
 
 def loginVerify():
@@ -117,12 +123,14 @@ def loginVerify():
 def register():
     '''
     Create a new window where the user can register.
+    Check if the username and password is valid \\ to be added later on
     :return: None
     '''
-    global screen1
-    screen1 = Toplevel(main_window)
-    screen1.title('Register')
-    screen1.geometry('300x250')
+    global register_window
+    regex = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$'
+    register_window = Toplevel(main_window)
+    register_window.title('Register')
+    register_window.geometry('300x250')
 
     global username
     global password
@@ -131,17 +139,17 @@ def register():
     username = StringVar()
     password = StringVar()
 
-    Label(screen1, text='Please enter details below').pack()
-    Label(screen1, text='').pack()
-    Label(screen1, text='Username * ').pack()
+    Label(register_window, text='Please enter details below').pack()
+    Label(register_window, text='').pack()
+    Label(register_window, text='Username: ').pack()
 
-    username_entry = Entry(screen1, textvariable=username)
+    username_entry = Entry(register_window, textvariable=username)
     username_entry.pack()
-    Label(screen1, text='Password * ').pack()
-    password_entry = Entry(screen1, show='*', textvariable=password)
+    Label(register_window, text='Password: ').pack()
+    password_entry = Entry(register_window, show='*', textvariable=password)
     password_entry.pack()
-    Label(screen1, text='').pack()
-    Button(screen1, text='Register', width=10, height=1, command=registerUser).pack()
+    Label(register_window, text='').pack()
+    Button(register_window, text='Register', width=10, height=1, command=registerUser).pack()
 
 
 def login():

@@ -1,12 +1,13 @@
 from tkinter import *
+import tkinter as tk
 from tkinter import ttk
-from tkinter.ttk import Progressbar
 from tkinter import Menu
 from tkinter import messagebox
-import cv2
 from PIL import ImageTk, Image
 from Camera import *
 from CameraGroup import *
+import matplotlib as mpl
+
 
 
 def RunMain():
@@ -128,6 +129,7 @@ def RunMain():
 
         global show_video
         if show_video is True:
+            #counter += 1
             currCap = video_streams[int(var.get())]
             _, frame = currCap.read()
             # Check if the webcam is opened correctly
@@ -166,14 +168,36 @@ def RunMain():
         cap = video_stream
 
 
+
+    def showGraph(canvas, figure, loc=(2,0)):
+        figure_canvas_agg = FigureCanvasAgg(figure)
+        figure_canvas_agg.draw()
+        figure_x, figure_y, figure_w, figure_h = figure.bbox.bounds
+        figure_w, figure_h = int(figure_w), int(figure_h)
+        photo = tk.PhotoImage(master=canvas, width=figure_w, height=figure_h)
+
+        # Position: convert from top-left anchor to center anchor
+        canvas.create_image(loc[0] + figure_w / 2, loc[1] + figure_h / 2, image=photo)
+
+        # Unfortunately, there's no accessor for the pointer to the native renderer
+        tkagg.blit(photo, figure_canvas_agg.get_renderer()._renderer, colormode=2)
+
+        # Return a handle which contains a reference to the photo object
+        # which must be kept live or else the picture disappears
+        return photo
+
+
     # Start and stop button setup
     start_btn = Button(page_1, text='Start', command=startClicked)
     stop_btn = Button(page_1, text='Stop', command=stopClicked)
     calibrate_btn = Button(page_2, text='Calibrate', command=None)
 
-    check_var = IntVar()
-    check_list = Checkbutton(page_2, text='Test', variable=check_var)
-    check_list.grid(column=0, row=2)
+    #check_var = IntVar()
+    #check_list = Checkbutton(page_2, text='Test', variable=check_var)
+    #drop_down = OptionMenu(page_2, text='test', variable=check_list, value=1)
+    #Label(page_2, text='Choose').grid(row=1, column=1)
+    #drop_down.grid(row=2, column=1)
+    #check_list.grid(column=0, row=2)
     start_btn.grid(column=0, row=1)
     calibrate_btn.grid(column=3, row=3)
 
