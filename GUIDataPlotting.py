@@ -6,6 +6,7 @@ from mpl_toolkits.mplot3d import axes3d
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 import numpy as np
+import Connector
 
 
 def vp_start_gui():
@@ -59,7 +60,6 @@ def plotGraph(frame):
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 
-
 class dataReading():
     def __init__(self, top=None):
         '''This class configures and populates the data window.
@@ -74,8 +74,8 @@ class dataReading():
         top.title("Data from Camera")
         top.configure(background=_fgcolor)
 
-        var = StringVar()
-        var.set('Value')
+        pose = Connector.getPose()
+
 
         self.frame_1 = tk.Frame(top)
         self.frame_1.place(relx=0.017, rely=0.8, relheight=0.189, relwidth=0.942)
@@ -91,7 +91,7 @@ class dataReading():
         self.entry_1.configure(font='TkTextFont')
         self.entry_1.configure(foreground='black')
         self.entry_1.configure(width=54)
-        self.entry_1.configure(textvariable=var)
+        self.entry_1.configure(textvariable=pose[0])
 
         self.entry_2 = tk.Entry(self.frame_1)
         self.entry_2.place(relx=0.177, rely=0.588, relheight=0.282, relwidth=0.096)
@@ -99,7 +99,7 @@ class dataReading():
         self.entry_2.configure(font='TkTextFont')
         self.entry_2.configure(foreground='black')
         self.entry_2.configure(width=54)
-        self.entry_2.configure(textvariable=var)
+        self.entry_2.configure(textvariable=pose[0])
 
         self.Text2_1 = tk.Text(self.frame_1)
         self.Text2_1.place(relx=0.336, rely=0.588, relheight=0.282

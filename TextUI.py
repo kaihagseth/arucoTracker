@@ -2,12 +2,8 @@ import cv2
 from exceptions import FailedCalibrationException
 import time
 import logging
-<<<<<<< HEAD
-
-
-=======
 import numpy as np
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
+
 class TextUI():
     '''
     Recieve and snd text commands from user.
@@ -66,10 +62,9 @@ class TextUI():
             return False
 
     def dispContiniusResults(self, result):
-<<<<<<< HEAD
         print(result)
 
-=======
+
         try:
             print("#####  Display current result:  ######")
             #print(result)
@@ -81,7 +76,7 @@ class TextUI():
             print("Translation z: ", result[5], ' mm')
         except TypeError:
             print("Could not print.")
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
+
     def abortFunction(self):
         pass
 
@@ -106,29 +101,6 @@ class TextUI():
                 self.c.initConnectedCams(includeDefaultCam=True)
             elif choice is 2:
                 self.c.initConnectedCams(includeDefaultCam=False)
-
-<<<<<<< HEAD
-        elif choice is 3:
-            print('Cameras is on index: ', self.c.getConnectedCams())
-            print('Number of cameras: ', len(self.c.getConnectedCams()))
-        elif choice is 5:
-            self.calibCameras()
-        elif choice is 6:
-            self.testCameras()
-        elif choice is 7:
-            self.videoTest(0)
-        elif choice is 8:
-            print('Printing parameters')
-            self.c.getCamFromIndex(0)._IC.printCurrParams()
-        elif choice is 9:
-            self.doHSVCalib()
-        elif choice is 10:
-            self.loadHSVValues()
-        else: #Invalid typing
-            print('Bad typing. Try again.')
-            self.configCameras()
-
-=======
             elif choice is 3:
                 print('Cameras is on index: ', self.c.getConnectedCams())
                 print('Number of cameras: ', len(self.c.getConnectedCams()))
@@ -153,7 +125,7 @@ class TextUI():
         except Exception:
             logging.error("Error occurred, try again.")
             self.start()
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
+
     def calibCameras(self):
         '''
         Menu for selecting what cameras to calibrate.

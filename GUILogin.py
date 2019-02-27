@@ -89,7 +89,7 @@ def registerUser():
         password_entry.delete(0, END)
         Label(register_window, text='Registration Success', fg='green', font=('calibri', 11)).pack()
 
-    elif regex is not True:
+    elif not regex.match(username_info):
         username_entry.delete(0, END)
         password_entry.delete(0, END)
         Label(register_window, text='Registration Failed', fg='red', font=('calibri', 11)).pack()
