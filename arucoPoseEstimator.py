@@ -63,10 +63,11 @@ class ArucoPoseEstimator:
         :param showFrame: set True to show analyzed frame in window.
         :return: Relative translation of model and euler angles of model.
         """
-        print(frame)
+        #dist_coeff = np.matrix(dist_coeff)
+        #print(frame)
         corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
         if len(corners) > 0:
-            retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self.board, camera_matrix, dist_coeff)
+            retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self._board, camera_matrix, dist_coeff)
             if self._R0 is None and retval:
                 self._R0 = np.matrix(cv2.Rodrigues(rvec)[0])
             if self._T0 is None and retval:
@@ -85,11 +86,11 @@ class ArucoPoseEstimator:
                                 .6, (0, 0, 255), 2)
                     cv2.putText(image_copy, 'z = ' + str(relative_translation[2]), (0, 160), cv2.FONT_HERSHEY_SIMPLEX,
                                 .6, (0, 0, 255), 2)
-                    cv2.putText(image_copy, 'pitch = ' + str(euler_angles[0]), (0, 190), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                    cv2.putText(image_copy, 'roll = ' + str(euler_angles[0]), (0, 190), cv2.FONT_HERSHEY_SIMPLEX, .6,
                                 (0, 0, 255), 2)
-                    cv2.putText(image_copy, 'yaw = ' + str(euler_angles[1]), (0, 220), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                    cv2.putText(image_copy, 'pitch = ' + str(euler_angles[1]), (0, 220), cv2.FONT_HERSHEY_SIMPLEX, .6,
                                 (0, 0, 255), 2)
-                    cv2.putText(image_copy, 'roll = ' + str(euler_angles[2]), (0, 250), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                    cv2.putText(image_copy, 'yaw = ' + str(euler_angles[2]), (0, 250), cv2.FONT_HERSHEY_SIMPLEX, .6,
                                 (0, 0, 255), 2)
                     cv2.imshow('out', image_copy)
                     if cv2.waitKey(1) & 0xFF == ord('q'):

@@ -26,7 +26,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -54,7 +54,7 @@ class PoseEstimator():
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
-            th = threading.Thread(target=VE.getModelPose(), args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
+            th = threading.Thread(target=VE.runThreadedLoop(), args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
             logging.debug('Passing thread creation.')
             self.threadInfoList.append([VE, th, singlecam_curr_pose_que])
             print()

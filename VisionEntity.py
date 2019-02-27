@@ -19,6 +19,13 @@ class VisionEntity:
         self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
         self._arucoPoseEstimator = ArucoPoseEstimator(board_length, board_width, marker_size, marker_gap)
         self._intrinsic_calibrator = IntrinsicCalibrator()
+        self._camera.loadSavedCalibValues()
+        self.setIntrinsicCamParams()
+
+    def runThreadedLoop(self):
+        while True:
+            frame = self.getFrame()
+            self.getModelPose(frame)
 
     def calibrateCameraWithTool(self):
         """
@@ -65,13 +72,14 @@ class VisionEntity:
         """
         return self._camera.getUndistortedFrame()
 
-    def getModelPose(self):
+    def getModelPose(self, frame):
         """
         Returns six axis pose of model
         :return: Tuple of size 2 with numpy arrays (x, y, z) (pitch, yaw, roll) (angles in degrees)
         """
-        return self._arucoPoseEstimator.getModelPose(self.getFrame, self.intrinsic_matrix,
-                                                     self.getDistortionCoefficients)
+        showFrame = True
+        return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
+                                                     self.getDistortionCoefficients(), showFrame=showFrame)
 
     def getFrame(self):
         """
