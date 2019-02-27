@@ -76,12 +76,11 @@ def registerUser():
     Register a user so that you can login
     :return:
     '''
-    print('working')
-    regex = r"\"?([-a-zA-Z0-9.`?{}]+@\w+\.\w+)\"?"
+    regex = re.compile(r"\"?([-a-zA-Z0-9.`?{}]+@\w+\.\w+)\"?")
     username_info = username.get()
     password_info = password.get()
 
-    if regex is True:
+    if regex.match(username_info):
         file = open(username_info, 'w')
         file.write(username_info + '\n')
         file.write(password_info)
@@ -93,7 +92,7 @@ def registerUser():
     elif regex is not True:
         username_entry.delete(0, END)
         password_entry.delete(0, END)
-        Label(register_window, text='Registration Failed', fg='green', font=('calibri', 11)).pack()
+        Label(register_window, text='Registration Failed', fg='red', font=('calibri', 11)).pack()
 
 
 def loginVerify():
