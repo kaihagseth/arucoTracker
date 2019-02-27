@@ -99,16 +99,25 @@ class ArucoPoseEstimator:
                         cv2.destroyAllWindows()
                 return relative_translation, euler_angles
 
-    def writeBoardToPDF(self, width=210, length=297):
+    def writeBoardToPDF(self, width=160):
         """
         Creates a printable pdf-file of this aruco board.
         :param width: Max width of this image
         :param length: Max length of this image
         :return: None
         """
-        board_image = self._board.Draw(1000, 1000)
+        grid_size = self._board.getGridSize()
+        marker_length = self._board.getMarkerLength()
+        marker_seperation = self._board.getMarkerSeparation()
+
+        width = (grid_size[0] * marker_length) + (marker_seperation * (grid_size[0] - 1))
+        height = (grid_size[1] * marker_length) + (marker_seperation * (grid_size[1] - 1))
+
+        board_image = self._board.draw((int(width*12), int(height*12))) # About 300 dpi
         cv2.imwrite("arucoBoard.png", board_image)
+
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
-        pdf.image("arucoBoard.png", w=width, h=length)
+        pdf.image("arucoBoard.png", w=width, h=height)
+        pdf.image("images/arrow.png", x=20, y=height+20, w=30)
         pdf.output("arucoBoard.pdf")
