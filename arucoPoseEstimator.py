@@ -20,7 +20,7 @@ class ArucoPoseEstimator:
         """
         self._board = cv2.aruco.GridBoard_create(board_length, board_width, marker_size, marker_gap, self.dictionary,
                                                  self.nextMarkerId)
-        self.nextMarkerId += board_length*board_width
+        self.nextMarkerId += board_length*board_width # Next ID at 9 if 3x3
         self._R0 = None
         self._T0 = None
 
