@@ -106,7 +106,7 @@ class ArucoPoseEstimator:
         """
         board_image = self._board.Draw(1000, 1000)
         cv2.imwrite("arucoBoard.png", board_image)
-        pdf = FPDF(orientation='P', unit='mm', format='A4')
+        pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
         pdf.image("arucoBoard.png", w=width, h=length)
         pdf.output("arucoBoard.pdf")
