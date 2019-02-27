@@ -1,6 +1,7 @@
 from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import threading, queue, logging
 import time
+import csv
 from VisionEntity import VisionEntity
 
 class PoseEstimator():
@@ -13,6 +14,7 @@ class PoseEstimator():
     def __init__(self):
         self.VisionEntityList = [] # List for holding VEs
         self.threadInfoList = [] # List for reading results from VEs.
+        self._writer = None
 
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()
@@ -89,6 +91,19 @@ class PoseEstimator():
         '''
         VE = self.getVEById(index)
         self.VisionEntityList.remove(VE)
+
+    def writeCsvLog(self, tvec, evec):
+        """
+        :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
+        :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
+        :return:
+        """
+        with open('position_log.csv', mode='w') as csv_file:
+            if not self._writer:
+                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+                self._writer = csv.writer(csv_file, dialect='excel')
+                self._writer.writerow(fieldnames)
+            self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
 
     def getVEById(self, camID):
         """
