@@ -66,6 +66,8 @@ class ArucoPoseEstimator:
         #dist_coeff = np.matrix(dist_coeff)
         #print(frame)
         corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
+        if showFrame:
+            image_copy = frame
         if len(corners) > 0:
             retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self._board, camera_matrix, dist_coeff)
             if self._R0 is None and retval:
@@ -77,7 +79,6 @@ class ArucoPoseEstimator:
                 relative_rotation = self._R0.T * np.matrix(cv2.Rodrigues(rvec)[0])
                 euler_angles = np.array((180 * self.rotationMatrixToEulerAngles(relative_rotation)) / np.pi, dtype=int)
                 if showFrame:
-                    image_copy = frame
                     image_copy = cv2.aruco.drawDetectedMarkers(image_copy, corners, ids)
                     image_copy = cv2.aruco.drawAxis(image_copy, camera_matrix, dist_coeff, rvec, tvec, 200)
                     cv2.putText(image_copy, 'x = ' + str(relative_translation[0]), (0, 100), cv2.FONT_HERSHEY_SIMPLEX,
@@ -92,6 +93,7 @@ class ArucoPoseEstimator:
                                 (0, 0, 255), 2)
                     cv2.putText(image_copy, 'yaw = ' + str(euler_angles[2]), (0, 250), cv2.FONT_HERSHEY_SIMPLEX, .6,
                                 (0, 0, 255), 2)
+                if showFrame:
                     cv2.imshow('out', image_copy)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         cv2.destroyAllWindows()
