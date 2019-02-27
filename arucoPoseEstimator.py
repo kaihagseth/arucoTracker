@@ -20,7 +20,7 @@ class ArucoPoseEstimator:
         """
         self._board = cv2.aruco.GridBoard_create(board_length, board_width, marker_size, marker_gap, self.dictionary,
                                                  self.nextMarkerId)
-        self.nextMarkerId += board_length*board_width
+        self.nextMarkerId += board_length*board_width # Next ID at 9 if 3x3
         self._R0 = None
         self._T0 = None
 
@@ -106,7 +106,7 @@ class ArucoPoseEstimator:
         """
         board_image = self._board.Draw(1000, 1000)
         cv2.imwrite("arucoBoard.png", board_image)
-        pdf = FPDF(orientation='P', unit='mm', format='A4')
+        pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
         pdf.image("arucoBoard.png", w=width, h=length)
         pdf.output("arucoBoard.pdf")
