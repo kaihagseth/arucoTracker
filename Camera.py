@@ -15,7 +15,8 @@ class Camera():
     Class for Camera.
     # TODO: Refactoring
     """
-    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None, activateSavedValues = False):
+    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, intrinsic_camera_matrix=None,
+                 activateSavedValues = False):
         '''Create a cam '''
         print("Creating OTCam")
         #self._ID = cam_id # A distinct number for each camera.
@@ -47,10 +48,6 @@ class Camera():
         """
         return self._vidCap
 
-    def getFrame(self):
-        '''Get frame from vidthread.'''
-        self._vidstreamthread.read()
-
     def set_intrinsic_params(self, new_mtrx):
         '''Set intrinsic params for the camera'''
         self._intri_cam_mtrx = new_mtrx
@@ -59,19 +56,27 @@ class Camera():
     def getIntrinsicParams(self):
         return self._intrinsic_camera_matrix
 
-    def set_intrinsic_params(self, intrinsic_params):
+    def setIntrinsicParams(self, intrinsic_params):
         """
         :param intrinsic_params: New intrinsic matrix
         :return: None
         """
         self._intrinsic_camera_matrix = intrinsic_params
 
-    def set_distortion_coefficients(self, distortion_coefficients):
+    def setDistortionCoefficients(self, distortion_coefficients):
         """
         :param distortion_coefficients: new distortion coefficients
         :return: None
         """
         self._distortion_coefficients = distortion_coefficients
+
+
+    def getDistortionCoefficients(self):
+        """
+        :return: distortion coefficients
+        """
+        return self._distortion_coefficients
+
 
     def calibrateCamera(self):
         '''
@@ -79,6 +84,7 @@ class Camera():
         Take a image, find the
         :return:
         '''
+
     def getSingleFrame(self):
         '''Get non-threaded camera frame.'''
         grabbed, frame = self._vidCap.read()
@@ -111,6 +117,7 @@ class Camera():
         :param filename: Name of file to get params from.
         '''
         self._IC.loadSavedValues(filename)
+
     def getSrc(self):
         return self._src
     # Code based upon this guide: https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/

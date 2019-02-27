@@ -1,8 +1,7 @@
 import time
 from Camera import Camera
-from SingleFramePointDetector import SingleFramePointDetector
 from IntrinsicCalibrator import IntrinsicCalibrator
-from SingleCameraPoseEstimator import SingleCameraPoseEstimator
+from arucoPoseEstimator import ArucoPoseEstimator
 import numpy as np
 import exceptions as exc
 import logging
@@ -16,12 +15,14 @@ class VisionEntity:
 
     _guess_pose = None
 
-    def __init__(self, cv2_index):
+    def __init__(self, cv2_index, board_length, board_width, marker_size, marker_gap):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
-        self._single_frame_point_detector = SingleFramePointDetector()
+        self._arucoPoseEstimator = ArucoPoseEstimator(board_length, board_width, marker_size, marker_gap)
         self._intrinsic_calibrator = IntrinsicCalibrator()
-        self._single_camera_pose_estimator = SingleCameraPoseEstimator()
+        self._camera.loadSavedCalibValues()
+        self.setIntrinsicCamParams()
+
 
     def findPoseResult_th(self, singlecam_curr_pose, singlecam_curr_pose_que):
         '''
@@ -101,6 +102,12 @@ class VisionEntity:
         """
         return self._single_frame_point_detector.findBallPoints(self._camera.getSingleFrame())
 
+    def runThreadedLoop(self):
+        while True:
+            frame = self.getFrame()
+            self.getModelPose(frame)
+
+
     def calibrateCameraWithTool(self):
         """
         # TODO: This function is not yet created in camera Class.
@@ -122,45 +129,15 @@ class VisionEntity:
         Calibrates intrinsic matrix and distortion coefficients for camera.
         :return: None
         """
-        self._camera.set_intrinsic_params(intrinsic_parameters)
+        self._camera.setIntrinsicParams(intrinsic_parameters)
 
     def setCameraDistortionCoefficents(self, distortion_coefficients):
         """
         Calibrates intrinsic matrix and distortion coefficients for camera.
         :return: None
         """
-        self._camera.set_distortion_coefficients(distortion_coefficients)
+        self._camera.setDistortionCoefficients(distortion_coefficients)
 
-    def calibratePointDetector(self):
-        """
-        Opens color calibration tool for image segmentation.
-        :return: None
-        """
-        self._single_frame_point_detector.calibrate(self._camera)
-
-    def getObjectPose(self,intr_cam_mtrx,image_points):
-        """
-        Returns Object pose
-        :return: A list of the six axis of the model.
-        """
-        # get points from point detector, then plug points into pose estimator to get six axis
-        return self._single_camera_pose_estimator.getPose(intr_cam_matrix=intr_cam_mtrx,image_points=image_points)
-
-    def setHSV(self, lower_values, upper_values):
-        """
-        Sets the HSV values for the image segmenter in the point detector class
-        :param lower_values: 3 long tuple with lower threshold for Hue, Saturation and Value
-        :param upper_values: 3 long tuple with upper threshold for Hue, Saturation and Value
-        :return: None
-        """
-        self._single_frame_point_detector.setHSVValues(lower_values, upper_values)
-
-    def getHSV(self):
-        """
-        returns HSV-values from the image segmenter
-        :return: lower_values, upper_values with thresholds for Hue Saturation and Value
-        """
-        return self._single_frame_point_detector.getHSVValues()
 
     def getCameraStream(self):
         """
@@ -176,12 +153,28 @@ class VisionEntity:
         """
         return self._camera.getUndistortedFrame()
 
-    def getModelPose(self):
+    def getModelPose(self, frame):
         """
         Returns six axis pose of model
-        :return: Tuple of size 6 with (x, y, z, pitch, yaw, roll) (angles in radians)
+        :return: Tuple of size 2 with numpy arrays (x, y, z) (pitch, yaw, roll) (angles in degrees)
         """
-        return self._single_camera_pose_estimator.getPose(self.intrinsic_matrix, self.getFramePoints())
+        showFrame = True
+        return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
+                                                     self.getDistortionCoefficients(), showFrame=showFrame)
+
+    def getFrame(self):
+        """
+        Returns a raw frame from the camera
+        :return: distortion coefficients of camera
+        """
+        return self._camera.getSingleFrame()
+
+    def getDistortionCoefficients(self):
+        """
+        Returns distortion coefficients of camera
+        :return: distortion coefficients of camera
+        """
+        return self._camera.getDistortionCoefficients()
 
     def setModelReferenceFrame(self):
         """
@@ -201,9 +194,3 @@ class VisionEntity:
 
     def getCam(self):
         return self._camera
-
-    def saveHSVValues(self):
-        self._single_frame_point_detector.saveHSVValues()
-
-    def loadHSVValues(self):
-        self._single_frame_point_detector.loadHSVValues()

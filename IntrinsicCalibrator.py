@@ -43,7 +43,7 @@ class IntrinsicCalibrator:
         self._curr_dist_coeff = npzfile['dist']
         self._curr_newcamera_mtx = npzfile['newcameramtx']
         self._curr_roi = npzfile['roi']
-        self._parr_cam.set_intrinsic_params(npzfile['mtx'])
+        self._parr_cam.setIntrinsicParams(npzfile['mtx'])
 
     def calibCam(self, frames):
         '''
@@ -134,19 +134,18 @@ class IntrinsicCalibrator:
             self._curr_newcamera_mtx = newcameramtx
             self._curr_roi = roi
 
-<<<<<<< HEAD
+
         except IndexError:
             pass#cv2.error as e:
          #   print('OpenCV failed. ')
           #  print('MSG: ', e)
            # raise FailedCalibrationException(msg=e)
 
-=======
         except cv2.error as e:
             print('OpenCV failed. ')
             print('MSG: ', e)
             raise FailedCalibrationException(msg=e)
->>>>>>> 711356b847696920d3255fbd3b2086a8e0ea7d13
+
     def printCurrParams(self):
         print('_curr_ret : ', self._curr_ret)
         print('_curr_mtx : ', self._curr_camera_matrix)

@@ -30,7 +30,6 @@ class TextUI():
                 VE = self.c.getVEFromCamIndex(1)
                 # Do HSV calibration
                 # cv2.VideoCapture(choice)
-                VE.loadHSVValues() # Load values to testcam
                 #self.calibCameras()
                 #cam = self.c.getCamFromIndex(0)
                 #cam.loadSavedCalibValues()

@@ -57,6 +57,7 @@ class Connector():
         with open(path) as f:
             config = json.load(f)
         logging.config.dictConfig(config)
+
     def getConnectedCams(self):
         camlist = []
         for VE in self.PE.VisionEntityList:
