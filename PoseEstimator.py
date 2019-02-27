@@ -86,6 +86,7 @@ class PoseEstimator():
         except IndexError as e:
             logging.error(str(e))
             return []
+
     def getCamById(self, camID):
         for VE in self.VisionEntityList:
             cam = VE.getCam()
