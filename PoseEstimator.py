@@ -51,7 +51,7 @@ class PoseEstimator():
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
-            singlecam_curr_pose = [0.0,0.0,0.0,0.0,0.0,0.0]
+            singlecam_curr_pose = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             #Create a thread-safe variable to save pose to.
             singlecam_curr_pose_que = queue.Queue()
             singlecam_curr_pose_que.put(singlecam_curr_pose)
@@ -106,3 +106,6 @@ class PoseEstimator():
                 return wantedVE
         # If not found, log error.
         logging.error('Camera not found on given index, VE returned None. ')
+
+    def getVisionEntityList(self):
+        return self.VisionEntityList

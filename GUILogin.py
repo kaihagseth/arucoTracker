@@ -15,20 +15,12 @@ def deleteWindows():
     RunMain()
 
 
-def deleteWrongPassWindow():
+def deleteEntryWindow():
     '''
     Delete the popup box for wrong user/pass
     :return: None
     '''
     screen4.destroy()
-
-
-def deleteWrongUserWindow():
-    '''
-    Delete the popup box for wrong username/password
-    :return: None
-    '''
-    screen5.destroy()
 
 
 def loginSuccessful():
@@ -45,30 +37,17 @@ def loginSuccessful():
     Button(screen3, text='OK', command=deleteWindows).pack()
 
 
-def wrongPassword():
+def wrongEntry():
     '''
-    Popup for wrong password/username
+    Popup for wrong password/email
     :return: None
     '''
     global screen4
     screen4 = Toplevel(main_window)
-    screen4.title('Success')
-    screen4.geometry('150x100')
-    Label(screen4, text='Wrong Username or Password').pack()
-    Button(screen4, text='OK', command=deleteWrongPassWindow).pack()
-
-
-def userNotFound():
-    '''
-    Popup for wrong password/username
-    :return:
-    '''
-    global screen5
-    screen5 = Toplevel(main_window)
-    screen5.title('Success')
-    screen5.geometry('200x100')
-    Label(screen5, text='Wrong Username or Password').pack()
-    Button(screen5, text='OK', command=deleteWrongUserWindow).pack()
+    screen4.title('Failed')
+    screen4.geometry('200x100')
+    Label(screen4, text='Wrong Email or Password').pack()
+    Button(screen4, text='OK', command=deleteEntryWindow).pack()
 
 
 def registerUser():
@@ -77,20 +56,21 @@ def registerUser():
     :return:
     '''
     regex = re.compile(r"\"?([-a-zA-Z0-9.`?{}]+@\w+\.\w+)\"?")
-    username_info = username.get()
+    email_info = email.get()
     password_info = password.get()
 
-    if regex.match(username_info):
-        file = open(username_info, 'w')
-        file.write(username_info + '\n')
+    if regex.match(email_info):
+        # Create file for saving email and password
+        file = open(email_info, 'w')
+        file.write(email_info + '\n')
         file.write(password_info)
         file.close()
-        username_entry.delete(0, END)
+        email_entry.delete(0, END)
         password_entry.delete(0, END)
         Label(register_window, text='Registration Success', fg='green', font=('calibri', 11)).pack()
 
-    elif not regex.match(username_info):
-        username_entry.delete(0, END)
+    elif not regex.match(email_info):
+        email_entry.delete(0, END)
         password_entry.delete(0, END)
         Label(register_window, text='Registration Failed', fg='red', font=('calibri', 11)).pack()
 
@@ -100,29 +80,29 @@ def loginVerify():
     Verify that the user and password match a registered use.
     :return: None
     '''
-    username1 = username_verify.get()
+    email_name = email_verify.get()
     password1 = password_verify.get()
-    username_entry1.delete(0, END)
+    email_entry.delete(0, END)
     password_entry1.delete(0, END)
 
     list_of_files = os.listdir()
-    if username1 in list_of_files:
-        file1 = open(username1, 'r')
+    if email_name in list_of_files:
+        file1 = open(email_name, 'r')
         verify = file1.read().splitlines()
         if password1 in verify:
             loginSuccessful()
 
         else:
-            wrongPassword()
+            wrongEntry()
 
     else:
-        userNotFound()
+        wrongEntry()
 
 
 def register():
     '''
     Create a new window where the user can register.
-    Check if the username and password is valid \\ to be added later on
+    Check if the email and password is valid \\ to be added later on
     :return: None
     '''
     global register_window
@@ -131,19 +111,19 @@ def register():
     register_window.title('Register')
     register_window.geometry('300x250')
 
-    global username
+    global email
     global password
-    global username_entry
+    global email_entry
     global password_entry
-    username = StringVar()
+    email = StringVar()
     password = StringVar()
 
     Label(register_window, text='Please enter details below').pack()
     Label(register_window, text='').pack()
     Label(register_window, text='Username: ').pack()
 
-    username_entry = Entry(register_window, textvariable=username)
-    username_entry.pack()
+    email_entry = Entry(register_window, textvariable=email)
+    email_entry.pack()
     Label(register_window, text='Password: ').pack()
     password_entry = Entry(register_window, show='*', textvariable=password)
     password_entry.pack()
@@ -163,18 +143,18 @@ def login():
     Label(screen2, text='Please enter details below to login').pack()
     Label(screen2, text='').pack()
 
-    global username_verify
+    global email_verify
     global password_verify
 
-    username_verify = StringVar()
+    email_verify = StringVar()
     password_verify = StringVar()
 
-    global username_entry1
+    global email_entry
     global password_entry1
 
     Label(screen2, text='Username: ').pack()
-    username_entry1 = Entry(screen2, textvariable=username_verify)
-    username_entry1.pack()
+    email_entry = Entry(screen2, textvariable=email_verify)
+    email_entry.pack()
     Label(screen2, text='').pack()
     Label(screen2, text='Password: ').pack()
     password_entry1 = Entry(screen2, show='*', textvariable=password_verify)
