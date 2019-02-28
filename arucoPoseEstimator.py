@@ -65,7 +65,6 @@ class ArucoPoseEstimator:
                  Tuple of two Nones if no position is found
         """
         #dist_coeff = np.matrix(dist_coeff)
-        #print(frame)
         corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
         if showFrame:
             image_copy = frame
