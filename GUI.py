@@ -8,6 +8,7 @@ from Camera import *
 from CameraGroup import *
 import matplotlib as mpl
 import GUIDataPlotting
+import Connector
 
 
 
@@ -16,6 +17,8 @@ def RunMain():
     # Camera variables
     counter = 0
     show_video = False
+    c = Connector.Connector
+
 
     # Global camera_index
     global video_streams

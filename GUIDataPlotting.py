@@ -74,7 +74,7 @@ class dataReading:
         top.title("Data from Camera")
         top.configure(background=_fgcolor)
 
-
+        pose = []
 
 
         self.frame_1 = tk.Frame(top)
@@ -85,13 +85,13 @@ class dataReading:
         self.frame_1.configure(background='#000000')
         self.frame_1.configure(width=565)
 
-        self.entry_1 = tk.Entry(self.frame_1)
-        self.entry_1.place(relx=0.018, rely=0.588, relheight=0.282, relwidth=0.096)
-        self.entry_1.configure(background='red')
-        self.entry_1.configure(font='TkTextFont')
-        self.entry_1.configure(foreground='black')
-        self.entry_1.configure(width=54)
-        #self.entry_1.configure(textvariable=pose[0])
+        self.entry_x = tk.Entry(self.frame_1)
+        self.entry_x.place(relx=0.018, rely=0.588, relheight=0.282, relwidth=0.096)
+        self.entry_x.configure(background='red')
+        self.entry_x.configure(font='TkTextFont')
+        self.entry_x.configure(foreground='black')
+        self.entry_x.configure(width=54)
+        self.entry_x.configure(textvariable=pose[0])
 
         self.entry_2 = tk.Entry(self.frame_1)
         self.entry_2.place(relx=0.177, rely=0.588, relheight=0.282, relwidth=0.096)
@@ -99,7 +99,7 @@ class dataReading:
         self.entry_2.configure(font='TkTextFont')
         self.entry_2.configure(foreground='black')
         self.entry_2.configure(width=54)
-        #self.entry_2.configure(textvariable=pose[0])
+        self.entry_2.configure(textvariable=pose[0])
 
         self.Text2_1 = tk.Text(self.frame_1)
         self.Text2_1.place(relx=0.336, rely=0.588, relheight=0.282
