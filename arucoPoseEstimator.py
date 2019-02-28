@@ -61,10 +61,10 @@ class ArucoPoseEstimator:
         :param camera_matrix:  Intrinsic camera matrix
         :param dist_coeff: Camera Distortion coefficients
         :param showFrame: set True to show analyzed frame in window.
-        :return: Relative translation of model and euler angles of model.
+        :return: Relative translation of model and euler angles of model as tuple of two np.arrays.
+                 Tuple of two Nones if no position is found
         """
         #dist_coeff = np.matrix(dist_coeff)
-        #print(frame)
         corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
         if showFrame:
             image_copy = frame
@@ -103,6 +103,7 @@ class ArucoPoseEstimator:
             cv2.imshow('out', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
+        return None, None
 
 
     def writeBoardToPDF(self, width=160):

@@ -29,7 +29,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -37,6 +37,8 @@ class PoseEstimator():
         for i in range(num_cams):
             if i not in unwantedCams:
                 ilist.append(i)
+                msg = 'Webcam on index {0} included.'.format(i)
+                logging.info(msg)
             else:
                 msg = 'Webcam on index {0} not included.'.format(i)
                 logging.info(msg)
@@ -51,7 +53,7 @@ class PoseEstimator():
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
-            singlecam_curr_pose = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            singlecam_curr_pose = [0.0,0.0,0.0],[0.0,0.0,0.0]
             #Create a thread-safe variable to save pose to.
             singlecam_curr_pose_que = queue.Queue()
             singlecam_curr_pose_que.put(singlecam_curr_pose)
@@ -66,25 +68,30 @@ class PoseEstimator():
 
     def collectPoses(self):
         '''
-        In future: Get all output from the poseestimation here.
-        :return: threadInfopList
+        Get all output from the poseestimation here.
+        If only single cam used, return tuple with tvec and rvec.
+        Solution for multiple cams not implemented.
+        :return: tvec, rvec (single cam)
         '''
         time.sleep(0.02)
         try:
-            #print(self.threadInfoList)
             useSingleCam = True
             if useSingleCam is True:
                 poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
-                return poseque.get()
+                pose = poseque.get()
+                tvec, rvec = pose[0], pose[1]
+                return rvec, tvec
             else:
                 posequelist = self.threadInfoList[:][2]  # Get list of the threadsafe variables
-                if posequelist >= 1:
-                    poselist = []  # Create list for poses
-                    for poseque in posequelist:
-                        poselist.append(poseque.get())
-                    print("Poses collected.")
+                poselist = []
+                # Create list for poses
+                for poseque in posequelist:
+                    poselist.append(poseque.get())
                 return poselist
         except IndexError as e:
+            logging.error(str(e))
+            return []
+        except TypeError as e:
             logging.error(str(e))
             return []
 
@@ -113,8 +120,6 @@ class PoseEstimator():
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
         :return: None
         """
-        print(tvec)
-        print(evec)
         if not self._writer:
             with open('position_log.csv', 'w') as csv_file:
                 fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']

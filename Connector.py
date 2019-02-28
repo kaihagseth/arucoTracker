@@ -28,12 +28,15 @@ class Connector():
         doAbort = doAbortFx()
         while not doAbort:
             # Get the pose(s) from all cams.
-            rawpose = self.PE.collectPoses()
-            tvec = rawpose[0:3]
-            evec = rawpose[3:6]
-            self.PE.writeCsvLog(tvec, evec)
+            tvec, evec = self.PE.collectPoses()
+            try:
+                assert (tvec is not None and len(tvec) == 3), "Tvec format error."
+                assert (evec is not None and len(evec) == 3), "Evec format error."
+                self.PE.writeCsvLog(tvec, evec)
+            except AssertionError:
+                logging.ERROR("Raw pose was returned in an invalid format.")
             # Display the pose(s).
-            dispResFx(rawpose)
+            dispResFx((tvec, evec))
             # Check if we want to abort, function from GUI.
             doAbort = doAbortFx()
          #   logging.info("Running startApplication in Connector")
