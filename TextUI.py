@@ -60,13 +60,12 @@ class TextUI():
     def dispContiniusResults(self, result):
         try:
             #print("#####  Display current result:  ######")
-            showResult = True
+            showResult = False
             if showResult:
                 print("############## RESULT: ###############")
-                #print(result)
-                print("Rotation x - roll: ", result[1][0]*180.0/np.pi," grader")
-                print("Rotation y - pitch: ", result[1][1]*180.0/np.pi," grader")
-                print("Rotation z - yaw: ", result[1][2]*180.0/np.pi," grader")
+                print("Rotation x - roll: ", result[1][0], " grader")
+                print("Rotation y - pitch: ", result[1][1], " grader")
+                print("Rotation z - yaw: ", result[1][2], " grader")
                 print("Translation x: ", result[0][0], ' mm')
                 print("Translation y: ", result[0][1], ' mm')
                 print("Translation z: ", result[0][2], ' mm')
