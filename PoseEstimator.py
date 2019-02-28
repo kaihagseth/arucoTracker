@@ -2,6 +2,7 @@ from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import threading, queue, logging
 import time
 import csv
+import time
 from VisionEntity import VisionEntity
 
 
@@ -16,6 +17,7 @@ class PoseEstimator():
         self.VisionEntityList = [] # List for holding VEs
         self.threadInfoList = [] # List for reading results from VEs.
         self._writer = None
+        self._log_start_time = None
 
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()
@@ -55,7 +57,7 @@ class PoseEstimator():
             print('VE start')
             singlecam_curr_pose = [0.0,0.0,0.0],[0.0,0.0,0.0]
             #Create a thread-safe variable to save pose to.
-            singlecam_curr_pose_que = queue.Queue()
+            singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last writed variable is most relevant.
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
@@ -120,17 +122,25 @@ class PoseEstimator():
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
         :return: None
         """
+        if tvec is None:
+            tvec = ['-', '-', '-']
+        if evec is None:
+            evec = ['-', '-', '-']
         if not self._writer:
             with open('position_log.csv', 'w') as csv_file:
-                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'time']
+                self._log_start_time = time.time()
                 self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
                 self._writer.writerow(fieldnames)
-                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
+                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
+                                       (time.time() - self._log_start_time)])
         else:
             with open('position_log.csv', 'a') as csv_file:
                 self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n',  dialect='excel')
+                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
+                                       (time.time() - self._log_start_time)])
 
-                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
+
 
     def getVEById(self, camID):
         """

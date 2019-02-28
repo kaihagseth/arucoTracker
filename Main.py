@@ -1,6 +1,8 @@
 from Connector import Connector
-from TextUI import TextUI
+from GUILogin import GUILogin
+from GUI import GUIApplication
 
 c = Connector()
-tui = TextUI(connector=c)
-tui.start()
+mainGUI = GUIApplication(connector = c)
+guil = GUILogin(mainGUI=mainGUI)
+guil.startLogin()
