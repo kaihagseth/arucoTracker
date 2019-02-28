@@ -1,6 +1,7 @@
 from tkinter import *
 import os
 from GUI import RunMain
+import GUIDataPlotting
 import re
 
 

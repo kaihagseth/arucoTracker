@@ -9,6 +9,7 @@ from CameraGroup import *
 import matplotlib as mpl
 import GUIDataPlotting
 import Connector
+import threading
 
 
 
@@ -103,10 +104,10 @@ def RunMain():
         main_label.configure(text='Starting video stream')
         videoStream()
         if not show_video:
-            start_btn.grid(column=0, row=2)
+            start_btn.grid(column=0, row=1)
             stop_btn.grid(column=None, row=None)
         elif show_video:
-            stop_btn.grid(column=1, row=2)
+            stop_btn.grid(column=1, row=1)
             start_btn.grid(column=None, row=None)
 
 
@@ -185,6 +186,9 @@ def RunMain():
     start_btn = Button(page_1, text='Start', command=startClicked)
     stop_btn = Button(page_1, text='Stop', command=stopClicked)
     calibrate_btn = Button(page_2, text='Calibrate', command=None)
+
+    print_btn = Button(page_3, text='Print PDF', command=fileClicked)
+    print_btn.place(relx=0.5, rely=0.02, anchor='center')
 
     start_btn.grid(column=0, row=1)
     calibrate_btn.grid(column=1, row=1)
