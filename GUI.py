@@ -39,11 +39,11 @@ def RunMain():
     notebook = ttk.Notebook(root)
 
     # Defines and places the notebook widget
-    notebook.grid(row=0, column=0, columnspan=50, rowspan=49, sticky='NESW')
+    notebook.grid(row=0, column=0, columnspan=8, rowspan=6, sticky='NESW')
 
     # gives weight to the cells in the grid
     rows = 0
-    while rows < 50:
+    while rows < 6:
         root.rowconfigure(rows, weight=1)
         root.columnconfigure(rows, weight=1)
         rows += 1
@@ -51,9 +51,12 @@ def RunMain():
     # Adds tabs of the notebook
     page_1 = ttk.Frame(notebook)
     page_2 = ttk.Frame(notebook)
+    page_3 = ttk.Frame(notebook)
 
     notebook.add(page_1, text='Tab 1')
     notebook.add(page_2, text='Tab 2')
+    notebook.add(page_3, text='Tab 3')
+
 
 
     #  File menu setup
@@ -76,10 +79,10 @@ def RunMain():
     root.config(menu=menu)
 
     main_label = Label(page_1, text='Camera Views')
-    main_label.grid(column=0, row=0)
+    main_label.grid(column=2, row=0)
 
     second_label = Label(page_2, text='Camera Calibration')
-    second_label.grid(column=0, row=0)
+    second_label.place(relx=0.5, rely=0.02, anchor='center')
 
     style = ttk.Style()
     style.theme_use('default')
@@ -97,10 +100,10 @@ def RunMain():
         main_label.configure(text='Starting video stream')
         videoStream()
         if not show_video:
-            start_btn.grid(column=0, row=1)
+            start_btn.grid(column=0, row=2)
             stop_btn.grid(column=None, row=None)
         elif show_video:
-            stop_btn.grid(column=1, row=1)
+            stop_btn.grid(column=1, row=2)
             start_btn.grid(column=None, row=None)
 
 
@@ -115,10 +118,10 @@ def RunMain():
 
         main_label.configure(text='Stopping video stream')
         if not show_video:
-            start_btn.grid(column=0, row=1)
+            start_btn.grid(column=0, row=2)
             stop_btn.grid(column=None, row=None)
         elif show_video:
-            stop_btn.grid(column=1, row=1)
+            stop_btn.grid(column=1, row=2)
             start_btn.grid(column=None, row=None)
 
 
@@ -180,14 +183,11 @@ def RunMain():
     stop_btn = Button(page_1, text='Stop', command=stopClicked)
     calibrate_btn = Button(page_2, text='Calibrate', command=None)
 
-    #check_var = IntVar()
-    #check_list = Checkbutton(page_2, text='Test', variable=check_var)
-    #drop_down = OptionMenu(page_2, text='test', variable=check_list, value=1)
-    #Label(page_2, text='Choose').grid(row=1, column=1)
-    #drop_down.grid(row=2, column=1)
-    #check_list.grid(column=0, row=2)
     start_btn.grid(column=0, row=1)
-    calibrate_btn.grid(column=3, row=3)
+    calibrate_btn.grid(column=1, row=1)
+    calibrate_btn.grid_rowconfigure(1, weight=1)
+    calibrate_btn.grid_columnconfigure(1, weight=1)
+
 
     # Camera temp variables.
     cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
@@ -200,7 +200,8 @@ def RunMain():
 
     # Creating a radio button for each camera connected.
     for i, video_stream in enumerate(video_streams):
-        radio_button = Radiobutton(page_1, text='Cam '+str(i), variable=var, value=n, command=changeCameraStream(video_stream))
+        radio_button = Radiobutton(page_1, text='Cam '+str(i), variable=var, value=n,
+                                   command=changeCameraStream(video_stream))
         radio_button.grid(column=0, row=5+i)
         n += 1
 
