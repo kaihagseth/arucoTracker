@@ -55,7 +55,7 @@ class PoseEstimator():
             print('VE start')
             singlecam_curr_pose = [0.0,0.0,0.0],[0.0,0.0,0.0]
             #Create a thread-safe variable to save pose to.
-            singlecam_curr_pose_que = queue.Queue()
+            singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last writed variable is most relevant.
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.

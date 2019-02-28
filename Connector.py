@@ -4,11 +4,12 @@ import json
 import logging
 from logging.config import dictConfig
 from PoseEstimator import PoseEstimator
-
+from GUILogin import GUILogin
 
 class Connector():
     '''
     Connect the UI with rest of the application.
+    Start the GUI.
     hello
     '''
 
@@ -16,6 +17,7 @@ class Connector():
         #self.cg = CameraGroup()
         self.logging_setup()
         self.PE = PoseEstimator()
+
 
     def startApplication(self, dispResFx, doAbortFx):
         '''
@@ -48,7 +50,7 @@ class Connector():
         Initialise cams connected to PC.
         Send the camlist and create a SCPE for each camera.
         :param includeDefaultCam: If True, include the inbuilt webcam.
-        :return: None
+        :return: List of cams connected
         '''
 
         camlist = self.cg.initConnectedCams(includeDefaultCam)
