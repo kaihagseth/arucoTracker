@@ -35,17 +35,17 @@ class Connector():
             except AssertionError:
                 logging.ERROR("Raw pose was returned in an invalid format.")
             # Display the pose(s).
-            dispResFx(tvec, evec)
+            dispResFx((tvec, evec))
             # Check if we want to abort, function from GUI.
             doAbort = doAbortFx()
          #   logging.info("Running startApplication in Connector")
         print('Ended')
 
 
-    def initConnectedCams(self, includeDefaultCam):
+    def initConnectedCams(self):
         '''
         Initialise cams connected to PC.
-        Send the camlist and create a SCPE for each camera.
+        Send the camlist and create a VisionEntities. for each camera.
         :param includeDefaultCam: If True, include the inbuilt webcam.
         :return: None
         '''

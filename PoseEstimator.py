@@ -36,6 +36,8 @@ class PoseEstimator():
         for i in range(num_cams):
             if i not in unwantedCams:
                 ilist.append(i)
+                msg = 'Webcam on index {0} included.'.format(i)
+                logging.info(msg)
             else:
                 msg = 'Webcam on index {0} not included.'.format(i)
                 logging.info(msg)
@@ -76,6 +78,7 @@ class PoseEstimator():
             if useSingleCam is True:
                 poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
                 pose = poseque.get()
+                print("Pose: ", pose)
                 tvec, rvec = pose[0], pose[1]
                 return rvec, tvec
             else:
