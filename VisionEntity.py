@@ -27,7 +27,6 @@ class VisionEntity:
         while True:
             frame = self.getFrame()
             singlecam_curr_pose = self.getModelPose(frame)
-            #print("Single cam curr pose VE29: ", singlecam_curr_pose)
             singlecam_curr_pose_que.put(singlecam_curr_pose)
          #   logging.info("Running threaded loop")
 

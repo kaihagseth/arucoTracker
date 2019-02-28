@@ -51,8 +51,10 @@ class ArucoPoseEstimator:
         :param T0: Translation matrix from camera to reference frame
         :return: Relative translation of object from reference frame to object.
         """
-        relative_tvec = (np.matrix(R0).T * (np.matrix(tvec) - np.matrix(T0)))
-        return relative_tvec
+        # tvec - T0 - Translation to origo
+        # Multiply with transverse rotation matrix to get back to reference coordinates.
+        relative_tvec = np.matrix(R0).T * (np.matrix(tvec) - np.matrix(T0))
+        return np.asarray(relative_tvec.T)[0]
 
     def getModelPose(self, frame, camera_matrix, dist_coeff, showFrame=False):
         """
@@ -75,9 +77,10 @@ class ArucoPoseEstimator:
             if self._T0 is None and retval:
                 self._T0 = tvec
             if rvec is not None:
-                relative_translation = np.array(self.getRelativeTranslation(tvec, self._R0, self._T0), dtype=int)
+                relative_translation = self.getRelativeTranslation(tvec, self._R0, self._T0).astype(int)
+                # Multiplying with transverse ref rotation matrix to find current rotation relative to reference frame.
                 relative_rotation = self._R0.T * np.matrix(cv2.Rodrigues(rvec)[0])
-                euler_angles = np.array((180 * self.rotationMatrixToEulerAngles(relative_rotation)) / np.pi, dtype=int)
+                euler_angles = np.degrees(self.rotationMatrixToEulerAngles(relative_rotation)).astype(int) % 360
                 if showFrame:
                     image_copy = cv2.aruco.drawDetectedMarkers(image_copy, corners, ids)
                     image_copy = cv2.aruco.drawAxis(image_copy, camera_matrix, dist_coeff, rvec, tvec, 200)

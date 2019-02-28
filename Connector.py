@@ -32,11 +32,9 @@ class Connector():
             # Get the pose(s) from all cams.
             tvec, evec = self.PE.collectPoses()
             try:
-                assert (tvec is not None and len(tvec) == 3), "Tvec format error."
-                assert (evec is not None and len(evec) == 3), "Evec format error."
                 self.PE.writeCsvLog(tvec, evec)
-            except AssertionError:
-                logging.ERROR("Raw pose was returned in an invalid format.")
+            except (AttributeError, TypeError):
+                raise AssertionError("Raw pose was returned in an invalid format.")
             # Display the pose(s).
             dispResFx((tvec, evec))
             # Check if we want to abort, function from GUI.
@@ -45,10 +43,10 @@ class Connector():
         print('Ended')
 
 
-    def initConnectedCams(self, includeDefaultCam):
+    def initConnectedCams(self):
         '''
         Initialise cams connected to PC.
-        Send the camlist and create a SCPE for each camera.
+        Send the camlist and create a VisionEntities. for each camera.
         :param includeDefaultCam: If True, include the inbuilt webcam.
         :return: List of cams connected
         '''
