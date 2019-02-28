@@ -28,6 +28,7 @@ class VisionEntity:
             frame = self.getFrame()
             singlecam_curr_pose = self.getModelPose(frame)
             singlecam_curr_pose_que.put(singlecam_curr_pose)
+         #   logging.info("Running threaded loop")
 
     def calibrateCameraWithTool(self):
         """

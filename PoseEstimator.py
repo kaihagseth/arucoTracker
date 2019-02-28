@@ -1,8 +1,7 @@
 from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import threading, queue, logging
 import time
-
-
+import csv
 from VisionEntity import VisionEntity
 
 
@@ -16,6 +15,7 @@ class PoseEstimator():
     def __init__(self):
         self.VisionEntityList = [] # List for holding VEs
         self.threadInfoList = [] # List for reading results from VEs.
+        self._writer = None
 
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()
@@ -29,7 +29,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -57,7 +57,7 @@ class PoseEstimator():
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
-            th = threading.Thread(target=VE.runThreadedLoop(), args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
+            th = threading.Thread(target=VE.runThreadedLoop, args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
             logging.debug('Passing thread creation.')
             self.threadInfoList.append([VE, th, singlecam_curr_pose_que])
             print()
@@ -69,12 +69,24 @@ class PoseEstimator():
         In future: Get all output from the poseestimation here.
         :return: threadInfopList
         '''
-        #print(self.threadInfoList)
-        #print('Pose: ', self.threadInfoList[0][2].get())
-        #singlecam_poses = self.threadInfoList[:,2]
-        #print(singlecam_poses)
-        time.sleep(0.1)
-        return self.threadInfoList[0][2].get()
+        time.sleep(0.02)
+        try:
+            #print(self.threadInfoList)
+            useSingleCam = True
+            if useSingleCam is True:
+                poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
+                return poseque.get()
+            else:
+                posequelist = self.threadInfoList[:][2]  # Get list of the threadsafe variables
+                if posequelist >= 1:
+                    poselist = []  # Create list for poses
+                    for poseque in posequelist:
+                        poselist.append(poseque.get())
+                    print("Poses collected.")
+                return poselist
+        except IndexError as e:
+            logging.error(str(e))
+            return []
 
     def getCamById(self, camID):
         for VE in self.VisionEntityList:
@@ -93,6 +105,27 @@ class PoseEstimator():
         '''
         VE = self.getVEById(index)
         self.VisionEntityList.remove(VE)
+
+    def writeCsvLog(self, tvec, evec):
+        """
+        Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
+        :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
+        :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
+        :return: None
+        """
+        print(tvec)
+        print(evec)
+        if not self._writer:
+            with open('position_log.csv', 'w') as csv_file:
+                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
+                self._writer.writerow(fieldnames)
+                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
+        else:
+            with open('position_log.csv', 'a') as csv_file:
+                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n',  dialect='excel')
+
+                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2]])
 
     def getVEById(self, camID):
         """

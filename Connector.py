@@ -18,14 +18,25 @@ class Connector():
         self.PE = PoseEstimator()
 
     def startApplication(self, dispResFx, doAbortFx):
+        '''
+        Start the application, and communicate continius with the GUI while loop is running in seperate threads.
+        :param dispResFx: Function to display result with
+        :param doAbortFx: Function to abort the application
+        '''
         self.PE.runPoseEstimator() # Create all threads and start them
         logging.info('Running startApplication()')
         doAbort = doAbortFx()
         while not doAbort:
-            #print('Running dispResFx')
-            res = self.PE.collectPoses()
-            dispResFx(res)
+            # Get the pose(s) from all cams.
+            rawpose = self.PE.collectPoses()
+            tvec = rawpose[0:3]
+            evec = rawpose[3:6]
+            self.PE.writeCsvLog(tvec, evec)
+            # Display the pose(s).
+            dispResFx(rawpose)
+            # Check if we want to abort, function from GUI.
             doAbort = doAbortFx()
+         #   logging.info("Running startApplication in Connector")
         print('Ended')
 
 
