@@ -108,7 +108,7 @@ class Camera():
         '''Return a undistorted version of a distorted image. '''
         self._IC.undistort_image(img)
 
-    def activateSavedValues(self, filename='IntriCalib.npz'):
+    def activateSavedValues(self, filename='calibValues/A1calib.npz'):
         '''Load and use the earlier saved intrinsic parameters from a file.
         :param filename: Name of file to get params from.
         '''
