@@ -20,7 +20,7 @@ class TextUI():
             if self.DEBUG:
                 logging.debug("DEBUG MODE ACTIVATED. Cameras initialised")
                 ''' DEBUG MODE: Fast forward with obvious things like initialisation. '''
-                self.c.initConnectedCams(includeDefaultCam=True)
+                self.c.initConnectedCams()
                 VE = self.c.getVEFromCamIndex(1)
                 # Do HSV calibration
                 # cv2.VideoCapture(choice)
@@ -60,16 +60,16 @@ class TextUI():
     def dispContiniusResults(self, result):
         try:
             #print("#####  Display current result:  ######")
-            showResult = False
+            showResult = True
             if showResult:
                 print("############## RESULT: ###############")
-                print(result)
-            #print("Rotation x - roll: ", result[0]*180.0/np.pi," grader")
-            #print("Rotation y - pitch: ", result[1]*180.0/np.pi," grader")
-            #print("Rotation z - yaw: ", result[2]*180.0/np.pi," grader")
-            #print("Translation x: ", result[3], ' mm')
-            #print("Translation y: ", result[4], ' mm')
-            #print("Translation z: ", result[5], ' mm')
+                #print(result)
+                print("Rotation x - roll: ", result[1][0]*180.0/np.pi," grader")
+                print("Rotation y - pitch: ", result[1][1]*180.0/np.pi," grader")
+                print("Rotation z - yaw: ", result[1][2]*180.0/np.pi," grader")
+                print("Translation x: ", result[0][0], ' mm')
+                print("Translation y: ", result[0][1], ' mm')
+                print("Translation z: ", result[0][2], ' mm')
         except TypeError:
             print("Could not print.")
     def abortFunction(self):

@@ -78,6 +78,7 @@ class PoseEstimator():
             if useSingleCam is True:
                 poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
                 pose = poseque.get()
+                print("Pose: ", pose)
                 tvec, rvec = pose[0], pose[1]
                 return rvec, tvec
             else:
