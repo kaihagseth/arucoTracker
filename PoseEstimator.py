@@ -36,6 +36,8 @@ class PoseEstimator():
         for i in range(num_cams):
             if i not in unwantedCams:
                 ilist.append(i)
+                msg = 'Webcam on index {0} included.'.format(i)
+                logging.info(msg)
             else:
                 msg = 'Webcam on index {0} not included.'.format(i)
                 logging.info(msg)

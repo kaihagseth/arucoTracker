@@ -35,7 +35,7 @@ class Connector():
             except AssertionError:
                 logging.ERROR("Raw pose was returned in an invalid format.")
             # Display the pose(s).
-            dispResFx(tvec, evec)
+            dispResFx((tvec, evec))
             # Check if we want to abort, function from GUI.
             doAbort = doAbortFx()
          #   logging.info("Running startApplication in Connector")
