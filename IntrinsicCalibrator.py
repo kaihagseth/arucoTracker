@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 import cv2
 import glob
@@ -27,8 +26,7 @@ class IntrinsicCalibrator:
         self._curr_newcamera_mtx = None
         self._curr_roi = None
         self._parr_cam = parr_cam
-
-    def loadSavedValues(self, filename='IntriCalib.npz'):
+    def loadSavedValues(self, filename='calibValues/A1calib.npz'):
         '''
         Load values to be used in calibration.
         # TODO: Remove
@@ -73,7 +71,7 @@ class IntrinsicCalibrator:
 
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,4,0)
         objp = np.zeros((cb_n_width * cb_n_height, 3), np.float32)
-        objp[:, :2] = np.mgrid[0:cb_n_height, 0:cb_n_width].T.reshape(-1, 2)
+        objp[:, :2] = np.mgrid[0:cb_n_height, 0:cb_n_width].T.reshape(-1, 2)*40
 
         # Arrays to store object points and image points from all the images.
         objpoints = []  # 3d point in real world space
@@ -93,9 +91,9 @@ class IntrinsicCalibrator:
                     cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     imgpoints.append(corners)
                     ''' Draw and d isplay the corners '''
-                    cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
-                    cv2.imshow('img', frame)
-                    cv2.waitKey(500)
+                    # cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
+                    # cv2.imshow('img', frame)
+                    # cv2.waitKey(1)
                 else:
                     logging.error('"ret" is not true. Could not find corners.')
             cv2.destroyAllWindows()
@@ -104,25 +102,26 @@ class IntrinsicCalibrator:
                 print('Objpoints is none!')
             if not imgpoints:
                 print('Imgpoints is none!')
-
+            print('starting calibration')
             ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+            print('Calibration done, finding optimal camera matrix')
             h, w = img.shape[:2]
             newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
             '''Undistort the image: '''
-            dst = cv2.undistort(gray, mtx, dist, None, newcameramtx)
-            if not dst.any(): #dst is empty, no calib result is found.
-                raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
+            # dst = cv2.undistort(gray, mtx, dist, None, newcameramtx)
+            # if not dst.any(): #dst is empty, no calib result is found.
+            #     raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
             # crop the image
-            x, y, w, h = roi
-            dst = dst[y:y + h, x:x + w]
+            # x, y, w, h = roi
+            # dst = dst[y:y + h, x:x + w]
             #cv2.imshow('Calib res', dst)
 
             #cv2.waitKey(0)
             '''Only write image if list is more a single frame.'''
-            if len(frames) >= 2:
-                cv2.imwrite('images/calibresult.png', dst)
+            #if len(frames) >= 2:
+            #    cv2.imwrite('images/calibresult.png', dst)
             '''Save latest values to a file.'''
-            filename = 'IntriCalib{0}'.format(camID)
+            filename = 'newestCalib'
             np.savez(filename, ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
             self._parr_cam.set_intrinsic_params(mtx)
@@ -186,6 +185,19 @@ class IntrinsicCalibrator:
         x, y, w, h = self._curr_roi
         dst = dst[y:y + h, x:x + w]
         return dst
+
+    def videoCalibration(self, videoName):
+        video_capture = cv2.VideoCapture('calibVideos/' + videoName)
+        ret, image = video_capture.read()
+        frames = []
+        while ret:
+            frames.append(image)
+            ret, image = video_capture.read()
+        frames = np.array(frames)[1::6]
+        print(len(frames))
+        self.calibCam(frames)
+
+
 if __name__ == "__main__":
     '''
     For debug only
