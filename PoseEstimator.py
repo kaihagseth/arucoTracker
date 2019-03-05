@@ -1,3 +1,4 @@
+from SingleCameraPoseEstimator import SingleCameraPoseEstimator
 import threading, queue, logging
 import time
 import csv
