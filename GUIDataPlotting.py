@@ -248,7 +248,7 @@ def plotGraph(frame):
     y = []
     z = []
 
-    with open('images\position_log.csv', 'r') as csv_file:
+    with open('logs\position_log.csv', 'r') as csv_file:
         plots = csv.reader(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
         for row in plots:
             try:
