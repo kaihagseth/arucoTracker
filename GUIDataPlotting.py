@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import Connector
 import csv
+import logging
 
 
 class dataReading:
@@ -225,6 +226,7 @@ def destroy_Toplevel1():
 
 
 def plotGraph(frame):
+    pass
     ''' Draw a matplotlib figure onto a Tk canvas
     loc: location of top-left corner of figure on canvas in pixels.
     Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
@@ -256,7 +258,7 @@ def plotGraph(frame):
                 y.append(int(row[1]))
                 z.append(int(row[2]))
             except(TypeError, ValueError):
-                print('Error ignored')
+                logging.debug('Error ignored')
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)

@@ -59,7 +59,7 @@ class PoseEstimator():
             #Create a thread-safe variable to save pose to.
             singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last written variable is most relevant.
             singlecam_curr_pose_que.put(singlecam_curr_pose)
-            frame_que = queue.LifoQueue() # Thread-safe variable for passing cam frames to GUI.
+            frame_que = queue.LifoQueue(maxsize=1) # Thread-safe variable for passing cam frames to GUI.
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
             th = threading.Thread(target=VE.runThreadedLoop, args=[singlecam_curr_pose, singlecam_curr_pose_que, frame_que], daemon=True)
@@ -68,7 +68,11 @@ class PoseEstimator():
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
-
+    def getPosePreviewImg(self):
+        # Get the image created in arucoPoseEstimator with pose and chessboard. None if empty
+        imgque = self.threadInfoList[0][3]
+        img = imgque.get()
+        return img
     def collectPoses(self):
         '''
         Get all output from the poseestimation here.

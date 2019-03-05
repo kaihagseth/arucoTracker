@@ -22,6 +22,8 @@ class ArucoPoseEstimator:
         self.nextMarkerId += board_length*board_width  # Next ID at 9 if 3x3
         self._R0 = None
         self._T0 = None
+        # Image who shows pose and inframe-coordinate system in getPose function. Only if showImage TRUE.
+        self.posPreviewImage = None
 
     @staticmethod
     def rotationMatrixToEulerAngles(R):
@@ -100,6 +102,8 @@ class ArucoPoseEstimator:
                     cv2.imshow('out', image_copy)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         cv2.destroyAllWindows()
+                    self.posPreviewImage = image_copy
+
                 return relative_translation, euler_angles
         if showFrame:
             cv2.imshow('out', frame)
@@ -108,6 +112,8 @@ class ArucoPoseEstimator:
         return None, None
 
 
+    def getPosePreviewImage(self):
+        return self.posPreviewImage
     def writeBoardToPDF(self, width=160):
         """
         Creates a printable pdf-file of this aruco board.

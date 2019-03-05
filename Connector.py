@@ -3,7 +3,11 @@ import os
 import json
 import logging
 from logging.config import dictConfig
+
+import time
+
 from PoseEstimator import PoseEstimator
+import threading
 from GUILogin import GUILogin
 
 class Connector():
@@ -19,7 +23,7 @@ class Connector():
         self.PE = PoseEstimator()
 
 
-    def startApplication(self, dispResFx, doAbortFx):
+    def startApplication(self, dispResFx, stopAppFx):
         '''
         Start the application, and communicate continius with the GUI while loop is running in seperate threads.
         :param dispResFx: Function to display result with
@@ -27,18 +31,25 @@ class Connector():
         '''
         self.PE.runPoseEstimator() # Create all threads and start them
         logging.info('Running startApplication()')
-        doAbort = doAbortFx()
+        stopApp = False
+        doAbort = False
+        msg = 'Thread: ', threading.current_thread().name
+        logging.info(msg)
         while not doAbort:
-            # Get the pose(s) from all cams.
-            tvec, evec = self.PE.collectPoses()
-            try:
-                self.PE.writeCsvLog(tvec, evec)
-            except (AttributeError, TypeError):
-                raise AssertionError("Raw pose was returned in an invalid format.")
-            # Display the pose(s).
-            dispResFx((tvec, evec))
-            # Check if we want to abort, function from GUI.
-            doAbort = doAbortFx()
+            if not stopApp:
+                # Get the pose(s) from all cams.
+                tvec, evec = self.PE.collectPoses()
+                try:
+                    self.PE.writeCsvLog(tvec, evec)
+                except (AttributeError, TypeError):
+                    raise AssertionError("Raw pose was returned in an invalid format.")
+                # Display the pose(s).
+                poseFrame = self.PE.getPosePreviewImg()
+                dispResFx((tvec, evec), poseFrame)
+                # Check if we want to abort, function from GUI.
+                stopApp = stopAppFx()
+            else:
+                time.sleep(0.1)
         print('Ended')
 
     def initConnectedCams(self):

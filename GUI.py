@@ -16,6 +16,8 @@ class GUIApplication(threading.Thread):
 
     def __init__(self, connector):
         threading.Thread.__init__(self)
+        msg = 'Thread: ', threading.current_thread().name
+        logging.info(msg)
         # Camera variables
         self.counter = 0
         self.show_video = False
@@ -124,8 +126,11 @@ class GUIApplication(threading.Thread):
         page_4_frame.configure(background='#000000')
         page_4_frame.configure(width=565)
 
-        GUIDataPlotting.createDataWindow(page_4_frame)
-
+        try:
+            GUIDataPlotting.createDataWindow(page_4_frame)
+        except IndexError:
+            pass
+            logging.info('Sketchy, but OK.')
 
 
         def startClicked():
@@ -163,19 +168,18 @@ class GUIApplication(threading.Thread):
              #   stop_btn.grid(column=1, row=2)
               #  start_btn.grid(column=None, row=None)
 
+        show_video = False
         def hideCamBtnClicked():
             global showVideo
             showVideo = False
         # function for video streaming
+        image_tk = None
         def videoStream():
             '''
             Create a simple setup for testing video stream with GUI
             :return: None
             '''
-
-            global show_video
-
-
+            global show_video, image_tk
             if show_video is True:
                 try:
                     global camIDInUse
@@ -187,7 +191,6 @@ class GUIApplication(threading.Thread):
                     #if not currCap.isOpened():
                     #    raise IOError("Cannot open webcam")
                     print("ID: ", self.camIDInUse)
-                    print("Frame: ", frame)
                     if frame is not None:
                         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         img_video = Image.fromarray(cv2image)
@@ -197,6 +200,21 @@ class GUIApplication(threading.Thread):
                         main_label.after(1, videoStream)
                 except AttributeError as e:
                     logging.error(str(e))
+
+
+        def poseStream(frame):
+            logging.debug('Inside posestream')
+            global image_tk
+            try:
+                if frame is not None:
+                    cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img_video = Image.fromarray(cv2image)
+                    image_tk = ImageTk.PhotoImage(image=img_video)
+                    main_label.image_tk = image_tk
+                    main_label.configure(image=image_tk)
+                    #main_label.after(1, videoStream)
+            except AttributeError as e:
+                logging.error(str(e))
 
         def showImage():
             '''
@@ -228,15 +246,24 @@ class GUIApplication(threading.Thread):
         def placeGraph():
             GUIDataPlotting.plotGraph()
 
+        poseEstmationThread = None
         def startApplication():
             #Start the main app
-            self.c.startApplication(doAbortFx=doAbortApp,dispContiniusResults=dispContiniusResults)
+            global poseEstmationThread
+            poseEstmationThread = threading.Thread(target=self.c.startApplication, args=[dispContiniusResults, doAbortApp], daemon=True)
+            poseEstmationThread.start()
+            logging.info('Started application in a own thread.')
+        doStopApp = False
+        def doAbortApp():
+            return doStopApp # For now
+        def setDoStopApp():
+            global doStopApp
+            logging.info("Setting doStopApp to True")
+            doStopApp = True
+        def dispContiniusResults(result, poseFrame):
+            poseStream(poseFrame)
+            #print(result)
 
-        def doAbortApp(self):
-            return False # For now
-
-        def dispContiniusResults(self, result):
-            print(result)
         camFrameSettingSection = Frame(left_camPaneTabMain,bg='gray80')#, orient=HORIZONTAL)
 
         # Start and stop button setup
@@ -251,9 +278,6 @@ class GUIApplication(threading.Thread):
         stop_btn.grid(column=1,row=0)
         availCamsLabel = Label(left_camPaneTabMain,text='Available cameras: ')
         availCamsLabel.pack()
-        deadSpace1 = Frame(left_camPaneTabMain, height=100).pack()
-        startCamApp = Button(left_camPaneTabMain, text='Start application.',command=startApplication)
-
 
 
         calibrate_btn.grid(column=1, row=1)
@@ -274,7 +298,16 @@ class GUIApplication(threading.Thread):
                            padx=20,
                            variable=v,
                            value=vali).pack()#grid(column=1,row=0+vali)
-
+        tk.Radiobutton(left_camPaneTabMain,
+                       text="Pose prev image",
+                       padx=20,
+                       variable=v,
+                       value=10).pack()
+        deadSpace1 = Frame(left_camPaneTabMain, height=100).pack()
+        startCamApp = Button(left_camPaneTabMain, text='Start application', command=startApplication)
+        stopCamApp = Button(left_camPaneTabMain, text='Stop application', command=setDoStopApp)
+        startCamApp.pack()
+        stopCamApp.pack()
         self.root.mainloop()
     def run2(self):
         n = ttk.Notebook(parent)
