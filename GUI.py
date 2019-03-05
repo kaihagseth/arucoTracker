@@ -146,7 +146,7 @@ class GUIApplication(threading.Thread):
                     #counter += 1
                     #currCap = video_streams[int(var.get())]
                     print("Var value: ", var.get())
-                    frame = self.c.getImgFromSingleCam(camIDInUse) #currCap.read()
+                    frame = self.c.getImgFromSingleCam(v.get()) #currCap.read()
                     # Check if the webcam is opened correctly
                     #if not currCap.isOpened():
                     #    raise IOError("Cannot open webcam")
@@ -209,40 +209,15 @@ class GUIApplication(threading.Thread):
         #cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
         var = IntVar()
 
-        n = 0
-        def setVal():
-            print("You have set val var to ", var.get())
-        # Array for added cameras. Future improvements is getting the list of cameras connected.
-        #video_streams = [cv2.VideoCapture(0), cv2.VideoCapture(1), cv2.VideoCapture(2)]
-        #indexlist = [0,1,2,3,4,5,6]
-        ## Creating a radio button for each camera connected.
-        #radiochoiceval = 0
-        #for c_id in self.camlist:
-        #    var = c_id
-        #    radio_button = Radiobutton(page_1, text='Cam ' + str(c_id), variable=var, value=indexlist[radiochoiceval], command=setVal)
-        #    radio_button.grid(column=0, row=5 + c_id)
-        #    n += 1
-        #    radiochoiceval += 1
-        def setCam1():
-            global camIDInUse
-            camIDInUse = 0
 
-        def setCam2():
-            global camIDInUse
-            camIDInUse = 1
+        v = tk.IntVar()
+        v.set(1)  # initializing the choice, i.e. Python
 
-        def setCam3():
-            global camIDInUse
-            camIDInUse = 2
-
-        radio_button1 = Radiobutton(page_1, text='Cam ' + str(1), variable=var, value=1,
-                                   command=setCam1)
-        radio_button1.grid(column=0, row=5 + 1)
-        radio_button2 = Radiobutton(page_1, text='Cam ' + str(1), variable=var, value=2,
-                                   command=setCam2)
-        radio_button2.grid(column=0, row=5 + 2)
-        radio_button3 = Radiobutton(page_1, text='Cam ' + str(3), variable=var, value=3,
-                                   command=setCam3)
-        radio_button3.grid(column=0, row=5 + 3)
+        for vali, cam in enumerate(self.camlist):
+            tk.Radiobutton(page_1,
+                           text=str(vali),
+                           padx=20,
+                           variable=v,
+                           value=vali).grid(column=1,row=0+vali)
 
         self.root.mainloop()

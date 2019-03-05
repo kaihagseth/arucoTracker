@@ -32,7 +32,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
