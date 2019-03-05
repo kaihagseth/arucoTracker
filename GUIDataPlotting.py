@@ -256,7 +256,9 @@ def plotGraph(frame):
                 y.append(int(row[1]))
                 z.append(int(row[2]))
             except(TypeError, ValueError):
-                print('Error ignored')
+                if row[0] == '-':
+                    continue
+                print('Could not read data from position log. Row not translatable to int')
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)
