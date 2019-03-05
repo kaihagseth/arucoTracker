@@ -4,24 +4,12 @@ import cv2
 from exceptions import FailedCalibrationException
 
 class IntrinsicCalibrator:
-    '''
-    Do intrinsic calibration on cameras.
-    Returns a
-    # TODO: Refactoring: Remove all references to parent camera. This class should handle and return calibration.
-    # TODO: Moving the undistort function to the vision entity-class would loosen coupling.
-    #
-    '''
+    """
+    This class handles camera calibration
+    """
 
-    def __init__(self, parr_cam=None):
-        self._curr_ret = None
-        self._curr_rvecs = None
-        self._curr_tvecs = None
-        self._curr_camera_matrix = None
-        self._curr_dist_coeff = None
-        self._curr_newcamera_mtx = None
-        self._curr_roi = None
-        self._parr_cam = parr_cam
-    def loadSavedValues(self, filename='calibValues/A1calib.npz'):
+    @staticmethod
+    def loadSavedValues(filename='calibValues/A1calib.npz'):
         '''
         Load values to be used in calibration.
         This process is just needed if you don't want to do a new calibration,
@@ -31,12 +19,11 @@ class IntrinsicCalibrator:
         '''
         print('Loading old parameters from file ', filename)
         npzfile = np.load(filename)
-        self._curr_camera_matrix = npzfile['mtx']
-        self._curr_dist_coeff = npzfile['dist']
-        self._curr_newcamera_mtx = npzfile['newcameramtx']
-        self._curr_roi = npzfile['roi']
-        self._parr_cam.setIntrinsicParams(npzfile['mtx'])
+        camera_parameters ={'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
+                            'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
+        return camera_parameters
 
+    @staticmethod
     def calibCam(self, frames, showCalibration=False, cb_square_size=1):
         '''
         Calibrate the camera lens.
@@ -45,7 +32,6 @@ class IntrinsicCalibrator:
         '''
         cb_n_width = 5
         cb_n_height = 7
-        camID = 0
         #Save the images to a distinct camera folder
 
         ''' Make sure we don't use invalid ID.  '''
@@ -74,7 +60,7 @@ class IntrinsicCalibrator:
                 # Find the chess board corners
                 ret, corners = cv2.findChessboardCorners(gray, (cb_n_height, cb_n_width), None)
                 ''' If found, add object points, image points (after refining them) '''
-                if ret == True:
+                if ret:
                     objpoints.append(objp)
                     cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     imgpoints.append(corners)
@@ -84,7 +70,7 @@ class IntrinsicCalibrator:
                         cv2.imshow('img', frame)
                         cv2.waitKey(1)
                 else:
-                    logging.error('"ret" is not true. Could not find corners.')
+                    logging.error('findChessboardCorners could not find corners.')
             if showCalibration:
                 cv2.destroyAllWindows()
             '''Do the calibration:'''
@@ -92,7 +78,7 @@ class IntrinsicCalibrator:
                 print('Objpoints is none!')
             if not imgpoints:
                 print('Imgpoints is none!')
-            print('starting calibration')
+            logging.info('Starting calibration with ' + str(len(imgpoints)) + ' valid frames')
             ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
             h, w = img.shape[:2]
             newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
@@ -101,68 +87,53 @@ class IntrinsicCalibrator:
             filename = 'newestCalib'
             np.savez(filename, ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
             '''Update class with latest numbers.'''
-            self._parr_cam.set_intrinsic_params(mtx)
-            self._curr_ret = ret
-            self._curr_camera_matrix = mtx
-            self._curr_dist_coeff = dist
-            self._curr_rvecs = rvecs
-            self._curr_tvecs = tvecs
-            self._curr_newcamera_mtx = newcameramtx
-            self._curr_roi = roi
+            camera_parameters = {'mtx': mtx, 'ret': ret, 'dist': dist, 'rvecs': rvecs, 'tvecs': tvecs,
+                                 'newcameramtx': newcameramtx, 'roi': roi}
             print('Calibration done')
-
-
+            return camera_parameters
         except IndexError:
             pass#cv2.error as e:
          #   print('OpenCV failed. ')
           #  print('MSG: ', e)
            # raise FailedCalibrationException(msg=e)
-
         except cv2.error as e:
             print('OpenCV failed. ')
             print('MSG: ', e)
             raise FailedCalibrationException(msg=e)
 
-    def printCurrParams(self):
-        print('_curr_ret : ', self._curr_ret)
-        print('_curr_mtx : ', self._curr_camera_matrix)
-        print('_curr_dist : ', self._curr_dist_coeff)
-        print('_curr_rvecs : ', self._curr_rvecs)
-        print('_curr_newcameramtx : ', self._curr_newcamera_mtx)
-        print('_curr_roi : ', self._curr_roi)
+    @staticmethod
+    def getUndistortedFrame(img, camera_parameters):
+        """
+        Returns an undistorted frame based on the camera matrix and distortion coefficients of this object
+        :param img: Distorted frame
+        :param camera_parameters: Dictionary like containing camera parameters
+        :return: An undistorted frame.
+        """
+        camera_matrix = camera_parameters['mtx']
+        dist_coeff = camera_parameters['dist']
+        new_camera_matrix = camera_parameters['newcameramtx']
+        roi = camera_parameters['roi']
 
-    def undistort_image(self, image):
-        # TODO: Rename to getUndistortedFrame
-        img =  cv2.undistort(image, self._curr_camera_matrix, self._curr_dist_coeff,
-                             newCameraMatrix=self._curr_newcamera_mtx)
-        logging.debug('Image: ', img)
-        x, y, w, h = self._curr_roi
-        dst = img[y:y + h, x:x + w]
-        return dst
-        # def undistort_image(self, image):
-        #return cv2.undistort(image, self.camera_matrix, self.dist_coeffs,
-        #                     newCameraMatrix=self.new_camera_matrix)
-    def undistortImage(self, img):
-        # TODO: Rename to getUndistortedFrame
-        '''
-        Goal: Insert a distored image and get a undistorted image back.
-        :param img: Distorted image
-        :return: A undistorted image.
-        '''
         try:
             logging.debug('Inside undistortImage()')
-            dst = cv2.undistort(img, self._curr_camera_matrix, self._curr_dist_coeff, None, self._curr_newcamera_mtx)
+            dst = cv2.undistort(img, camera_matrix, dist_coeff, None, new_camera_matrix)
             logging.debug(dst)
         except cv2.error: # Not successfull
             raise FailedCalibrationException
         if not dst.any():  # dst is empty, no calib result is found.
             raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
         # crop the image
-        x, y, w, h = self._curr_roi
+        x, y, w, h = roi
         dst = dst[y:y + h, x:x + w]
         return dst
 
-    def videoCalibration(self, videoName):
+    @staticmethod
+    def videoCalibration(videoName, debug=False):
+        """
+        Reads a video in the calibVideos-folder and outputs a calibration called "newestCalib.npz".
+        :param videoName: filename of video
+        :return: Camera calibration parameters in dictionary.
+        """
         video_capture = cv2.VideoCapture('calibVideos/' + videoName)
         ret, image = video_capture.read()
         frames = []
@@ -170,5 +141,6 @@ class IntrinsicCalibrator:
             frames.append(image)
             ret, image = video_capture.read()
         frames = np.array(frames)[1::6]
-        print(len(frames))
-        self.calibCam(frames)
+        if debug:
+            print('Videocalibration starting with ' + str(len(frames)) + ' frames')
+        return IntrinsicCalibrator.calibCam(frames, debug)
