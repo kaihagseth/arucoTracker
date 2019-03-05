@@ -57,10 +57,12 @@ class GUIApplication(threading.Thread):
         page_1 = ttk.Frame(notebook)
         page_2 = ttk.Frame(notebook)
         page_3 = ttk.Frame(notebook)
+        page_4 = ttk.Frame(notebook)
 
-        notebook.add(page_1, text='Tab 1')
-        notebook.add(page_2, text='Tab 2')
-        notebook.add(page_3, text='Tab 3')
+        notebook.add(page_1, text='Camera')
+        notebook.add(page_2, text='Calibration')
+        notebook.add(page_3, text='PDF')
+        notebook.add(page_4, text='Graph')
 
 
 
@@ -140,6 +142,7 @@ class GUIApplication(threading.Thread):
             global show_video
             if show_video is True:
                 #counter += 1
+                var=StringVar()
                 currCap = video_streams[int(var.get())]
                 _, frame = currCap.read()
                 # Check if the webcam is opened correctly
@@ -199,16 +202,16 @@ class GUIApplication(threading.Thread):
         def initConnectedCams():
             camlist = self.c.initConnectedCams()
 
-            "# Camera temp variables.
+            # Camera temp variables.
             cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
             var = StringVar()
             var.set(cam_list[0])
             n = 0
 
-            "# Array for added cameras. Future improvements is getting the list of cameras connected.
+            # Array for added cameras. Future improvements is getting the list of cameras connected.
             video_streams = [cv2.VideoCapture(0), cv2.VideoCapture(1), cv2.VideoCapture(2)]
 
-            "# Creating a radio button for each camera connected.
+            # Creating a radio button for each camera connected.
             for i, video_stream in enumerate(video_streams):
                 radio_button = Radiobutton(page_1, text='Cam ' + str(i), variable=var, value=n,
                                            command=changeCameraStream(video_stream))

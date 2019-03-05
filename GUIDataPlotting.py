@@ -2,9 +2,12 @@ import sys
 import tkinter as tk
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from matplotlib.figure import Figure
 import numpy as np
 import Connector
+import csv
 
 
 class dataReading:
@@ -22,9 +25,6 @@ class dataReading:
         top.configure(background=_fgcolor)
         width = 0.95
         height = 0.2
-
-        pose = []
-
 
         self.frame_1 = tk.Frame(top)
         self.frame_1.place(relx=0.017, rely=0.8, relheight=height, relwidth=width)
@@ -177,13 +177,13 @@ class dataReading:
         self.graph_frame.configure(width=233)
         self.graph_frame.configure(command=plotGraph(self.graph_frame))
 
-        self.label_2 = tk.Label(top)
-        self.label_2.place(relx=0.335, rely=0.1, height=30, width=165)
-        self.label_2.configure(background='#d9d9d9')
-        self.label_2.configure(disabledforeground='#a3a3a3')
-        self.label_2.configure(foreground='#000000')
-        self.label_2.configure(text='''Live Plotting of Data''')
-        self.label_2.configure(width=164)
+        self.label_top = tk.Label(top)
+        self.label_top.place(relx=0.335, rely=0.1, height=30, width=165)
+        self.label_top.configure(background='#d9d9d9')
+        self.label_top.configure(disabledforeground='#a3a3a3')
+        self.label_top.configure(foreground='#000000')
+        self.label_top.configure(text='''Live Plotting of Data''')
+        self.label_top.configure(width=164)
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -222,15 +222,41 @@ def plotGraph(frame):
     Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
     '''
     plot3d = frame
+    fig = plt.figure()
     #plot3d.title('Graph')
-    fig = Figure(figsize=(3, 2), dpi=100)
+    #fig = Figure(figsize=(3, 2), dpi=100)
     canvas = FigureCanvasTkAgg(fig, master=plot3d)  # A tk.DrawingArea.
     canvas.draw()
 
-    ax = fig.add_subplot(111, projection="3d")
-    for i in range(10):
-        y = np.random.random()
-        ax.scatter(i, y)
+    #if tvec is None:
+    #    tvec = ['-', '-', '-']
+    #if evec is None:
+    #    evec = ['-', '-', '-']
+    ax = plt.axes(projection='3d')
+    x = tvec[0]
+    y = tvec[1]
+    z = tvec[2]
+
+    with open('images\position_log.csv', 'r') as csv_file:
+        plots = csv.reader(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
+        for row in plots:
+            try:
+                x.append(int(row[0]))
+                y.append(int(row[1]))
+                z.append(int(row[2]))
+            except(TypeError, ValueError):
+                print('Error ignored')
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
+    array = [x,y,z]
+    for i in array:
+        ax.plot3D(x[i], y[i], z[i], 'red')
+        x = np.asarray(x)
+        y = np.asarray(y)
+        z = np.asarray(z)
+
+        ax.plot3D(x, y, z, 'red')
 
     toolbar = NavigationToolbar2Tk(canvas, plot3d)
     toolbar.update()
