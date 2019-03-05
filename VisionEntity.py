@@ -20,7 +20,7 @@ class VisionEntity:
         self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
         self._arucoPoseEstimator = ArucoPoseEstimator(board_length, board_width, marker_size, marker_gap)
         self._intrinsic_calibrator = IntrinsicCalibrator()
-        self._camera.loadSavedCalibValues()
+        self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
     def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que):
