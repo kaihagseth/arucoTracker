@@ -112,7 +112,7 @@ class TextUI():
                 self.videoTest(0)
             elif choice is 8:
                 print('Printing parameters')
-                self.c.getCamFromIndex(0)._IC.printCurrParams()
+                self.c.getCamFromIndex(0)._printCameraParams()
             elif choice is 9:
                 self.doHSVCalib()
             elif choice is 10:
