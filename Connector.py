@@ -39,7 +39,6 @@ class Connector():
             dispResFx((tvec, evec))
             # Check if we want to abort, function from GUI.
             doAbort = doAbortFx()
-         #   logging.info("Running startApplication in Connector")
         print('Ended')
 
     def initConnectedCams(self):
@@ -59,8 +58,6 @@ class Connector():
         :param camId:
         :return:
         """
-        #msg = "ID trying to acccess frame: ", camId
-        #logging.info(msg)
         return self.PE.getVEById(camId).getFrame()
 
     def getVEFromCamIndex(self, index):
@@ -68,8 +65,6 @@ class Connector():
 
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'
-        # l = logging.getLogger()
-        # l.debug('HELLO DEBUG')
         with open(path) as f:
             config = json.load(f)
         logging.config.dictConfig(config)
