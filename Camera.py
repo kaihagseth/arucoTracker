@@ -3,27 +3,32 @@ import logging
 
 from WebcamVideoStream import WebcamVideoStream
 import cv2
-from IntrinsicCalibrator import IntrinsicCalibrator as ic
+import IntrinsicCalibrator as ic
 
 class Camera():
     """
     Class for Camera.
     """
-    def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, camera_label='A1',
-                 activateSavedValues = True):
-        '''Create a cam '''
+    def __init__(self, cam_name="Cam0", src_index=0, camera_label='A1',
+                 load_camera_parameters=True):
+        """
+        :param cam_name: Name of camera
+        :param src_index: Index opencv uses to access this camera
+        :param camera_label: String corresponding to yellow label on camera.
+        :param loadCameraParameters: Flag to decide if you should load this cameras parameters.
+        """
         print("Creating OTCam")
-        #self._ID = cam_id # A distinct number for each camera.
         self._name = cam_name
+        self.camera_label = camera_label
         self.camera_parameters = {'mtx': None, 'ret': None, 'dist': None, 'rvecs': None, 'tvecs': None,
-                                 'newcameramtx': None, 'roi': None}
+                                  'newcameramtx': None, 'roi': None}
         self._src = src_index
         self._vidCap = cv2.VideoCapture(self._src)
         # Test
         if not self._vidCap.open(self._src):
-            logging.error('Camera not opened!!')
-        if activateSavedValues:
-            self.loadCameraParameters(camera_label)
+            logging.error('Camera not opened!')
+        if load_camera_parameters:
+            self.loadCameraParameters()
 
     def startVideoStream(self):
         '''
@@ -66,7 +71,6 @@ class Camera():
         """
         self.camera_parameters['dist'] = distortion_coefficients
 
-
     def getDistortionCoefficients(self):
         """
         :return: distortion coefficients
@@ -93,13 +97,25 @@ class Camera():
         img = ic.getUndistortedFrame(self.getFrame())
         return img
 
-
-    def loadCameraParameters(self, camera_id='A1'):
-        '''Load and use the earlier saved intrinsic parameters from a file.
+    def loadCameraParameters(self):
+        """Load and use the earlier saved intrinsic parameters from a file.
         :param filename: Name of file to get params from.
-        '''
-        filename =  'calibValues/' + camera_id +'calib.npz'
-        self.camera_parameters = ic.loadSavedValues(filename)
+        """
+        filename =  'calibValues/' + self.camera_label +'calib.npz'
+        npzfile = np.load(filename)
+        self.camera_parameters = {'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
+                             'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
+
+    def saveCameraParameters(self):
+        """
+        Saves current camera values to a file
+        :return:
+        """
+        filename = 'calibValues/' + self.camera_id +'calib.npz'
+        np.savez(filename, ret=self.camera_parameters['ret'], mtx=self.camera_parameters['mtx'],
+                 dist=self.camera_parameters['dist'], rvecs=self.self.camera_parameters['rvecs'],
+                 tvecs=self.self.camera_parameters['tvecs'], newcameramtx=self.camera_parameters['newcameramtx'],
+                 roi=self.camera_parameters['newcameramtx'])
 
     def getSrc(self):
         return self._src

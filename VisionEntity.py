@@ -1,6 +1,5 @@
 import time
 from Camera import Camera
-from IntrinsicCalibrator import IntrinsicCalibrator
 from arucoPoseEstimator import ArucoPoseEstimator
 import numpy as np
 import exceptions as exc
@@ -17,9 +16,8 @@ class VisionEntity:
 
     def __init__(self, cv2_index, board_length=3, board_width=3, marker_size=30, marker_gap=5):
         self.intrinsic_matrix = None
-        self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
+        self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
         self._arucoPoseEstimator = ArucoPoseEstimator(board_length, board_width, marker_size, marker_gap)
-        self._intrinsic_calibrator = IntrinsicCalibrator()
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
@@ -76,12 +74,11 @@ class VisionEntity:
         """
         return self._camera.getUndistortedFrame()
 
-    def getModelPose(self, frame):
+    def getModelPose(self, frame, showFrame=True):
         """
         Returns six axis pose of model
         :return: Tuple of size 2 with numpy arrays (x, y, z) (pitch, yaw, roll) (angles in degrees)
         """
-        showFrame = True
         return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
                                                      self.getDistortionCoefficients(), showFrame=showFrame)
 
@@ -116,4 +113,8 @@ class VisionEntity:
         self.intrinsic_matrix = self._camera.getIntrinsicParams()
 
     def getCam(self):
+        """
+        Returns this vision entitys Camera object
+        :return: Camera object
+        """
         return self._camera
