@@ -11,7 +11,7 @@ import csv
 
 
 class dataReading:
-    def __init__(self, top=None):   #add param for connector later on
+    def __init__(self, top=None):
         '''This class configures and populates the data window.
                     top is the toplevel containing window.'''
 
@@ -177,9 +177,9 @@ class dataReading:
         self.graph_frame.configure(command=plotGraph(self.graph_frame))
 
         self.btn_top = tk.Button(top)
-        self.btn_top.place(relx=0.330, rely=0.05, height=30, width=150)
-        self.btn_top.configure(background='#000000')
-        self.btn_top.configure(disabledforeground='#a3a3a3')
+        self.btn_top.place(relx=0.375, rely=0.05, height=30, width=150)
+        self.btn_top.configure(background='#665959')
+        self.btn_top.configure(disabledforeground='#911515')
         self.btn_top.configure(foreground='#FFFFFF')
         self.btn_top.configure(text='Plot Data')
         self.btn_top.configure(width=150)
@@ -256,9 +256,7 @@ def plotGraph(frame):
                 y.append(int(row[1]))
                 z.append(int(row[2]))
             except(TypeError, ValueError):
-                if row[0] == '-':
-                    continue
-                print('Could not read data from position log. Row not translatable to int')
+                print('Error ignored')
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)
