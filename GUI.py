@@ -8,6 +8,7 @@ from Camera import *
 import matplotlib as mpl
 import GUIDataPlotting
 import Connector
+import threading
 
 import threading
 camIDInUse = 1
@@ -53,14 +54,23 @@ class GUIApplication(threading.Thread):
             self.root.columnconfigure(rows, weight=1)
             rows += 1
 
+        #tabs = {} #Implement this in the future for self generating tabs
+        #for tab_name in tab_names:
+        #    tab = MyTab(self.notebook, tab_name)
+        #    self.notebook.add(tab, text=tab_name)
+        #    tabs[tab_name] = tab
+
+
         # Adds tabs of the notebook
         page_1 = ttk.Frame(notebook)
         page_2 = ttk.Frame(notebook)
         page_3 = ttk.Frame(notebook)
+        page_4 = ttk.Frame(notebook)
 
-        notebook.add(page_1, text='Tab 1')
-        notebook.add(page_2, text='Tab 2')
-        notebook.add(page_3, text='Tab 3')
+        notebook.add(page_1, text='Camera')
+        notebook.add(page_2, text='Calibration')
+        notebook.add(page_3, text='PDF')
+        notebook.add(page_4, text='Graph')
 
 
 
@@ -106,9 +116,16 @@ class GUIApplication(threading.Thread):
         second_label = Label(page_2, text='Camera Calibration')
         second_label.place(relx=0.5, rely=0.02, anchor='center')
 
-        style = ttk.Style()
-        style.theme_use('default')
-        style.configure("black.Horizontal.TProgressbar", background='black')
+        page_4_frame = Frame(page_4)
+        page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
+        page_4_frame.configure(relief='groove')
+        page_4_frame.configure(borderwidth='2')
+        page_4_frame.configure(relief='groove')
+        page_4_frame.configure(background='#000000')
+        page_4_frame.configure(width=565)
+
+        GUIDataPlotting.createDataWindow(page_4_frame)
+
 
 
         def startClicked():

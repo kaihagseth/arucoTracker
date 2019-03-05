@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import math
 from fpdf import FPDF
-from PIL import Image
 
 
 class ArucoPoseEstimator:
@@ -20,7 +19,7 @@ class ArucoPoseEstimator:
         """
         self._board = cv2.aruco.GridBoard_create(board_length, board_width, marker_size, marker_gap, self.dictionary,
                                                  self.nextMarkerId)
-        self.nextMarkerId += board_length*board_width # Next ID at 9 if 3x3
+        self.nextMarkerId += board_length*board_width  # Next ID at 9 if 3x3
         self._R0 = None
         self._T0 = None
 
@@ -66,7 +65,7 @@ class ArucoPoseEstimator:
         :return: Relative translation of model and euler angles of model as tuple of two np.arrays.
                  Tuple of two Nones if no position is found
         """
-        #dist_coeff = np.matrix(dist_coeff)
+
         corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
         if showFrame:
             image_copy = frame
@@ -118,10 +117,10 @@ class ArucoPoseEstimator:
         """
         grid_size = self._board.getGridSize()
         marker_length = self._board.getMarkerLength()
-        marker_seperation = self._board.getMarkerSeparation()
+        marker_separation = self._board.getMarkerSeparation()
 
-        width = (grid_size[0] * marker_length) + (marker_seperation * (grid_size[0] - 1))
-        height = (grid_size[1] * marker_length) + (marker_seperation * (grid_size[1] - 1))
+        width = (grid_size[0] * marker_length) + (marker_separation * (grid_size[0] - 1))
+        height = (grid_size[1] * marker_length) + (marker_separation * (grid_size[1] - 1))
 
         board_image = self._board.draw((int(width*12), int(height*12))) # About 300 dpi
         cv2.imwrite("arucoBoard.png", board_image)
