@@ -1,12 +1,7 @@
 import logging
 import numpy as np
 import cv2
-import glob
 from exceptions import FailedCalibrationException
-
-images = glob.glob('*.jpg')
-cv2.destroyAllWindows()
-
 
 class IntrinsicCalibrator:
     '''
@@ -29,7 +24,6 @@ class IntrinsicCalibrator:
     def loadSavedValues(self, filename='calibValues/A1calib.npz'):
         '''
         Load values to be used in calibration.
-        # TODO: Remove
         This process is just needed if you don't want to do a new calibration,
         but use old values instead.
         :param filename: Filename to get values from.
@@ -43,13 +37,12 @@ class IntrinsicCalibrator:
         self._curr_roi = npzfile['roi']
         self._parr_cam.setIntrinsicParams(npzfile['mtx'])
 
-    def calibCam(self, frames):
+    def calibCam(self, frames, showCalibration=False, cb_square_size=1):
         '''
         Calibrate the camera lens.
         :param frames: List of frames to use in calibration.
         :return: None
         '''
-      #  i = 1
         cb_n_width = 5
         cb_n_height = 7
         camID = 0
@@ -61,17 +54,12 @@ class IntrinsicCalibrator:
             logging.error('CameraID not found!')
         else:
             camID = self._parr_cam.getSrc()
-        ''' Add all images in folder ''' # TODO: Fix this
-       #  for (i, frame) in enumerate(frames):
-      #      path = 'images/cam_{0}/calib_img{1}.png'.format(camID, i)
-     #       cv2.imwrite(path, frame)
-    #
         # Termination criteria
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,4,0)
         objp = np.zeros((cb_n_width * cb_n_height, 3), np.float32)
-        objp[:, :2] = np.mgrid[0:cb_n_height, 0:cb_n_width].T.reshape(-1, 2)*40
+        objp[:, :2] = np.mgrid[0:cb_n_height, 0:cb_n_width].T.reshape(-1, 2)*cb_square_size
 
         # Arrays to store object points and image points from all the images.
         objpoints = []  # 3d point in real world space
@@ -91,12 +79,14 @@ class IntrinsicCalibrator:
                     cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     imgpoints.append(corners)
                     ''' Draw and d isplay the corners '''
-                    # cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
-                    # cv2.imshow('img', frame)
-                    # cv2.waitKey(1)
+                    if showCalibration:
+                        cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
+                        cv2.imshow('img', frame)
+                        cv2.waitKey(1)
                 else:
                     logging.error('"ret" is not true. Could not find corners.')
-            cv2.destroyAllWindows()
+            if showCalibration:
+                cv2.destroyAllWindows()
             '''Do the calibration:'''
             if not objpoints:
                 print('Objpoints is none!')
@@ -104,22 +94,9 @@ class IntrinsicCalibrator:
                 print('Imgpoints is none!')
             print('starting calibration')
             ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-            print('Calibration done, finding optimal camera matrix')
             h, w = img.shape[:2]
             newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-            '''Undistort the image: '''
-            # dst = cv2.undistort(gray, mtx, dist, None, newcameramtx)
-            # if not dst.any(): #dst is empty, no calib result is found.
-            #     raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
-            # crop the image
-            # x, y, w, h = roi
-            # dst = dst[y:y + h, x:x + w]
-            #cv2.imshow('Calib res', dst)
 
-            #cv2.waitKey(0)
-            '''Only write image if list is more a single frame.'''
-            #if len(frames) >= 2:
-            #    cv2.imwrite('images/calibresult.png', dst)
             '''Save latest values to a file.'''
             filename = 'newestCalib'
             np.savez(filename, ret=ret, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs, newcameramtx=newcameramtx, roi=roi)
@@ -132,6 +109,7 @@ class IntrinsicCalibrator:
             self._curr_tvecs = tvecs
             self._curr_newcamera_mtx = newcameramtx
             self._curr_roi = roi
+            print('Calibration done')
 
 
         except IndexError:
@@ -164,7 +142,6 @@ class IntrinsicCalibrator:
         # def undistort_image(self, image):
         #return cv2.undistort(image, self.camera_matrix, self.dist_coeffs,
         #                     newCameraMatrix=self.new_camera_matrix)
-
     def undistortImage(self, img):
         # TODO: Rename to getUndistortedFrame
         '''
@@ -181,7 +158,6 @@ class IntrinsicCalibrator:
         if not dst.any():  # dst is empty, no calib result is found.
             raise FailedCalibrationException(msg='Failed to do cv2.undistort(). Try with new picture.')
         # crop the image
-        logging.debug('Past dst')
         x, y, w, h = self._curr_roi
         dst = dst[y:y + h, x:x + w]
         return dst
@@ -196,31 +172,3 @@ class IntrinsicCalibrator:
         frames = np.array(frames)[1::6]
         print(len(frames))
         self.calibCam(frames)
-
-
-if __name__ == "__main__":
-    '''
-    For debug only
-    '''
-    #ic = IntrinsicCalibration()
-    #ic.loadSavedValues()
-    #ic.pri
-    #ic.calibCam([cv2.imread('images/img.jpg')])
-
-    ''' print('Hello')
-    ic = IntrinsicCalibration()
-    ic.loadSavedValues('IntriCalib.npz')
-    #ic.calibCamDefault(useDemo=True)
-    print('Hi')
-    img = cv2.imread('images/img.jpg')
-    print('OK')
-    imgd = None
-    try:
-        print('Inside imgd')
-        imgd = ic.undistortImage(img)
-    except FailedCalibrationException:
-        print('Unsuccesfull')
-    print('Img: ', imgd)
-    cv2.imshow('Undistort',imgd)
-    cv2.imwrite('images/imgd.jpg', imgd)
-    cv2.waitKey(7000)'''
