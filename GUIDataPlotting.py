@@ -11,18 +11,18 @@ import csv
 
 
 class dataReading:
-    def __init__(self, top=None):
+    def __init__(self, top=None):   #add param for connector later on
         '''This class configures and populates the data window.
                     top is the toplevel containing window.'''
 
         _bgcolor = '#d9d9d9'  # X11 color: 'gray85'
-        _fgcolor = '#aaa000'  # X11 color: 'red'
+        _fgcolor = '#d9d9d9'  # X11 color: 'red'
         _compcolor = '#d9d9d9'  # X11 color: 'gray85'
         _ana1color = '#d9d9d9'  # X11 color: 'gray85'
         _ana2color = '#ececec'  # Closest X11 color: 'gray92'
-        top.geometry("600x450+650+150")
-        top.title("Data from Camera")
-        top.configure(background=_fgcolor)
+        #top.geometry('600x450+650+150')
+        #top.title('Data from Camera')
+        #top.configure(background=_fgcolor)
         width = 0.95
         height = 0.2
 
@@ -36,7 +36,7 @@ class dataReading:
 
         self.entry_x = tk.Entry(self.frame_1)
         self.entry_x.place(relx=0.018, rely=0.588, relheight=0.282, relwidth=0.096)
-        self.entry_x.configure(background='red')
+        self.entry_x.configure(background='white')
         self.entry_x.configure(font='TkTextFont')
         self.entry_x.configure(foreground='black')
         self.entry_x.configure(width=54)
@@ -76,7 +76,6 @@ class dataReading:
         self.entry_pitch.configure(selectbackground='#c4c4c4')
         self.entry_pitch.configure(selectforeground='black')
         self.entry_pitch.configure(width=54)
-
 
         self.entry_yaw = tk.Entry(self.frame_1)
         self.entry_yaw.place(relx=0.867, rely=0.588, relheight=0.282
@@ -177,17 +176,26 @@ class dataReading:
         self.graph_frame.configure(width=233)
         self.graph_frame.configure(command=plotGraph(self.graph_frame))
 
-        self.label_top = tk.Label(top)
-        self.label_top.place(relx=0.335, rely=0.1, height=30, width=165)
-        self.label_top.configure(background='#d9d9d9')
-        self.label_top.configure(disabledforeground='#a3a3a3')
-        self.label_top.configure(foreground='#000000')
-        self.label_top.configure(text='''Live Plotting of Data''')
-        self.label_top.configure(width=164)
+        self.btn_top = tk.Button(top)
+        self.btn_top.place(relx=0.330, rely=0.05, height=30, width=150)
+        self.btn_top.configure(background='#000000')
+        self.btn_top.configure(disabledforeground='#a3a3a3')
+        self.btn_top.configure(foreground='#FFFFFF')
+        self.btn_top.configure(text='Plot Data')
+        self.btn_top.configure(width=150)
+        #self.btn_top.configure(command=self.textVariable(c))
+
+
+    def textVariable(self, pose):
+        self.entry_x.configure(textvariable=pose[0][0])
+        self.entry_y.configure(textvariable=pose[0][1])
+        self.entry_y.configure(textvariable=pose[0][2])
+        self.entry_pitch.configure(textvariable=pose[1][1])
+        self.entry_yaw.configure(textvariable=pose[1][2])
+        self.entry_roll.configure(textvariable=pose[1][0])
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
-
     global val, w, root
     root = tk.Tk()
     top = dataReading(root)
@@ -201,9 +209,9 @@ def createDataWindow(root, *args, **kwargs):
     '''Starting point when module is imported by another program.'''
     global w, w_win, rt
     rt = root
-    w = tk.Toplevel(root)
-    top = dataReading(w)
-    return w, top
+    frame = root
+    top = dataReading(frame)
+    return top
 
 
 def destroy_Toplevel1():
@@ -233,9 +241,12 @@ def plotGraph(frame):
     #if evec is None:
     #    evec = ['-', '-', '-']
     ax = plt.axes(projection='3d')
-    x = tvec[0]
-    y = tvec[1]
-    z = tvec[2]
+    #x = tvec[0]
+    #y = tvec[1]
+    #z = tvec[2]
+    x = []
+    y = []
+    z = []
 
     with open('images\position_log.csv', 'r') as csv_file:
         plots = csv.reader(csv_file, delimiter=',', lineterminator='\n', dialect='excel')

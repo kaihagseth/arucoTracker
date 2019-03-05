@@ -54,6 +54,13 @@ class GUIApplication(threading.Thread):
             self.root.columnconfigure(rows, weight=1)
             rows += 1
 
+        #tabs = {} #Implement this in the future for self generating tabs
+        #for tab_name in tab_names:
+        #    tab = MyTab(self.notebook, tab_name)
+        #    self.notebook.add(tab, text=tab_name)
+        #    tabs[tab_name] = tab
+
+
         # Adds tabs of the notebook
         page_1 = ttk.Frame(notebook)
         page_2 = ttk.Frame(notebook)
@@ -92,9 +99,16 @@ class GUIApplication(threading.Thread):
         second_label = Label(page_2, text='Camera Calibration')
         second_label.place(relx=0.5, rely=0.02, anchor='center')
 
-        style = ttk.Style()
-        style.theme_use('default')
-        style.configure("black.Horizontal.TProgressbar", background='black')
+        page_4_frame = Frame(page_4)
+        page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
+        page_4_frame.configure(relief='groove')
+        page_4_frame.configure(borderwidth='2')
+        page_4_frame.configure(relief='groove')
+        page_4_frame.configure(background='#000000')
+        page_4_frame.configure(width=565)
+
+        GUIDataPlotting.createDataWindow(page_4_frame)
+
 
 
         def startClicked():
@@ -190,12 +204,6 @@ class GUIApplication(threading.Thread):
             print("CHANGING CAMERA ID: Camid to shift to", camid)
             print("Previous camid: ", camIDInUse)
             camIDInUse = camid#cap = video_stream
-
-
-        def placeGraph():
-            GUIDataPlotting.plotGraph()
-
-
 
         # Start and stop button setup
         start_btn = Button(page_1, text='Start', command=startClicked)
