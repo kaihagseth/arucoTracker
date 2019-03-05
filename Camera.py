@@ -110,7 +110,7 @@ class Camera():
 
     def undistort(self, img):
         '''Return a undistorted version of a distorted image. '''
-        self._IC.undistort_image(img)
+        self._IC.undistortImage(img)
 
     def activateSavedValues(self, filename='calibValues/A1calib.npz'):
         '''Load and use the earlier saved intrinsic parameters from a file.
