@@ -10,7 +10,7 @@ class Camera():
     Class for Camera.
     """
     def __init__(self, cam_name = "Cam0", src_index=0, camera_pose_matrix=None, camera_label='A1',
-                 activateSavedValues = False):
+                 activateSavedValues = True):
         '''Create a cam '''
         print("Creating OTCam")
         #self._ID = cam_id # A distinct number for each camera.

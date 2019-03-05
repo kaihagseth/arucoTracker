@@ -15,7 +15,7 @@ class VisionEntity:
 
     _guess_pose = None
 
-    def __init__(self, cv2_index, board_length, board_width, marker_size, marker_gap):
+    def __init__(self, cv2_index, board_length=3, board_width=3, marker_size=30, marker_gap=5):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, activateSavedValues=True)
         self._arucoPoseEstimator = ArucoPoseEstimator(board_length, board_width, marker_size, marker_gap)
