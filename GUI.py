@@ -5,26 +5,27 @@ from tkinter import Menu
 from tkinter import messagebox
 from PIL import ImageTk, Image
 from Camera import *
-from CameraGroup import *
 import matplotlib as mpl
 import GUIDataPlotting
 import Connector
 import threading
 
 import threading
-
+camIDInUse = 1
 class GUIApplication(threading.Thread):
+
     def __init__(self, connector):
         threading.Thread.__init__(self)
         # Camera variables
         self.counter = 0
         self.show_video = False
         self.c = connector
+        self.camlist = self.c.initConnectedCams()
 
     def run(self):
         # Global camera_index
         global video_streams
-
+        self.camIDInUse = 0
         # Empty function to add to dummy buttons
         def fileClicked():
             print('File clicked')
@@ -140,21 +141,25 @@ class GUIApplication(threading.Thread):
             '''
 
             global show_video
-            if show_video is True:
-                #counter += 1
-                var=StringVar()
-                currCap = video_streams[int(var.get())]
-                _, frame = currCap.read()
-                # Check if the webcam is opened correctly
-                if not currCap.isOpened():
-                    raise IOError("Cannot open webcam")
 
-                cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img_video = Image.fromarray(cv2image)
-                image_tk = ImageTk.PhotoImage(image=img_video)
-                main_label.image_tk = image_tk
-                main_label.configure(image=image_tk)
-                main_label.after(1, videoStream)
+
+            if show_video is True:
+                global camIDInUse
+                #counter += 1
+                #currCap = video_streams[int(var.get())]
+                frame = self.c.getImgFromSingleCam(var) #currCap.read()
+                # Check if the webcam is opened correctly
+                #if not currCap.isOpened():
+                #    raise IOError("Cannot open webcam")
+                print("ID: ", self.camIDInUse)
+                print("Frame: ", frame)
+                if frame is not None:
+                    cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img_video = Image.fromarray(cv2image)
+                    image_tk = ImageTk.PhotoImage(image=img_video)
+                    main_label.image_tk = image_tk
+                    main_label.configure(image=image_tk)
+                    main_label.after(1, videoStream)
 
 
         def showImage():
@@ -174,11 +179,14 @@ class GUIApplication(threading.Thread):
             Save a single frame from video feed
             :return: jpg
             '''
-            cv2.imwrite('images/frame%d.jpg' % counter, videoStream())
+            cv2.imwrite('images/frame%d.jpg' % self.counter, videoStream())
 
 
-        def changeCameraStream(video_stream):
-            cap = video_stream
+        def changeCameraID(camid):
+            global camIDInUse
+            print("CHANGING CAMERA ID: Camid to shift to", camid)
+            print("Previous camid: ", camIDInUse)
+            camIDInUse = camid#cap = video_stream
 
 
         def placeGraph():
@@ -197,25 +205,21 @@ class GUIApplication(threading.Thread):
         calibrate_btn.grid_rowconfigure(1, weight=1)
         calibrate_btn.grid_columnconfigure(1, weight=1)
 
+        # Camera temp variables.
+        #cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
+        var = IntVar()
+        var.set(0)
+        n = 0
+        def p():
+            print("Want to change id")
+        # Array for added cameras. Future improvements is getting the list of cameras connected.
+        #video_streams = [cv2.VideoCapture(0), cv2.VideoCapture(1), cv2.VideoCapture(2)]
 
-
-        def initConnectedCams():
-            camlist = self.c.initConnectedCams()
-
-            # Camera temp variables.
-            cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
-            var = StringVar()
-            var.set(cam_list[0])
-            n = 0
-
-            # Array for added cameras. Future improvements is getting the list of cameras connected.
-            video_streams = [cv2.VideoCapture(0), cv2.VideoCapture(1), cv2.VideoCapture(2)]
-
-            # Creating a radio button for each camera connected.
-            for i, video_stream in enumerate(video_streams):
-                radio_button = Radiobutton(page_1, text='Cam ' + str(i), variable=var, value=n,
-                                           command=changeCameraStream(video_stream))
-                radio_button.grid(column=0, row=5 + i)
-                n += 1
+        # Creating a radio button for each camera connected.
+        for c_id in self.camlist:
+            radio_button = Radiobutton(page_1, text='Cam ' + str(c_id), variable=var, value=n,
+                                       command=p())
+            radio_button.grid(column=0, row=5 + c_id)
+            n += 1
 
         self.root.mainloop()

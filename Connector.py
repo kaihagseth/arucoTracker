@@ -42,7 +42,6 @@ class Connector():
          #   logging.info("Running startApplication in Connector")
         print('Ended')
 
-
     def initConnectedCams(self):
         '''
         Initialise cams connected to PC.
@@ -51,15 +50,18 @@ class Connector():
         :return: List of cams connected
         '''
 
-        camlist = self.cg.initConnectedCams(includeDefaultCam)
+        camlist = self.PE.createVisionEntities()
         return camlist
 
-    def initSCPEs(self, camlist):
-        self.PE.initSCPEs(camlist)
-        self.PE.createVisionEntities()
-
     def getImgFromSingleCam(self, camId):
-        return self.PE.getCamById(camId).getSingleImg()
+        """
+        OMG: Not threadsafe in VisionEntity!
+        :param camId:
+        :return:
+        """
+        #msg = "ID trying to acccess frame: ", camId
+        #logging.info(msg)
+        return self.PE.getVEById(camId).getFrame()
 
     def getVEFromCamIndex(self, index):
         return self.PE.getVEById(index)

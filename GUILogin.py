@@ -108,6 +108,8 @@ class GUILogin():
             else:
                 self.wrongEntry()
 
+#        elif email_name is "" and password1 is "":
+#            self.loginSuccessful()
         else:
             self.wrongEntry()
 
@@ -190,7 +192,7 @@ class GUILogin():
         Button(main_window,text='Login', height='2', width='25', command=self.login).pack()
         Label(main_window,text='').pack()
         Button(main_window,text='Register', height='2', width='25', command=self.register).pack()
-
+        Button(main_window, text='Hack', height='2', width='25', command=self.startMainApplication).pack()
         main_window.mainloop()
 
 

@@ -24,6 +24,7 @@ class PoseEstimator():
         for cam_index in cam_list:
             VE = VisionEntity(cam_index, 3, 3, 50, 5)
             self.VisionEntityList.append(VE)
+        return cam_list
 
     def findConnectedCamIndexes(self):
         '''
@@ -31,7 +32,7 @@ class PoseEstimator():
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [0,2,3,4]  # Index of the webcam we dont want to use, if any.
+        unwantedCams = [3,4]  # Index of the webcam we dont want to use, if any.
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
@@ -57,13 +58,14 @@ class PoseEstimator():
             print('VE start')
             singlecam_curr_pose = [0.0,0.0,0.0],[0.0,0.0,0.0]
             #Create a thread-safe variable to save pose to.
-            singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last writed variable is most relevant.
+            singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last written variable is most relevant.
             singlecam_curr_pose_que.put(singlecam_curr_pose)
+            frame_que = queue.LifoQueue() # Thread-safe variable for passing cam frames to GUI.
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
-            th = threading.Thread(target=VE.runThreadedLoop, args=[singlecam_curr_pose, singlecam_curr_pose_que], daemon=True)
+            th = threading.Thread(target=VE.runThreadedLoop, args=[singlecam_curr_pose, singlecam_curr_pose_que, frame_que], daemon=True)
             logging.debug('Passing thread creation.')
-            self.threadInfoList.append([VE, th, singlecam_curr_pose_que])
+            self.threadInfoList.append([VE, th, singlecam_curr_pose_que, frame_que])
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
@@ -96,15 +98,6 @@ class PoseEstimator():
         except TypeError as e:
             logging.error(str(e))
             return []
-
-    def getCamById(self, camID):
-        for VE in self.VisionEntityList:
-            cam = VE.getCam()
-            if cam._src is camID:
-                wantedCam = cam
-                return wantedCam
-        # If not found, log error.
-        logging.error('Camera not found on given index. ')
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -139,8 +132,6 @@ class PoseEstimator():
                 self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n',  dialect='excel')
                 self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
                                        (time.time() - self._log_start_time)])
-
-
 
     def getVEById(self, camID):
         """
