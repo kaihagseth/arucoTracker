@@ -141,23 +141,26 @@ class GUIApplication(threading.Thread):
 
 
             if show_video is True:
-                global camIDInUse
-                #counter += 1
-                #currCap = video_streams[int(var.get())]
-                frame = self.c.getImgFromSingleCam(var) #currCap.read()
-                # Check if the webcam is opened correctly
-                #if not currCap.isOpened():
-                #    raise IOError("Cannot open webcam")
-                print("ID: ", self.camIDInUse)
-                print("Frame: ", frame)
-                if frame is not None:
-                    cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    img_video = Image.fromarray(cv2image)
-                    image_tk = ImageTk.PhotoImage(image=img_video)
-                    main_label.image_tk = image_tk
-                    main_label.configure(image=image_tk)
-                    main_label.after(1, videoStream)
-
+                try:
+                    global camIDInUse
+                    #counter += 1
+                    #currCap = video_streams[int(var.get())]
+                    print("Var value: ", var.get())
+                    frame = self.c.getImgFromSingleCam(camIDInUse) #currCap.read()
+                    # Check if the webcam is opened correctly
+                    #if not currCap.isOpened():
+                    #    raise IOError("Cannot open webcam")
+                    print("ID: ", self.camIDInUse)
+                    print("Frame: ", frame)
+                    if frame is not None:
+                        cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        img_video = Image.fromarray(cv2image)
+                        image_tk = ImageTk.PhotoImage(image=img_video)
+                        main_label.image_tk = image_tk
+                        main_label.configure(image=image_tk)
+                        main_label.after(1, videoStream)
+                except AttributeError as e:
+                    logging.error(str(e))
 
         def showImage():
             '''
@@ -205,18 +208,41 @@ class GUIApplication(threading.Thread):
         # Camera temp variables.
         #cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
         var = IntVar()
-        var.set(0)
+
         n = 0
-        def p():
-            print("Want to change id")
+        def setVal():
+            print("You have set val var to ", var.get())
         # Array for added cameras. Future improvements is getting the list of cameras connected.
         #video_streams = [cv2.VideoCapture(0), cv2.VideoCapture(1), cv2.VideoCapture(2)]
+        #indexlist = [0,1,2,3,4,5,6]
+        ## Creating a radio button for each camera connected.
+        #radiochoiceval = 0
+        #for c_id in self.camlist:
+        #    var = c_id
+        #    radio_button = Radiobutton(page_1, text='Cam ' + str(c_id), variable=var, value=indexlist[radiochoiceval], command=setVal)
+        #    radio_button.grid(column=0, row=5 + c_id)
+        #    n += 1
+        #    radiochoiceval += 1
+        def setCam1():
+            global camIDInUse
+            camIDInUse = 0
 
-        # Creating a radio button for each camera connected.
-        for c_id in self.camlist:
-            radio_button = Radiobutton(page_1, text='Cam ' + str(c_id), variable=var, value=n,
-                                       command=p())
-            radio_button.grid(column=0, row=5 + c_id)
-            n += 1
+        def setCam2():
+            global camIDInUse
+            camIDInUse = 1
+
+        def setCam3():
+            global camIDInUse
+            camIDInUse = 2
+
+        radio_button1 = Radiobutton(page_1, text='Cam ' + str(1), variable=var, value=1,
+                                   command=setCam1)
+        radio_button1.grid(column=0, row=5 + 1)
+        radio_button2 = Radiobutton(page_1, text='Cam ' + str(1), variable=var, value=2,
+                                   command=setCam2)
+        radio_button2.grid(column=0, row=5 + 2)
+        radio_button3 = Radiobutton(page_1, text='Cam ' + str(3), variable=var, value=3,
+                                   command=setCam3)
+        radio_button3.grid(column=0, row=5 + 3)
 
         self.root.mainloop()

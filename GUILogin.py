@@ -108,8 +108,8 @@ class GUILogin():
             else:
                 self.wrongEntry()
 
-#        elif email_name is "" and password1 is "":
-#            self.loginSuccessful()
+        elif email_name is "" and password1 is "":
+            self.loginSuccessful()
         else:
             self.wrongEntry()
 
