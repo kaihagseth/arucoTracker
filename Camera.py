@@ -90,12 +90,9 @@ class Camera():
 
     def getUndistortedFrame(self):
         "Get threaded, undistorted frame. "
-        img = self.undistort(self.getFrame())
+        img = ic.getUndistortedFrame(self.getFrame())
         return img
 
-    def undistort(self, img):
-        '''Return a undistorted version of a distorted image. '''
-        self._IC.getUndistortedFrame(img)
 
     def loadCameraParameters(self, camera_id='A1'):
         '''Load and use the earlier saved intrinsic parameters from a file.
