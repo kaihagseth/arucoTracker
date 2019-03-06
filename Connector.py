@@ -48,6 +48,8 @@ class Connector():
                 dispResFx((tvec, evec), poseFrame)
                 # Check if we want to abort, function from GUI.
                 stopApp = stopAppFx()
+                msg = 'StopApp: ', stopApp
+                logging.debug(msg)
             else:
                 time.sleep(0.1)
         print('Ended')

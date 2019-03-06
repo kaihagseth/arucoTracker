@@ -1,5 +1,8 @@
 from tkinter import *
 import os
+
+import time
+
 from GUI import GUIApplication
 import re
 import threading
@@ -47,7 +50,9 @@ class GUILogin():
         screen3.title('Success')
         screen3.geometry('150x100')
         Label(screen3, text='Login Success').pack()
-        Button(screen3, text='OK', command=self.deleteWindows).pack()
+        time.sleep(0.25)
+        self.deleteWindows()
+        #Button(screen3, text='OK', command=self.deleteWindows).pack()
 
 
     def wrongEntry(self):
@@ -192,7 +197,9 @@ class GUILogin():
         Button(main_window,text='Login', height='2', width='25', command=self.login).pack()
         Label(main_window,text='').pack()
         Button(main_window,text='Register', height='2', width='25', command=self.register).pack()
-        Button(main_window, text='Hack', height='2', width='25', command=self.startMainApplication).pack()
+        #Button(main_window, text='Hack', height='2', width='25', command=self.loginSuccessful).pack()
+        self.login()
+
         main_window.mainloop()
 
 
