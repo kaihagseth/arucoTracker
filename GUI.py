@@ -7,6 +7,7 @@ from PIL import ImageTk, Image
 from Camera import *
 import matplotlib as mpl
 import GUIDataPlotting
+import arucoPoseEstimator
 import Connector
 import threading
 
@@ -67,6 +68,7 @@ class GUIApplication(threading.Thread):
         page_3 = ttk.Frame(notebook)
         page_4 = ttk.Frame(notebook)
 
+        # Improvements: Make this generic where we put the text in an array and use a for loop.
         notebook.add(page_1, text='Camera')
         notebook.add(page_2, text='Calibration')
         notebook.add(page_3, text='PDF')
@@ -93,13 +95,33 @@ class GUIApplication(threading.Thread):
         # Configure setup
         self.root.config(menu=menu)
 
+        # Setup for page 1: Camera view and selection of camera
         main_label = Label(page_1, text='Camera Views')
         main_label.grid(column=2, row=0)
 
+        # Setup for page 2: Calibrating camera
         second_label = Label(page_2, text='Camera Calibration')
         second_label.place(relx=0.5, rely=0.02, anchor='center')
 
+        # Page 3: PDF setup
+        #page_3_frame = Frame(page_3)
+        # must keep a global reference to these two
+        #im = Image.open('arucoBoard.png')
+        #im = im.resize((300, 300), Image.ANTIALIAS)
+        #ph = ImageTk.PhotoImage(im)
+        # Need to use ph for tkinter to understand
+        #btn_img = Label(page_3_frame, image=ph)
+        #btn_img.pack()
+        #page_3_frame.pack()
+
+        #self.aruco = arucoPoseEstimator.ArucoPoseEstimator
+        #pdf_btn = Button(page_3_frame, text='Save Aruco Board')
+                         #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
+        #pdf_btn.pack()
+
+        # Page 4: Graph setup
         page_4_frame = Frame(page_4)
+        #page_4_frame.pack()
         page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
         page_4_frame.configure(relief='groove')
         page_4_frame.configure(borderwidth='2')
