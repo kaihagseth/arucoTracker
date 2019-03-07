@@ -112,6 +112,23 @@ class GUIApplication(threading.Thread):
         self.second_label = Label(self.page_2, text='Camera Calibration')
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
+        #Page 3: PDF setup
+        self.page_3_frame = Frame(self.page_3)
+        # must keep a global reference to these two
+        self.im = Image.open('arucoBoard.png')
+        self.im = self.im.resize((300, 300), Image.ANTIALIAS)
+        self.ph = ImageTk.PhotoImage(self.im)
+        # Need to use ph for tkinter to understand
+        self.btn_img = Label(self.page_3_frame, image=self.ph)
+        self.btn_img.pack()
+        self.page_3_frame.pack()
+
+        self.aruco = self.arucoPoseEstimator.ArucoPoseEstimator
+        self.pdf_btn = Button(self.page_3_frame, text='Save Aruco Board')
+                         #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
+        self.pdf_btn.pack()
+
+        # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
         self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
         self.page_4_frame.configure(relief='groove')
