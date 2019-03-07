@@ -12,25 +12,28 @@ import Connector
 import threading
 
 import threading
-camIDInUse = 1
+
 class GUIApplication(threading.Thread):
 
     def __init__(self, connector):
         threading.Thread.__init__(self)
+        msg = 'Thread: ', threading.current_thread().name
+        logging.info(msg)
         # Camera variables
         self.counter = 0
-        self.show_video = False
         self.c = connector
         self.camlist = self.c.initConnectedCams()
+        self.camIDInUse = 1
+        self.image_tk = None
+        # GUI Handling flags
+        self.doStopApp = False
+        self.show_video = False
 
     def run(self):
-        # Global camera_index
-        global video_streams
+        '''
+        Run the main application.
+        '''
         self.camIDInUse = 0
-        # Empty function to add to dummy buttons
-        def fileClicked():
-            print('File clicked')
-
 
         # Set up main window.
         self.root = Tk()
@@ -39,218 +42,280 @@ class GUIApplication(threading.Thread):
         self.root.configure(background='black')
 
         # Create menu
-        menu = Menu(self.root)
-        file_menu = Menu(menu, tearoff=0)
+        self.menu = Menu(self.root)
+        self.file_menu = Menu(self.menu, tearoff=0)
 
         # Create notebook
-        notebook = ttk.Notebook(self.root)
+        self.notebook = ttk.Notebook(self.root)
 
-        # Defines and places the notebook widget
-        notebook.grid(row=0, column=0, columnspan=8, rowspan=6, sticky='NESW')
+        # Defines and places the notebook widget. Expand to cover complete window.
+        self.notebook.pack(fill=BOTH, expand=True)
 
         # gives weight to the cells in the grid
-        rows = 0
-        while rows < 6:
-            self.root.rowconfigure(rows, weight=1)
-            self.root.columnconfigure(rows, weight=1)
-            rows += 1
-
-        #tabs = {} #Implement this in the future for self generating tabs
-        #for tab_name in tab_names:
-        #    tab = MyTab(self.notebook, tab_name)
-        #    self.notebook.add(tab, text=tab_name)
-        #    tabs[tab_name] = tab
-
+        self.rows = 0
+        while self.rows < 1:
+            self.root.rowconfigure(self.rows, weight=1)
+            self.root.columnconfigure(self.rows, weight=1)
+            self.rows += 1
 
         # Adds tabs of the notebook
-        page_1 = ttk.Frame(notebook)
-        page_2 = ttk.Frame(notebook)
-        page_3 = ttk.Frame(notebook)
-        page_4 = ttk.Frame(notebook)
+        self.page_1 = ttk.Frame(self.notebook)
+        self.page_2 = ttk.Frame(self.notebook)
+        self.page_3 = ttk.Frame(self.notebook)
+        self.page_4 = ttk.Frame(self.notebook)
 
-        # Improvements: Make this generic where we put the text in an array and use a for loop.
-        notebook.add(page_1, text='Camera')
-        notebook.add(page_2, text='Calibration')
-        notebook.add(page_3, text='PDF')
-        notebook.add(page_4, text='Graph')
+        self.notebook.add(self.page_1, text='Camera')
+        self.notebook.add(self.page_2, text='Calibration')
+        self.notebook.add(self.page_3, text='PDF')
+        self.notebook.add(self.page_4, text='Graph')
 
 
 
         #  File menu setup
-        file_menu.add_command(label='New', command=None)
-        file_menu.add_command(label='Save', command=None)
-        file_menu.add_command(label='Open', command=None)
-        file_menu.add_command(label='Settings', command=None)
-        file_menu.add_command(label='Export', command=None)
-        file_menu.add_command(label='Exit', command=self.root.quit)
-        menu.add_cascade(label='File', menu=file_menu)
+        self.file_menu.add_command(label='New', command=None)
+        self.file_menu.add_command(label='Save', command=None)
+        self.file_menu.add_command(label='Open', command=None)
+        self.file_menu.add_command(label='Settings', command=None)
+        self.file_menu.add_command(label='Export', command=None)
+        self.file_menu.add_command(label='Exit', command=self.root.quit)
+        self.menu.add_cascade(label='File', menu=self.file_menu)
 
         # Edit menu setup
-        edit_menu = Menu(menu, tearoff=0)
-        edit_menu.add_command(label='Cut', command=None)
-        edit_menu.add_command(label='Copy', command=None)
-        edit_menu.add_command(label='Paste', command=None)
-        menu.add_cascade(label='Edit', menu=edit_menu)
+        self.edit_menu = Menu(self.menu, tearoff=0)
+        self.edit_menu.add_command(label='Cut', command=None)
+        self.edit_menu.add_command(label='Copy', command=None)
+        self.edit_menu.add_command(label='Paste', command=None)
+        self.menu.add_cascade(label='Edit', menu=self.edit_menu)
 
         # Configure setup
-        self.root.config(menu=menu)
+        self.root.config(menu=self.menu)
 
-        # Setup for page 1: Camera view and selection of camera
-        main_label = Label(page_1, text='Camera Views')
-        main_label.grid(column=2, row=0)
+        # Create the main pane tab for first tab of gui
+        self.camPaneTabMain = PanedWindow(self.page_1, bg='gray40')
+        self.camPaneTabMain.pack(fill=BOTH, expand=True)#camPaneTabMain.pack(page_1)#(row=0, column=0,columnspan=1,rowspan=1,sticky='NESW')
 
-        # Setup for page 2: Calibrating camera
-        second_label = Label(page_2, text='Camera Calibration')
-        second_label.place(relx=0.5, rely=0.02, anchor='center')
+        self.left_camPaneTabMain = Label(self.camPaneTabMain)#, text="left pane")
+        self.camPaneTabMain.add(self.left_camPaneTabMain)
 
-        # Page 3: PDF setup
-        #page_3_frame = Frame(page_3)
-        # must keep a global reference to these two
-        #im = Image.open('arucoBoard.png')
-        #im = im.resize((300, 300), Image.ANTIALIAS)
-        #ph = ImageTk.PhotoImage(im)
-        # Need to use ph for tkinter to understand
-        #btn_img = Label(page_3_frame, image=ph)
-        #btn_img.pack()
-        #page_3_frame.pack()
+        self.midSection_camPaneTabMain = PanedWindow(self.camPaneTabMain, orient=VERTICAL, bg='gray80')
+        self.camPaneTabMain.add(self.midSection_camPaneTabMain)
 
-        #self.aruco = arucoPoseEstimator.ArucoPoseEstimator
-        #pdf_btn = Button(page_3_frame, text='Save Aruco Board')
-                         #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
-        #pdf_btn.pack()
+        self.top = Label(self.midSection_camPaneTabMain, text="top pane")
+        self.midSection_camPaneTabMain.add(self.top)
 
-        # Page 4: Graph setup
-        page_4_frame = Frame(page_4)
-        #page_4_frame.pack()
-        page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
-        page_4_frame.configure(relief='groove')
-        page_4_frame.configure(borderwidth='2')
-        page_4_frame.configure(relief='groove')
-        page_4_frame.configure(background='#000000')
-        page_4_frame.configure(width=565)
+        self.bottom = Label(self.midSection_camPaneTabMain, text="bottom pane")
+        self.midSection_camPaneTabMain.add(self.bottom)
 
-        GUIDataPlotting.createDataWindow(page_4_frame)
+        self.main_label = Label(self.midSection_camPaneTabMain, text='Camera Views')
+        self.main_label.grid(column=2, row=0)
 
+        self.second_label = Label(self.page_2, text='Camera Calibration')
+        self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
+        self.page_4_frame = Frame(self.page_4)
+        self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
+        self.page_4_frame.configure(relief='groove')
+        self.page_4_frame.configure(borderwidth='2')
+        self.page_4_frame.configure(relief='groove')
+        self.page_4_frame.configure(background='#000000')
+        self.page_4_frame.configure(width=565)
 
-        def startClicked():
+        try:
+            GUIDataPlotting.createDataWindow(self.page_4_frame)
+        except IndexError:
+            pass
+            logging.info('Sketchy, but OK.')
 
-            '''
-            Start Video Stream
-            :return: None
-            '''
-            global show_video
-            show_video = True
-            main_label.configure(text='Starting video stream')
-            videoStream()
-            if not show_video:
-                start_btn.grid(column=0, row=2)
-                stop_btn.grid(column=None, row=None)
-            elif show_video:
-                stop_btn.grid(column=1, row=2)
-                start_btn.grid(column=None, row=None)
-
-
-        def stopClicked():
-            '''
-            Stops video stream. Possible to add more functionality later on for saving data etc.
-            :return: None at the moment, but may return datastream later on.
-            '''
-            global show_video
-            saveFrame()
-            show_video = False
-
-            main_label.configure(text='Stopping video stream')
-            if not show_video:
-                start_btn.grid(column=0, row=2)
-                stop_btn.grid(column=None, row=None)
-            elif show_video:
-                stop_btn.grid(column=1, row=2)
-                start_btn.grid(column=None, row=None)
-
-
-        # function for video streaming
-        def videoStream():
-            '''
-            Create a simple setup for testing video stream with GUI
-            :return: None
-            '''
-
-            global show_video
-
-
-            if show_video is True:
-                try:
-                    global camIDInUse
-                    #counter += 1
-                    #currCap = video_streams[int(var.get())]
-                    print("Var value: ", var.get())
-                    frame = self.c.getImgFromSingleCam(v.get()) #currCap.read()
-                    # Check if the webcam is opened correctly
-                    #if not currCap.isOpened():
-                    #    raise IOError("Cannot open webcam")
-                    print("ID: ", self.camIDInUse)
-                    print("Frame: ", frame)
-                    if frame is not None:
-                        cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        img_video = Image.fromarray(cv2image)
-                        image_tk = ImageTk.PhotoImage(image=img_video)
-                        main_label.image_tk = image_tk
-                        main_label.configure(image=image_tk)
-                        main_label.after(1, videoStream)
-                except AttributeError as e:
-                    logging.error(str(e))
-
-        def showImage():
-            '''
-            test to save single frame
-            :return: img
-            '''
-            global show_video
-            img = ImageTk.PhotoImage(file='images/test_image.png')
-            img_label = Label(self.root, image=img)
-            img_label.grid(column=0, row=0)
-
-
-        # function for saving a single frame
-        def saveFrame():
-            '''
-            Save a single frame from video feed
-            :return: jpg
-            '''
-            cv2.imwrite('images/frame%d.jpg' % self.counter, videoStream())
-
-
-        def changeCameraID(camid):
-            global camIDInUse
-            print("CHANGING CAMERA ID: Camid to shift to", camid)
-            print("Previous camid: ", camIDInUse)
-            camIDInUse = camid#cap = video_stream
+        self.camFrameSettingSection = Frame(self.left_camPaneTabMain,bg='gray80')#, orient=HORIZONTAL)
 
         # Start and stop button setup
-        start_btn = Button(page_1, text='Start', command=startClicked)
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', command=self.startClicked)
         #init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        stop_btn = Button(page_1, text='Stop', command=stopClicked)
-        calibrate_btn = Button(page_2, text='Calibrate', command=None)
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', command=self.stopClicked)
+        self.hidecam_btn = Button(self.left_camPaneTabMain, text='Hide', command=self.hideCamBtnClicked)
+        self.camFrameSettingSection.pack()
+        self.calibrate_btn = Button(self.page_2, text='Calibrate', command=None)
 
-        start_btn.grid(column=0, row=1)
-        calibrate_btn.grid(column=1, row=1)
-        calibrate_btn.grid_rowconfigure(1, weight=1)
-        calibrate_btn.grid_columnconfigure(1, weight=1)
+        self.start_btn.grid(column=0, row=0)
+        self.stop_btn.grid(column=1,row=0)
+        self.availCamsLabel = Label(self.left_camPaneTabMain,text='Available cameras: ')
+        self.availCamsLabel.pack()
+
+
+        self.calibrate_btn.grid(column=1, row=1)
+        self.calibrate_btn.grid_rowconfigure(1, weight=1)
+        self.calibrate_btn.grid_columnconfigure(1, weight=1)
 
         # Camera temp variables.
         #cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
-        var = IntVar()
+        self.var = IntVar()
 
 
-        v = tk.IntVar()
-        v.set(1)  # initializing the choice, i.e. Python
+        self.v = tk.IntVar()
+        self.v.set(1)  # initializing the choice, i.e. Python
 
         for vali, cam in enumerate(self.camlist):
-            tk.Radiobutton(page_1,
+            tk.Radiobutton(self.left_camPaneTabMain,
                            text=str(vali),
                            padx=20,
-                           variable=v,
-                           value=vali).grid(column=1,row=0+vali)
-
+                           variable=self.v,
+                           value=vali).pack()#grid(column=1,row=0+vali)
+        deadSpace1 = Frame(self.left_camPaneTabMain, height=100).pack()
+        self.startCamApp = Button(self.left_camPaneTabMain, text='Start application', command=self.startApplication)
+        self.stopCamApp = Button(self.left_camPaneTabMain, text='Stop application', command=self.setDoStopApp)
+        self.startCamApp.pack()
+        self.stopCamApp.pack()
         self.root.mainloop()
+
+    def startClicked(self):
+
+        '''
+        Start Video Stream
+        :return: None
+        '''
+
+        self.show_video = True
+        self.main_label.configure(text='Starting video stream')
+        self.videoStream()
+    #    if not show_video:
+     #       start_btn.grid(column=0, row=2)
+      #      stop_btn.grid(column=None, row=None)
+       # elif show_video:
+        #    stop_btn.grid(column=1, row=2)
+         #   start_btn.grid(column=None, row=None)
+
+
+    def stopClicked(self):
+        '''
+        Stops video stream. Possible to add more functionality later on for saving data etc.
+        :return: None at the moment, but may return datastream later on.
+        '''
+        self.saveFrame()
+        self.show_video = False
+
+        self.main_label.configure(text='Stopping video stream')
+     #   if not show_video:
+      #      start_btn.grid(column=0, row=2)
+       #     stop_btn.grid(column=None, row=None)
+        #elif show_video:
+         #   stop_btn.grid(column=1, row=2)
+          #  start_btn.grid(column=None, row=None)
+
+    def hideCamBtnClicked(self):
+        # Hide the cam.
+
+        # Don't access new frames. 
+        self.show_video = False
+
+
+    def videoStream(self):
+        '''
+        Create a simple setup for testing video stream with GUI
+        :return: None
+        '''
+        print('Show video: (show_video) ',self.show_video)
+        if self.show_video is True:
+            try:
+                #counter += 1
+                #currCap = video_streams[int(var.get())]
+                print("Var value: ", self.var.get())
+                self.frame = self.c.getImgFromSingleCam(self.v.get()) #currCap.read()
+                # Check if the webcam is opened correctly
+                #if not currCap.isOpened():
+                #    raise IOError("Cannot open webcam")
+                print("ID: ", self.camIDInUse)
+                if self.frame is not None:
+                    self.cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+                    self.img_video = Image.fromarray(self.cv2image)
+                    self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+                    self.main_label.image_tk = self.image_tk
+                    self.main_label.configure(image=image_tk)
+                    self.main_label.after(1, self.videoStream)
+                else:
+                    logging.info("Frame is None.")
+            except AttributeError as e:
+                logging.error(str(e))
+
+
+
+    def poseStream(self, frame):
+        logging.debug('Inside posestream')
+        try:
+            print("FRRRRAAAAAMMMMMEEE: ", frame)
+            print('Image_tk: ', self.image_tk)
+            if frame is not None:
+                self.cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                self.img_video = Image.fromarray(self.cv2image)
+                self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+                self.main_label.image_tk = self.image_tk
+                self.main_label.configure(image=self.image_tk)
+                #main_label.after(1, videoStream)
+        except AttributeError as e:
+            logging.error(str(e))
+
+    def showImage(self):
+        '''
+        test to save single frame
+        :return: img
+        '''
+        self.img = ImageTk.PhotoImage(file='images/test_image.png')
+        self.img_label = Label(self.root, image=img)
+        self.img_label.grid(column=0, row=0)
+
+
+    # function for saving a single frame
+    def saveFrame(self):
+        '''
+        Save a single frame from video feed
+        :return: jpg
+        '''
+        cv2.imwrite('images/frame%d.jpg' % self.counter, self.videoStream())
+
+
+    def changeCameraID(self, camid):
+        print("CHANGING CAMERA ID: Camid to shift to", camid)
+        print("Previous camid: ", self.camIDInUse)
+        self.camIDInUse = camid
+
+
+    def placeGraph(self):
+        GUIDataPlotting.plotGraph()
+
+
+    def startApplication(self):
+        '''
+        Start the poseestimator in application.
+
+        :return:
+        '''
+        #Start the main app
+        self.poseEstmationThread = threading.Thread(target=self.c.startApplication, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
+        self.poseEstmationThread.start()
+        logging.info('Started application in a own thread.')
+
+    def doAbortApp(self):
+        '''
+        Stop the poseestimation running, but (for now), don't stop the application. .
+        :return:
+        '''
+        return self.doStopApp # For now
+
+    def setDoStopApp(self):
+        '''
+        Set flag who stops the poseestimation running to True.
+        :return:
+        '''
+        logging.info("Setting doStopApp to True")
+        self.doStopApp = True
+
+    def dispContiniusResults(self, result, poseFrame):
+        '''
+        Passed to, and called from Connector, while application runs.
+        Delivers pose and the "poseframe".
+        :param result: A tuple with rvec and tvec.
+        :param poseFrame: Image of webcam + detection markers and coordinate system.
+        '''
+        self.poseStream(poseFrame)
+
+    def fileClicked():
+        print('File clicked')

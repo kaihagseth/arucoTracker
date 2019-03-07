@@ -24,9 +24,10 @@ class VisionEntity:
     def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que):
         while True:
             frame = self.getFrame()
-            frame_que.put(frame)
+            #frame_que.put(frame)
             singlecam_curr_pose = self.getModelPose(frame)
             singlecam_curr_pose_que.put(singlecam_curr_pose)
+            frame_que.put(self.getPosePreviewImage())
          #   logging.info("Running threaded loop")
 
     def calibrateCameraWithTool(self):
@@ -81,7 +82,8 @@ class VisionEntity:
         """
         return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
                                                      self.getDistortionCoefficients(), showFrame=showFrame)
-
+    def getPosePreviewImage(self):
+        return self._arucoPoseEstimator.getPosePreviewImage()
     def getFrame(self):
         """
         Returns a raw frame from the camera

@@ -1,3 +1,5 @@
 .idea/
 __pycache__/
 
+
+logs/position_log\.csv
