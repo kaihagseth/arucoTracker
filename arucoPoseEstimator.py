@@ -57,9 +57,33 @@ class ArucoPoseEstimator:
         relative_tvec = np.matrix(R0).T * (np.matrix(tvec) - np.matrix(T0))
         return np.asarray(relative_tvec.T)[0]
 
-    def getModelPose(self, frame, camera_matrix, dist_coeff, showFrame=False):
+
+    def getModelPose(self, frame, camera_matrix, dist_coeff, writeFrame=False):
         """
-        Analyzes frame to find six axis pose of model
+        Returns the pose of model in relation to camera. Also returns number of corners found to indicate quality.
+        :param frame: Frame to get pose from
+        :param camera_matrix: Camera intrinsic matrix from the camera frame was taken with.
+        :param dist_coeff: Distortion coefficients from the camera frame was taken with.
+        :param writeFrame: Should this frame be written to memory?
+        :return: retval if a pose estimate was successfully made, cornerLength: number of corners found,
+                 rvec: rodrigues rotation vector in relation to camera tvec: translation in relation to camera.
+        """
+        if writeFrame:
+            self.posPreviewImage = frame
+        corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
+        if corners:
+            retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self._board, camera_matrix, dist_coeff)
+            if retval:
+                if writeFrame:
+                    self.posPreviewImage = cv2.aruco.drawDetectedMarkers(self.posPreviewImage, corners, ids)
+                    self.posPreviewImage = cv2.aruco.drawAxis(self.posPreviewImage, camera_matrix, dist_coeff, rvec,
+                                                              tvec, 200)
+        return retval, len(corners), rvec, tvec
+
+
+    def getRelativeModelPose(self, frame, camera_matrix, dist_coeff, showFrame=False):
+        """
+         Analyzes frame to find six axis pose of model
         :param frame: image frame to get pose from
         :param camera_matrix:  Intrinsic camera matrix
         :param dist_coeff: Camera Distortion coefficients
@@ -77,14 +101,15 @@ class ArucoPoseEstimator:
                 self._R0 = np.matrix(cv2.Rodrigues(rvec)[0])
             if self._T0 is None and retval:
                 self._T0 = tvec
-            if rvec is not None:
+            if retval:
                 relative_translation = self.getRelativeTranslation(tvec, self._R0, self._T0).astype(int)
                 # Multiplying with transverse ref rotation matrix to find current rotation relative to reference frame.
                 relative_rotation = self._R0.T * np.matrix(cv2.Rodrigues(rvec)[0])
                 euler_angles = np.degrees(self.rotationMatrixToEulerAngles(relative_rotation)).astype(int) % 360
                 if showFrame:
                     image_copy = cv2.aruco.drawDetectedMarkers(image_copy, corners, ids)
-                    image_copy = cv2.aruco.drawAxis(image_copy, camera_matrix, dist_coeff, rvec, tvec, 200)
+                    image_copy = cv2.aruco.drawAxis(image_copy, camera_matrix, dist_coeff, rvec,
+                                                              tvec, 200)
                     cv2.putText(image_copy, 'x = ' + str(relative_translation[0]), (0, 100), cv2.FONT_HERSHEY_SIMPLEX,
                                 .6, (0, 0, 255), 2)
                     cv2.putText(image_copy, 'y = ' + str(relative_translation[1]), (0, 130), cv2.FONT_HERSHEY_SIMPLEX,
@@ -114,6 +139,7 @@ class ArucoPoseEstimator:
 
     def getPosePreviewImage(self):
         return self.posPreviewImage
+
     def writeBoardToPDF(self, width=160):
         """
         Creates a printable pdf-file of this aruco board.

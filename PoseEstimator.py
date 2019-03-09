@@ -2,13 +2,28 @@ import threading, queue, logging
 import time
 import csv
 import time
+import math
 from VisionEntity import VisionEntity
+import numpy as np
 
 
-class PoseEstimator():
+class PoseEstimator:
     """
-    # TODO: This class will control a collection of vision entities, and will take over most jobs of today's camera
-    # TODO: group class
+    TODO: Refactor Vision entities to return each entities rvec and tvec to this class, and let this class handle
+    TODO: conversion to euler coordinates in world space.
+    TODO: R0 and T0 for second camera should be set when both cameras have the highest amount of board corners
+    TODO: available to ensure best possible accuracy. In most cases this means R0 and T0 for camera 2 will be set when
+    TODO: all corners are visible from both cameras at the same time.
+    TODO: ArucoPoseEstimators will no longer calculate world poses, but will still store R0 and T0.
+    TODO: PLAN:
+    TODO: 1. Cam0 sees board, and returns relative pose to pose estimator(PE)
+    TODO: 2. PE recognizes that world pose has not been set, and sets R0 and T0 for cam0. Cam0 is now the master camera.
+    TODO: 3. PE inverses pose matrix for cam0 and returns position of object relative to T0, which is always 0]
+    TODO: 4. When a marker is recognized in cam1, pose estimator checks how many corners are returned from each cam
+    TODO: 5. The world pose for the object relative to camera 2 is rtvec1 = rtvec0+tvec1 rrvec = rrvec0*rvec1 ?
+    TODO: 6. Every time the number of corners from the slave camera is higher or equal to the highest recorded number of
+    TODO:    corners, the slave cameras extrinsic matrix will be calibrated to match
+    TODO: In order to optimize this algorithm, the model pose estimation can be skipped for the slave cameras.
     Collect pose and info from all cameras, and find the best estimated pose possible.
     """
 
@@ -68,11 +83,13 @@ class PoseEstimator():
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
+
     def getPosePreviewImg(self):
         # Get the image created in arucoPoseEstimator with pose and chessboard. None if empty
         imgque = self.threadInfoList[0][3]
         img = imgque.get()
         return img
+
     def collectPoses(self):
         '''
         Get all output from the poseestimation here.
@@ -82,7 +99,7 @@ class PoseEstimator():
         '''
         time.sleep(0.02)
         try:
-            useSingleCam = True
+            useSingleCam = False
             if useSingleCam is True:
                 poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
                 pose = poseque.get()
@@ -151,3 +168,44 @@ class PoseEstimator():
 
     def getVisionEntityList(self):
         return self.VisionEntityList
+
+
+    def findMasterPose(self):
+        """
+        #TODO:
+        :return:
+        """
+        poses = self.collectPoses()
+
+
+    @staticmethod
+    def rotationMatrixToEulerAngles(R):
+        """
+        https://www.learnopencv.com/rotation-matrix-to-euler-angles/
+        :param R: Rotation matrix
+        :return: Euler angles
+        """
+        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+        singular = sy < 1e-6
+        if not singular:
+            x = math.atan2(R[2, 1], R[2, 2])
+            y = math.atan2(-R[2, 0], sy)
+            z = math.atan2(R[1, 0], R[0, 0])
+        else:
+            x = math.atan2(-R[1, 2], R[1, 1])
+            y = math.atan2(-R[2, 0], sy)
+            z = 0
+        return np.array([x, y, z])
+
+    @staticmethod
+    def getRelativeTranslation(tvec, R0, T0):
+        """
+        :param tvec: translation vector
+        :param R0: Rotation matrix from camera to reference frame
+        :param T0: Translation matrix from camera to reference frame
+        :return: Relative translation of object from reference frame to object.
+        """
+        # tvec - T0 - Translation to origo
+        # Multiply with transverse rotation matrix to get back to reference coordinates.
+        relative_tvec = np.matrix(R0).T * (np.matrix(tvec) - np.matrix(T0))
+        return np.asarray(relative_tvec.T)[0]

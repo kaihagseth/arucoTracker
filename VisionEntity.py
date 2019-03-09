@@ -21,14 +21,18 @@ class VisionEntity:
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
-    def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que):
+    def runThreadedLoop(self, singlecam_curr_pose_que, frame_que):
+        """
+        This function starts a thread that updates a threadsafe que with poses and frames from a vision entity.
+        :param singlecam_curr_pose_que: Threadsafe que where poses are stored.
+        :param frame_que: Threadsafe que variable where frames are stored.
+        :return: None
+        """
         while True:
             frame = self.getFrame()
-            #frame_que.put(frame)
             singlecam_curr_pose = self.getModelPose(frame)
             singlecam_curr_pose_que.put(singlecam_curr_pose)
             frame_que.put(self.getPosePreviewImage())
-         #   logging.info("Running threaded loop")
 
     def calibrateCameraWithTool(self):
         """
@@ -78,12 +82,13 @@ class VisionEntity:
     def getModelPose(self, frame, showFrame=True):
         """
         Returns six axis pose of model
-        :return: Tuple of size 2 with numpy arrays (x, y, z) (pitch, yaw, roll) (angles in degrees)
+        :return: Tuple of size 2 with numpy arrays rvec, tvec
         """
         return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
                                                      self.getDistortionCoefficients(), showFrame=showFrame)
     def getPosePreviewImage(self):
         return self._arucoPoseEstimator.getPosePreviewImage()
+
     def getFrame(self):
         """
         Returns a raw frame from the camera
