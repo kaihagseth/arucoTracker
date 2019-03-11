@@ -114,6 +114,7 @@ class ArucoPoseEstimator:
 
     def getPosePreviewImage(self):
         return self.posPreviewImage
+    
     def writeBoardToPDF(self, width=160):
         """
         Creates a printable pdf-file of this aruco board.

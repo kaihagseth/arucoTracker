@@ -76,16 +76,16 @@ class PoseEstimator():
         imgque = self.threadInfoList[0][3]
         img = imgque.get()
         return img
-    def collectPoses(self):
+    def collectPoses(self, useSingleCam=True):
         '''
         Get all output from the poseestimation here.
         If only single cam used, return tuple with tvec and rvec.
         Solution for multiple cams not implemented.
+        :param: True if only using one cam
         :return: tvec, rvec (single cam)
         '''
         time.sleep(0.02)
         try:
-            useSingleCam = True
             if useSingleCam is True:
                 poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
                 pose = poseque.get()

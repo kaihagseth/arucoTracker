@@ -279,8 +279,9 @@ class GUIApplication(threading.Thread):
         Reset the cam extrinsic matrixes to the current frame point.
         :return:
         '''
-        if
-            logging.info()
+        #if self.pose
+         #   logging.info()
+        pass
 
     def startRawCameraClicked(self):
         '''
@@ -411,7 +412,7 @@ class GUIApplication(threading.Thread):
         '''
         #Start the main app
         self.poseEstimationIsRunning = True
-        self.poseEstmationThread = threading.Thread(target=self.c.startFindPoseApp, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
+        self.poseEstmationThread = threading.Thread(target=self.c.startApplication, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
         self.poseEstmationThread.start()
         logging.info('Started application in a own thread.')
 
