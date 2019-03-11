@@ -9,13 +9,14 @@ import matplotlib as mpl
 import GUIDataPlotting
 import Connector
 import threading
-
+import time
 import threading
 
 class GUIApplication(threading.Thread):
 
     def __init__(self, connector):
         threading.Thread.__init__(self)
+
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
         # Camera variables
@@ -27,6 +28,7 @@ class GUIApplication(threading.Thread):
         # GUI Handling flags
         self.doStopApp = False
         self.show_video = False
+        self.showPoseStream = False
 
     def run(self):
         '''
@@ -37,9 +39,8 @@ class GUIApplication(threading.Thread):
         # Set up main window.
         self.root = Tk()
         self.root.title('Boat Pose Estimator')
-        self.root.geometry('800x600')
+        self.root.geometry('850x750')
         self.root.configure(background='black')
-
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
@@ -50,7 +51,7 @@ class GUIApplication(threading.Thread):
         # Defines and places the notebook widget. Expand to cover complete window.
         self.notebook.pack(fill=BOTH, expand=True)
 
-        # gives weight to the cells in the grid
+        # gives weight to the cells in the grid so thy don't collapse
         self.rows = 0
         while self.rows < 1:
             self.root.rowconfigure(self.rows, weight=1)
@@ -62,13 +63,12 @@ class GUIApplication(threading.Thread):
         self.page_2 = ttk.Frame(self.notebook)
         self.page_3 = ttk.Frame(self.notebook)
         self.page_4 = ttk.Frame(self.notebook)
-
+        self.page_5 = ttk.Frame(self.notebook)
         self.notebook.add(self.page_1, text='Camera')
         self.notebook.add(self.page_2, text='Calibration')
         self.notebook.add(self.page_3, text='PDF')
         self.notebook.add(self.page_4, text='Graph')
-
-
+        self.notebook.add(self.page_5, text='Configuration')
 
         #  File menu setup
         self.file_menu.add_command(label='New', command=None)
@@ -89,7 +89,7 @@ class GUIApplication(threading.Thread):
         # Configure setup
         self.root.config(menu=self.menu)
 
-        # Create the main pane tab for first tab of gui
+        # Camera Page: Configure PanedWindows
         self.camPaneTabMain = PanedWindow(self.page_1, bg='gray40')
         self.camPaneTabMain.pack(fill=BOTH, expand=True)#camPaneTabMain.pack(page_1)#(row=0, column=0,columnspan=1,rowspan=1,sticky='NESW')
 
@@ -99,14 +99,40 @@ class GUIApplication(threading.Thread):
         self.midSection_camPaneTabMain = PanedWindow(self.camPaneTabMain, orient=VERTICAL, bg='gray80')
         self.camPaneTabMain.add(self.midSection_camPaneTabMain)
 
-        self.top = Label(self.midSection_camPaneTabMain, text="top pane")
-        self.midSection_camPaneTabMain.add(self.top)
+        self.top = PanedWindow(self.midSection_camPaneTabMain)
+        #self.top.config(height=60)
+        self.midSection_camPaneTabMain.add(self.top, height=500)
 
-        self.bottom = Label(self.midSection_camPaneTabMain, text="bottom pane")
-        self.midSection_camPaneTabMain.add(self.bottom)
+        self.main_label = Label(self.top, text='Camera Views')
+        #self.main_label.config(height=40)
+        self.main_label.grid(column=0, row=0)
 
-        self.main_label = Label(self.midSection_camPaneTabMain, text='Camera Views')
-        self.main_label.grid(column=2, row=0)
+        self.bottom = PanedWindow(self.midSection_camPaneTabMain)
+        self.bottom.config(height=20)
+        self.midSection_camPaneTabMain.add(self.bottom, height=50)
+
+
+
+        self.poseFontType = "Courier"
+        self.poseFontSize = 44
+        self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Pose:", font=(self.poseFontType, self.poseFontSize))
+        self.shipPoseLabel_camPaneTabMain.grid(column=0,row=0)
+
+        self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)#, orient=HORIZONTAL)
+        self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1, columnspan=6)
+
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='x0', font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispX_camPaneTabMain.grid(column=0, row=0)
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='y0', font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispY_camPaneTabMain.grid(column=1, row=0)
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='z0', font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispZ_camPaneTabMain.grid(column=2, row=0)
+        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='roll0', font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispRoll_camPaneTabMain.grid(column=3, row=0)
+        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='pitch0', font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispPitch_camPaneTabMain.grid(column=4, row=0)
+        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='yaw0', font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispY_camPaneTabMain.grid(column=5, row=0)
 
         self.second_label = Label(self.page_2, text='Camera Calibration')
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
@@ -122,21 +148,21 @@ class GUIApplication(threading.Thread):
         try:
             GUIDataPlotting.createDataWindow(self.page_4_frame)
         except IndexError:
-            pass
             logging.info('Sketchy, but OK.')
 
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain,bg='gray80')#, orient=HORIZONTAL)
 
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start', command=self.startClicked)
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', command=self.startRawCameraClicked)
         #init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', command=self.stopClicked)
-        self.hidecam_btn = Button(self.left_camPaneTabMain, text='Hide', command=self.hideCamBtnClicked)
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', command=self.stopRawCameraClicked)
+        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked)
         self.camFrameSettingSection.pack()
         self.calibrate_btn = Button(self.page_2, text='Calibrate', command=None)
 
         self.start_btn.grid(column=0, row=0)
         self.stop_btn.grid(column=1,row=0)
+        self.hidecam_btn.grid(column=2, row=0)
         self.availCamsLabel = Label(self.left_camPaneTabMain,text='Available cameras: ')
         self.availCamsLabel.pack()
 
@@ -160,22 +186,92 @@ class GUIApplication(threading.Thread):
                            variable=self.v,
                            value=vali).pack()#grid(column=1,row=0+vali)
         deadSpace1 = Frame(self.left_camPaneTabMain, height=100).pack()
-        self.startCamApp = Button(self.left_camPaneTabMain, text='Start application', command=self.startApplication)
-        self.stopCamApp = Button(self.left_camPaneTabMain, text='Stop application', command=self.setDoStopApp)
+        self.startCamApp = Button(self.left_camPaneTabMain, text='Start application', command=self.startFindPoseApp)
+        self.stopCamApp = Button(self.left_camPaneTabMain, text='Stop application', command=self.setFindPoseFalse)
         self.startCamApp.pack()
         self.stopCamApp.pack()
+        # Setu the config tab
+        self.setupConfigTab()
+        # Start it all
         self.root.mainloop()
 
-    def startClicked(self):
 
+
+        # Configuration setup
+    def setupConfigTab(self):
+        self.configPaneTabMain = PanedWindow(self.page_5, bg='gray40')
+        self.configPaneTabMain.pack(fill=BOTH, expand=True)
+        # Create paned windows
+        self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)#, text="left pane")
+        self.configPaneTabMain.add(self.left_configPaneTabMain)
+
+        self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
+        self.configPaneTabMain.add(self.midSection_configPaneTabMain)
+
+        self.rightSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)
+        self.configPaneTabMain.add(self.rightSection_configPaneTabMain)
+
+        self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
+        self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
+
+        self.midtopSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="top pane")
+        self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
+
+        self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
+        self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
+        self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
+
+        self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
+        self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
+        # Configurations for which cams to connect
+        self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
+        self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
+        opt = []
+
+        def chkbox_checked():
+            for ix, item in enumerate(cb):
+                opt[ix] = (cb_v[ix].get())
+            print(opt)
+        mylist = [
+            1, 2, 3, 4, 5
+        ]
+        cb = []
+        cb_v = []
+        for ix, text in enumerate(mylist):
+            cb_v.append(tk.StringVar())
+            off_value = -1  # whatever you want it to be when the checkbutton is off
+            cb.append(tk.Checkbutton(self.selectCamIndexesFrame, text=text, onvalue=text, offvalue=off_value,
+                                     variable=cb_v[ix],
+                                     command=chkbox_checked))
+            cb[ix].grid(row=ix, column=0, sticky='w')
+            opt.append(off_value)
+            cb[-1].deselect()  # uncheck the boxes initially.
+        label = tk.Label(self.selectCamIndexesFrame, width=20)
+        label.grid(row=5 + 1, column=0, sticky='w')
+
+        #e1 = Entry(self.midtopSectionLabel_configPaneTabMain)
+        #self.midSection_configPaneTabMain.pack(e1)
+
+        # Add buttons for resetting camera extrinsic matrixes
+        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
+        resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
+
+    def resetCamExtrinsic(self):
+        '''
+        Reset the cam extrinsic matrixes to the current frame point.
+        :return:
+        '''
+        if
+            logging.info()
+
+    def startRawCameraClicked(self):
         '''
         Start Video Stream
         :return: None
         '''
-
         self.show_video = True
         self.main_label.configure(text='Starting video stream')
-        self.videoStream()
+        self.rawVideoStream()
     #    if not show_video:
      #       start_btn.grid(column=0, row=2)
       #      stop_btn.grid(column=None, row=None)
@@ -184,7 +280,7 @@ class GUIApplication(threading.Thread):
          #   start_btn.grid(column=None, row=None)
 
 
-    def stopClicked(self):
+    def stopRawCameraClicked(self):
         '''
         Stops video stream. Possible to add more functionality later on for saving data etc.
         :return: None at the moment, but may return datastream later on.
@@ -203,11 +299,16 @@ class GUIApplication(threading.Thread):
     def hideCamBtnClicked(self):
         # Hide the cam.
 
-        # Don't access new frames. 
+        # Don't access new frames.
+
         self.show_video = False
+        self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+        self.main_label.image_tk = self.image_tk
+        self.main_label.configure(image='', text='Image hidden.')
+        #self.main_label.after(1, self.rawVideoStream)
+        #self.main_label.grid(column=0, row=0)
 
-
-    def videoStream(self):
+    def rawVideoStream(self):
         '''
         Create a simple setup for testing video stream with GUI
         :return: None
@@ -227,9 +328,10 @@ class GUIApplication(threading.Thread):
                     self.cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
                     self.img_video = Image.fromarray(self.cv2image)
                     self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+                    #self.main_label.config(height=40)
                     self.main_label.image_tk = self.image_tk
-                    self.main_label.configure(image=image_tk)
-                    self.main_label.after(1, self.videoStream)
+                    self.main_label.configure(image=self.image_tk)
+                    self.main_label.after(1, self.rawVideoStream)
                 else:
                     logging.info("Frame is None.")
             except AttributeError as e:
@@ -237,21 +339,24 @@ class GUIApplication(threading.Thread):
 
 
 
-    def poseStream(self, frame):
+    def showFindPoseStream(self, frame):
         logging.debug('Inside posestream')
-        try:
-            print("FRRRRAAAAAMMMMMEEE: ", frame)
-            print('Image_tk: ', self.image_tk)
-            if frame is not None:
-                self.cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                self.img_video = Image.fromarray(self.cv2image)
-                self.image_tk = ImageTk.PhotoImage(image=self.img_video)
-                self.main_label.image_tk = self.image_tk
-                self.main_label.configure(image=self.image_tk)
-                #main_label.after(1, videoStream)
-        except AttributeError as e:
-            logging.error(str(e))
-
+        if self.showPoseStream:
+            try:
+                print("FRRRRAAAAAMMMMMEEE: ", frame)
+                print('Image_tk: ', self.image_tk)
+                if frame is not None:
+                    self.cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    self.img_video = Image.fromarray(self.cv2image)
+                    self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+                    self.main_label.image_tk = self.image_tk
+                    self.main_label.configure(image=self.image_tk)
+                    #main_label.after(1, videoStream)
+            except AttributeError as e:
+                logging.error(str(e))
+        else:
+            #self.main_label.grid(row=None,column=None)
+            pass
     def showImage(self):
         '''
         test to save single frame
@@ -268,7 +373,7 @@ class GUIApplication(threading.Thread):
         Save a single frame from video feed
         :return: jpg
         '''
-        cv2.imwrite('images/frame%d.jpg' % self.counter, self.videoStream())
+        cv2.imwrite('images/frame%d.jpg' % self.counter, self.rawVideoStream())
 
 
     def changeCameraID(self, camid):
@@ -281,14 +386,14 @@ class GUIApplication(threading.Thread):
         GUIDataPlotting.plotGraph()
 
 
-    def startApplication(self):
+    def startFindPoseApp(self):
         '''
         Start the poseestimator in application.
-
         :return:
         '''
         #Start the main app
-        self.poseEstmationThread = threading.Thread(target=self.c.startApplication, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
+        self.poseEstimationIsRunning = True
+        self.poseEstmationThread = threading.Thread(target=self.c.startFindPoseApp, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
         self.poseEstmationThread.start()
         logging.info('Started application in a own thread.')
 
@@ -299,13 +404,13 @@ class GUIApplication(threading.Thread):
         '''
         return self.doStopApp # For now
 
-    def setDoStopApp(self):
+    def setFindPoseFalse(self):
         '''
         Set flag who stops the poseestimation running to True.
-        :return:
         '''
         logging.info("Setting doStopApp to True")
         self.doStopApp = True
+        self.poseEstimationIsRunning = False
 
     def dispContiniusResults(self, result, poseFrame):
         '''
@@ -314,7 +419,7 @@ class GUIApplication(threading.Thread):
         :param result: A tuple with rvec and tvec.
         :param poseFrame: Image of webcam + detection markers and coordinate system.
         '''
-        self.poseStream(poseFrame)
+        self.showFindPoseStream(poseFrame)
 
     def fileClicked():
         print('File clicked')

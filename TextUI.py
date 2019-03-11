@@ -50,7 +50,7 @@ class TextUI():
     def startApplication(self):
         logging.info('Starting application')
         runApp = True
-        self.c.startApplication(self.dispContiniusResults, self.doAbortApp)
+        self.c.startFindPoseApp(self.dispContiniusResults, self.doAbortApp)
 
     def doAbortApp(self):
         intext = True

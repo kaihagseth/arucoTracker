@@ -25,13 +25,16 @@ class PoseEstimator():
             self.VisionEntityList.append(VE)
         return cam_list
 
-    def findConnectedCamIndexes(self):
+    def findConnectedCamIndexes(self, wantedCams=None):
         '''
         Find all cams connected to system.  
         :return: 
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
-        unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
+        if wantedCams is None:
+            unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
+        else: # Wanted cams specified in GUI.
+            pass
         logging.info('Inside findConnectedCams()')
         #logging.info('Using a hack. Hardcoded index list in return.')
         num_cams = 5
