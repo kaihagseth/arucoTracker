@@ -12,7 +12,7 @@ import logging
 
 
 class dataReading:
-    def __init__(self, top=None):   #add param for connector later on
+    def __init__(self, top=None):
         '''This class configures and populates the data window.
                     top is the toplevel containing window.'''
 
@@ -170,21 +170,30 @@ class dataReading:
         self.label_yaw.configure(width=44)
 
         self.graph_frame = tk.Frame(top)
-        self.graph_frame.place(relx=0.15, rely=0.2, height=200, width=425)
+        self.graph_frame.place(relx=0.2, rely=0.2, height=225, width=425)
         self.graph_frame.configure(background='red')
         self.graph_frame.configure(borderwidth='2')
         self.graph_frame.configure(relief='ridge')
         self.graph_frame.configure(width=233)
         self.graph_frame.configure(command=plotGraph(self.graph_frame))
 
-        self.btn_top = tk.Button(top)
-        self.btn_top.place(relx=0.330, rely=0.05, height=30, width=150)
-        self.btn_top.configure(background='#000000')
-        self.btn_top.configure(disabledforeground='#a3a3a3')
-        self.btn_top.configure(foreground='#FFFFFF')
-        self.btn_top.configure(text='Plot Data')
-        self.btn_top.configure(width=150)
-        #self.btn_top.configure(command=self.textVariable(c))
+        self.btn_plot = tk.Button(top)
+        self.btn_plot.place(relx=0.4, rely=0.05, height=30, width=100)
+        self.btn_plot.configure(background='#665959')
+        self.btn_plot.configure(disabledforeground='#911515')
+        self.btn_plot.configure(foreground='#FFFFFF')
+        self.btn_plot.configure(text='Plot Data')
+        self.btn_plot.configure(width=150)
+        #self.btn_plot.configure(command=self.textVariable(c))
+
+        self.btn_save =  tk.Button(top)
+        self.btn_save.place(relx=0.4, rely=0.7, height=30, width=100)
+        self.btn_save.configure(background='#665959')
+        self.btn_save.configure(disabledforeground='#911515')
+        self.btn_save.configure(foreground='#FFFFFF')
+        self.btn_save.configure(text='Save Data')
+        self.btn_save.configure(width=150)
+        #self.btn_plot.configure(command=self.saveData())
 
 
     def textVariable(self, pose):
@@ -250,7 +259,7 @@ def plotGraph(frame):
     y = []
     z = []
 
-    with open('logs\position_log.csv', 'r') as csv_file:
+    with open('position_log.csv', 'r') as csv_file:
         plots = csv.reader(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
         for row in plots:
             try:
@@ -258,9 +267,7 @@ def plotGraph(frame):
                 y.append(int(row[1]))
                 z.append(int(row[2]))
             except(TypeError, ValueError):
-                if row[0] == '-':
-                    continue
-                print('Could not read data from position log. Row not translatable to int')
+                print('Error ignored')
     x = np.asarray(x)
     y = np.asarray(y)
     z = np.asarray(z)
