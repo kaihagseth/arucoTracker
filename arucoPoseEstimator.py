@@ -167,8 +167,17 @@ class ArucoPoseEstimator:
        [0],
        [2]], dtype=int32))
         '''
-        ids =
-
+        idlist = []
+        for n in ids:
+            idlist.append(n[0])
+        cornerlist = []
+        for v in corners: # Iterate through all markers, each marker with 4 tuples for each corn coord.
+            cornerlist.append(v[0])
+        idcornerslist = []
+        # Create the complete list:
+        for i in range(len(ids)):
+            idcornerslist.append((idlist[i],cornerlist[i][0],cornerlist[i][1]))
+        return idcornerslist
     def getPosePreviewImage(self):
         return self.posPreviewImage
 
