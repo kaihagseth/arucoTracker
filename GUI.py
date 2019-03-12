@@ -208,6 +208,8 @@ class GUIApplication(threading.Thread):
         self.stopCamApp = Button(self.left_camPaneTabMain, text='Stop application', command=self.setFindPoseFalse)
         self.startCamApp.pack()
         self.stopCamApp.pack()
+        deadSpace2 = Frame(self.left_camPaneTabMain, height=50).pack()
+
         # Setu the config tab
         self.setupConfigTab()
         # Start it all
