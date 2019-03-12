@@ -21,7 +21,7 @@ class VisionEntity:
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
-    def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que, extrinsicMtrx):
+    def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que):
 
         while True:
             frame = self.getFrame()
