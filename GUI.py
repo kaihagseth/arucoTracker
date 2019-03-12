@@ -149,7 +149,6 @@ class GUIApplication(threading.Thread):
         self.btn_img.pack()
         self.page_3_frame.pack()
 
-        self.aruco = self.arucoPoseEstimator.ArucoPoseEstimator
         self.pdf_btn = Button(self.page_3_frame, text='Save Aruco Board')
                          #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
         self.pdf_btn.pack()
