@@ -102,7 +102,7 @@ class ArucoPoseEstimator:
                     cv2.imshow('out', image_copy)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         cv2.destroyAllWindows()
-                    self.posPreviewImage = image_copy
+                self.posPreviewImage = image_copy
 
                 return relative_translation, euler_angles
         if showFrame:
@@ -111,9 +111,9 @@ class ArucoPoseEstimator:
                 cv2.destroyAllWindows()
         return None, None
 
-
     def getPosePreviewImage(self):
         return self.posPreviewImage
+
     def writeBoardToPDF(self, width=160):
         """
         Creates a printable pdf-file of this aruco board.

@@ -11,11 +11,13 @@ import arucoPoseEstimator
 import Connector
 import threading
 import time
+import re
 import threading
 
 class GUIApplication(threading.Thread):
+    global length
 
-    def __init__(self, connector):
+    def __init__(self, connector, arucoPose):
         threading.Thread.__init__(self)
 
         msg = 'Thread: ', threading.current_thread().name
@@ -23,6 +25,7 @@ class GUIApplication(threading.Thread):
         # Camera variables
         self.counter = 0
         self.c = connector
+        self.aruco = arucoPose
         self.camlist = self.c.initConnectedCams()
         self.camIDInUse = 1
         self.image_tk = None
@@ -30,6 +33,7 @@ class GUIApplication(threading.Thread):
         self.doStopApp = False
         self.show_video = False
         self.showPoseStream = False
+
 
     def run(self):
         '''
@@ -148,11 +152,65 @@ class GUIApplication(threading.Thread):
         self.btn_img = Label(self.page_3_frame, image=self.ph)
         self.btn_img.pack()
         self.page_3_frame.pack()
+        self.page_3_label_frame = Frame(self.page_3_frame)
+        self.page_3_label_frame.configure(relief='groove')
+        self.page_3_label_frame.configure(borderwidth='2')
+        self.page_3_label_frame.configure(relief='groove')
+        self.page_3_entry_frame = Frame(self.page_3_frame)
+        self.page_3_entry_frame.configure(relief='groove')
+        self.page_3_entry_frame.configure(borderwidth='2')
+        self.page_3_entry_frame.configure(relief='groove')
 
-        self.aruco = self.arucoPoseEstimator.ArucoPoseEstimator
-        self.pdf_btn = Button(self.page_3_frame, text='Save Aruco Board')
-                         #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
-        self.pdf_btn.pack()
+
+        self.page_3_label_frame.pack(side=LEFT)
+        self.page_3_entry_frame.pack(side=RIGHT)
+
+        self.length = Label(self.page_3_label_frame, text='Length:') # Add text to label
+        self.length_entry = Entry(self.page_3_entry_frame) # Create entry for that label
+        vcmd_length = (self.length_entry.register(self.on_validate), '%P') # Check if input is valid
+
+        self.width = Label(self.page_3_label_frame, text='Width: ')
+        self.width_entry = Entry(self.page_3_entry_frame)
+        vcmd_width = (self.width_entry.register(self.on_validate), '%P')
+
+        self.size = Label(self.page_3_label_frame, text='Size: ')
+        self.size_entry = Entry(self.page_3_entry_frame)
+        vcmd_size = (self.size_entry.register(self.on_validate), '%P')
+
+        self.gap = Label(self.page_3_label_frame, text='Gap: ')
+        self.gap_entry = Entry(self.page_3_entry_frame, validate='key')
+        vcmd_gap = (self.gap_entry.register(self.on_validate), '%P')
+
+
+        self.length.pack()
+        self.length_entry.insert(0, 'Enter length...') # Add generic text
+        self.length_entry.bind('<Button-1>', self.on_entry_click) # If clicked on
+        self.length_entry.pack()
+        self.length_entry.config(validate='key', validatecommand=vcmd_length)
+
+        self.width.pack()
+        self.width_entry.insert(0, 'Enter width...')
+        self.width_entry.bind('<Key>', self.on_entry_click)
+        self.width_entry.pack()
+        self.width_entry.config(validate='key', validatecommand=vcmd_width)
+
+        self.size.pack()
+        self.size_entry.insert(0, 'Enter size...')
+        self.size_entry.bind('<FocusIn>', self.on_entry_click)
+        self.size_entry.pack()
+        self.size_entry.config(validate='key', validatecommand=vcmd_size)
+
+        self.gap.pack()
+        self.gap_entry.insert(0, 'Enter gap...')
+        self.gap_entry.bind('<FocusIn>', self.on_entry_click)
+        self.gap_entry.pack()
+        self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
+
+        self.btn_frame = Frame(self.page_3)
+        self.btn_frame.pack()
+        self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
+                              command=self.aruco.writeBoardToPDF())
+        self.pdf_btn.pack(side=BOTTOM)
 
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
@@ -163,6 +221,8 @@ class GUIApplication(threading.Thread):
         self.page_4_frame.configure(background='#000000')
         self.page_4_frame.configure(width=565)
 
+
+        # Improve so that we dont have to catch error for wrong index.
         try:
             GUIDataPlotting.createDataWindow(self.page_4_frame)
         except IndexError:
@@ -279,7 +339,7 @@ class GUIApplication(threading.Thread):
         Reset the cam extrinsic matrixes to the current frame point.
         :return:
         '''
-        if
+        if self.poseEstimationIsRunning:
             logging.info()
 
     def startRawCameraClicked(self):
@@ -381,7 +441,7 @@ class GUIApplication(threading.Thread):
         :return: img
         '''
         self.img = ImageTk.PhotoImage(file='images/test_image.png')
-        self.img_label = Label(self.root, image=img)
+        self.img_label = Label(self.root, image=self.img)
         self.img_label.grid(column=0, row=0)
 
 
@@ -411,7 +471,7 @@ class GUIApplication(threading.Thread):
         '''
         #Start the main app
         self.poseEstimationIsRunning = True
-        self.poseEstmationThread = threading.Thread(target=self.c.startFindPoseApp, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
+        self.poseEstmationThread = threading.Thread(target=self.c.startApplication, args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
         self.poseEstmationThread.start()
         logging.info('Started application in a own thread.')
 
@@ -439,5 +499,61 @@ class GUIApplication(threading.Thread):
         '''
         self.showFindPoseStream(poseFrame)
 
-    def fileClicked():
+    def fileClicked(self):
+        '''
+        Dummy function for setup for buttons or other functions that needs callback functions
+        :return: print
+        '''
         print('File clicked')
+
+    def savePDFParam(self):
+        '''
+        Return values from entry and send it to the arucoPoseEstimator
+        :return: length, width, size, gap
+        '''
+        length_value = self.length_entry.get(self)
+        width_value = self.width_entry.get(self)
+        size_value = self.size_entry.get(self)
+        gap_value = self.gap_entry.get(self)
+
+        return length_value, width_value, size_value, gap_value
+
+    def validate(self, string):
+        '''
+        Regex for input on entry
+        :param string: The input you want to check.
+        :return: only return numbers written.
+        '''
+        regex = re.compile(r"(\+|\-)?[0-9,]*$")
+        result = regex.match(string)
+        return (string == ""
+                or (string.count('+') <= 1
+                    and string.count('-') <= 1
+                    and string.count(',') <= 1
+                    and result is not None
+                    and result.group(0) != ""))
+
+    def on_validate(self, P):
+        '''
+        Check if the validation is true
+        :param P:
+        :return:
+        '''
+        return self.validate(P)
+
+# This function needs improvement so that it only checks the entry that is clicked instead of all at the same time.
+    def on_entry_click(self, event):
+        '''function that gets called whenever entry is clicked'''
+        if self.gap_entry.get() == 'Enter gap...':
+            self.gap_entry.delete(0, "end")  # delete all the text in the entry
+            self.gap_entry.insert(0, '')  # Insert blank for user input
+        if self.size_entry.get() == 'Enter size...':
+            self.size_entry.delete(0, "end")  # delete all the text in the entry
+            self.size_entry.insert(0, '')  # Insert blank for user input
+        if self.length_entry.get() == 'Enter length...':
+            self.length_entry.delete(0, "end")  # delete all the text in the entry
+            self.length_entry.insert(0, '')  # Insert blank for user input
+
+        if self.width_entry.get() == 'Enter width...':
+            self.width_entry.delete(0, "end")  # delete all the text in the entry
+            self.width_entry.insert(0, '')  # Insert blank for user input

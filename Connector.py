@@ -1,9 +1,7 @@
-
 import os
 import json
 import logging
 from logging.config import dictConfig
-
 import time
 
 from PoseEstimator import PoseEstimator
