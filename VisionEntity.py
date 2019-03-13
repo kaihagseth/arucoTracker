@@ -83,8 +83,14 @@ class VisionEntity:
         """
         return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
                                                      self.getDistortionCoefficients(), showFrame=showFrame)
+
     def getPosePreviewImage(self):
+        '''
+
+        :return:
+        '''
         return self._arucoPoseEstimator.getPosePreviewImage()
+
     def getFrame(self):
         """
         Returns a raw frame from the camera
@@ -121,3 +127,16 @@ class VisionEntity:
         :return: Camera object
         """
         return self._camera
+
+    def getExtrinsicMatrix(self, frame=None):
+        '''
+        Returns the camera extrinsic matrix
+        :return:
+        '''
+
+        ext = self._arucoPoseEstimator.getExtrinsic(frame, self.intrinsic_matrix,
+                                                    self.getDistortionCoefficients())
+        if ext is not None:
+            return ext
+        else:
+            raise exc.MissingExtrinsicException('Extrinsic matrix not returned')
