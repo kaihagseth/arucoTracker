@@ -185,24 +185,28 @@ class GUIApplication(threading.Thread):
         self.length.pack()
         self.length_entry.insert(0, 'Enter length...') # Add generic text
         self.length_entry.bind('<Button-1>', self.on_entry_click) # If clicked on
+        self.length_entry.configure(foreground='gray')
         self.length_entry.pack()
         self.length_entry.config(validate='key', validatecommand=vcmd_length)
 
         self.width.pack()
         self.width_entry.insert(0, 'Enter width...')
-        self.width_entry.bind('<Key>', self.on_entry_click)
+        self.width_entry.bind('<Button-1>', self.on_entry_click)
+        self.width_entry.configure(foreground='gray')
         self.width_entry.pack()
         self.width_entry.config(validate='key', validatecommand=vcmd_width)
 
         self.size.pack()
         self.size_entry.insert(0, 'Enter size...')
-        self.size_entry.bind('<FocusIn>', self.on_entry_click)
+        self.size_entry.configure(foreground='gray')
+        self.size_entry.bind('<Button-1>', self.on_entry_click)
         self.size_entry.pack()
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
 
         self.gap.pack()
         self.gap_entry.insert(0, 'Enter gap...')
-        self.gap_entry.bind('<FocusIn>', self.on_entry_click)
+        self.gap_entry.bind('<Button-1>', self.on_entry_click)
+        self.gap_entry.configure(foreground='gray')
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
@@ -524,14 +528,14 @@ class GUIApplication(threading.Thread):
         :param string: The input you want to check.
         :return: only return numbers written.
         '''
-        regex = re.compile(r"(\+|\-)?[0-9,]*$")
+        regex = re.compile(r'(\+|\-)?[0-9,]*$')
         result = regex.match(string)
-        return (string == ""
+        return (string == ''
                 or (string.count('+') <= 1
                     and string.count('-') <= 1
                     and string.count(',') <= 1
                     and result is not None
-                    and result.group(0) != ""))
+                    and result.group(0) != ''))
 
     def on_validate(self, P):
         '''
@@ -545,15 +549,18 @@ class GUIApplication(threading.Thread):
     def on_entry_click(self, event):
         '''function that gets called whenever entry is clicked'''
         if self.gap_entry.get() == 'Enter gap...':
-            self.gap_entry.delete(0, "end")  # delete all the text in the entry
+            self.gap_entry.delete(0, 'end')  # delete all the text in the entry
             self.gap_entry.insert(0, '')  # Insert blank for user input
-        if self.size_entry.get() == 'Enter size...':
-            self.size_entry.delete(0, "end")  # delete all the text in the entry
+            self.gap_entry.configure(foreground='black')
+        elif self.size_entry.get() == 'Enter size...':
+            self.size_entry.delete(0, 'end')  # delete all the text in the entry
             self.size_entry.insert(0, '')  # Insert blank for user input
-        if self.length_entry.get() == 'Enter length...':
-            self.length_entry.delete(0, "end")  # delete all the text in the entry
+            self.size_entry.configure(foreground='black')
+        elif self.length_entry.get() == 'Enter length...':
+            self.length_entry.delete(0, 'end')  # delete all the text in the entry
             self.length_entry.insert(0, '')  # Insert blank for user input
-
-        if self.width_entry.get() == 'Enter width...':
-            self.width_entry.delete(0, "end")  # delete all the text in the entry
+            self.length_entry.configure(foreground='black')
+        elif self.width_entry.get() == 'Enter width...':
+            self.width_entry.delete(0, 'end')  # delete all the text in the entry
             self.width_entry.insert(0, '')  # Insert blank for user input
+            self.width_entry.configure(foreground='black')

@@ -1,8 +1,6 @@
 from tkinter import *
 import os
-
 import time
-
 from GUI import GUIApplication
 import re
 import threading
@@ -181,7 +179,6 @@ class GUILogin():
         password_entry1.pack()
         Label(screen2, text='').pack()
         Button(screen2, text='Login', width=10, height=1, command=self.loginVerify).pack()
-
 
     def startLogin(self):
         '''
