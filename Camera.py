@@ -17,7 +17,7 @@ class Camera():
         :param camera_label: String corresponding to yellow label on camera.
         :param loadCameraParameters: Flag to decide if you should load this cameras parameters.
         """
-        print("Creating OTCam")
+        print("Creating Camer: Name: ", cam_name, "; Label: ", camera_label, "Index: ", src_index)
         self._name = cam_name
         self.camera_label = camera_label
         self.camera_parameters = {'mtx': None, 'ret': None, 'dist': None, 'rvecs': None, 'tvecs': None,

@@ -161,6 +161,9 @@ class GUIApplication(threading.Thread):
         self.page_3_entry_frame.configure(borderwidth='2')
         self.page_3_entry_frame.configure(relief='groove')
 
+        self.pdf_btn = Button(self.page_3_frame, text='Save Aruco Board')
+                         #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
+        self.pdf_btn.pack()
 
         self.page_3_label_frame.pack(side=LEFT)
         self.page_3_entry_frame.pack(side=RIGHT)
@@ -272,6 +275,8 @@ class GUIApplication(threading.Thread):
         self.stopCamApp = Button(self.left_camPaneTabMain, text='Stop application', command=self.setFindPoseFalse)
         self.startCamApp.pack()
         self.stopCamApp.pack()
+        deadSpace2 = Frame(self.left_camPaneTabMain, height=50).pack()
+
         # Setu the config tab
         self.setupConfigTab()
         # Start it all
