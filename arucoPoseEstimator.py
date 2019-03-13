@@ -120,6 +120,34 @@ class ArucoPoseEstimator:
             msg = str(e)
             logging.error(msg)
 
+
+    def getExtrinsic(self, frame, camera_matrix, dist_coeff):
+        '''
+        Return Extrinsic matrix
+        :param frame:
+        :param camera_matrix:
+        :param dist_coeff:
+        :return:
+        '''
+        if self._R0 is None and frame is not None:
+            try:
+                corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
+                if len(corners) > 0:
+                    retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, self._board, camera_matrix, dist_coeff)
+                    if retval:
+                        R = np.matrix(cv2.Rodrigues(rvec))
+                        ext = np.vstack((np.hstack((R, tvec.T)), [0, 0, 0, 1]))
+                        return ext
+                return None
+            except cv2.error as e:
+                msg = str(e)
+                logging.error(msg)
+        else:
+            if self._R0 is not None:
+                ext = np.vstack((np.hstack((self._R0, self._T0.T)), [0, 0, 0, 1]))
+                return ext
+            return None
+
     def get2DPointsMarkers(self, corners, ids):
         '''
         Find and extract corners of each marker to use for stereovision.
@@ -167,7 +195,6 @@ class ArucoPoseEstimator:
        [0],
        [2]], dtype=int32))
         '''
-        ids =
 
     def getPosePreviewImage(self):
         return self.posPreviewImage
