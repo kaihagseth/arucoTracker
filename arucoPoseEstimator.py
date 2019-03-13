@@ -148,6 +148,7 @@ class ArucoPoseEstimator:
                 return ext
             return None
 
+
     def get2DPointsMarkers(self, corners, ids):
         '''
         Find and extract corners of each marker to use for stereovision.
