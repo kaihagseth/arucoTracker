@@ -163,3 +163,29 @@ class VisionEntity:
             return ext
         else:
             raise exc.MissingExtrinsicException('Extrinsic matrix not returned')
+
+    def detectMarkers(self, dictionary):
+        """
+        Detects aruco markers and updates fields
+        :param dictionary:
+        :return:
+        """
+        self.corners, self.ids, self.rejected = cv2.aruco.detectMarkers(self.frame, dictionary)
+
+    def grabFrame(self):
+        """
+        Grabs frame from video stream
+        :return:
+        """
+        self.getCameraStream().grab()
+
+    def retrieveFrame(self):
+        """
+        Retrieves grabbed frame from video stream
+        :return: retval, frame from video stream
+        """
+        return self.getCameraStream().retrieve()
+
+    def estimatePose(self, board):
+        _, self.Mrvec, self.Mtvec = cv2.aruco.estimatePoseBoard(self.corners, self.ids, board.grid_board,
+                                                                self.intrinsic_matrix, self.distortion_coeff)

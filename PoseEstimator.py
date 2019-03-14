@@ -181,15 +181,14 @@ class PoseEstimator():
         for board in self._arucoBoards:
             board.isVisible = False
             for ve in self.getVisionEntityList():
-                ve.stream.grab()
+                ve.grabFrame()
                 ve.reset()
             for ve in self.getVisionEntityList():
-                ret, ve.frame = ve.stream.retrieve()
-                ve.corners, ve.ids, ve.rejected = cv2.aruco.detectMarkers(ve.frame, board.getDictionary)
+                ret, ve.frame = ve.retrieveFrame()
+                ve.detectMarkers(self.dictionary)
                 # Collecting frame and detecting markers for each camera.
                 if len(ve.corners) > 0:
-                    _, ve.Mrvec, ve.Mtvec = cv2.aruco.estimatePoseBoard(ve.corners, ve.ids, board.grid_board,
-                                                                          ve.intrinsic_matrix, ve.distortion_coeff)
+                    ve.estimatePose(board)
                     # When the board is spotted for the first time by a camera and a pose is calculated successfully, the boards
                     # pose is set to origen, and the camera is set as the master cam.
                     if board.rvec is None and (ve.Mrvec is not None):
