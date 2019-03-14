@@ -83,47 +83,12 @@ class PoseEstimator():
             frame_que = queue.LifoQueue(maxsize=1) # Thread-safe variable for passing cam frames to GUI.
             logging.debug('Passing queue.Queue()')
             # Create thread, with target findPoseResult(). All are daemon-threads.
-            th = threading.Thread(target=VE.runThreadedLoop, args=[singlecam_curr_pose, singlecam_curr_pose_que, frame_que], daemon=True)
+            th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             logging.debug('Passing thread creation.')
             self.threadInfoList.append([VE, th, singlecam_curr_pose_que, frame_que])
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
-
-    def getPosePreviewImg(self):
-        # Get the image created in arucoPoseEstimator with pose and chessboard. None if empty
-        imgque = self.threadInfoList[0][3]
-        img = imgque.get()
-        return img
-
-    def collectPoses(self, useSingleCam=True):
-        '''
-        Get all output from the poseestimation here.
-        If only single cam used, return tuple with tvec and rvec.
-        Solution for multiple cams not implemented.
-        :param: True if only using one cam
-        :return: tvec, rvec (single cam)
-        '''
-        time.sleep(0.02)
-        try:
-            if useSingleCam is True:
-                poseque = self.threadInfoList[0][2]  # Get list of the threadsafe variables
-                pose = poseque.get()
-                tvec, rvec = pose[0], pose[1]
-                return rvec, tvec
-            else:
-                posequelist = self.threadInfoList[:][2]  # Get list of the threadsafe variables
-                poselist = []
-                # Create list for poses
-                for poseque in posequelist:
-                    poselist.append(poseque.get())
-                return poselist
-        except IndexError as e:
-            logging.error(str(e))
-            return []
-        except TypeError as e:
-            logging.error(str(e))
-            return []
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -187,10 +152,8 @@ class PoseEstimator():
                 ve.reset()
             for ve in self.getVisionEntityList():
                 ret, ve.frame = ve.retrieveFrame()
-                ve.detectMarkers(self.dictionary)
                 # Collecting frame and detecting markers for each camera.
                 if len(ve.corners) > 0:
-                    ve.estimatePose(board)
                     # When the board is spotted for the first time by a camera and a pose is calculated successfully, the boards
                     # pose is set to origen, and the camera is set as the master cam.
                     if board.rvec is None and (ve.Mrvec is not None):
@@ -229,8 +192,12 @@ class PoseEstimator():
         """
         poses = []
         for board in self._arucoBoards:
-            tvec = np.array(board.tvec, dtype=int)
-            evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.rvec))).astype(int)
+            try:
+                tvec = np.array(board.getTvec(), dtype=int)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getRvec()))).astype(int)
+            except TypeError:
+                tvec = None
+                evec = None
             pose = tvec, evec
             poses.append(pose)
         return poses
@@ -247,13 +214,20 @@ class PoseEstimator():
                 return ve
         return None
 
-    def getPosePreviewImage(self):
+    def getPosePreviewImg(self):
         """
         Returns a pose preview image from master camera.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        out_frame = self._master_entity.retrieveFrame()
-        out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
-        out_frame = self._master_entity.drawAxis(out_frame)
-        out_frame = self._master_entity.drawAxis(out_frame)
-        return out_frame
+        try:
+            ret, out_frame = self._master_entity.retrieveFrame()
+            out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
+            out_frame = self._master_entity.drawAxis(out_frame)
+            out_frame = self._master_entity.drawAxis(out_frame)
+        except AttributeError:
+            entities = self.getVisionEntityList()
+            ret, out_frame = entities[0].retrieveFrame()
+        if ret:
+            cv2.imshow('test', out_frame)
+            cv2.waitKey(1)
+        return ret, out_frame

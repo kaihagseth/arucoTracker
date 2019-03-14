@@ -21,7 +21,6 @@ class GUIApplication(threading.Thread):
         # Camera variables
         self.counter = 0
         self.c = connector
-        self.aruco = Connector.ArucoPoseEstimator(3,3,20,5)
         self.camlist = self.c.initConnectedCams()
         self.camIDInUse = 1
         self.image_tk = None
@@ -490,12 +489,10 @@ class GUIApplication(threading.Thread):
         self.doStopApp = True
         self.poseEstimationIsRunning = False
 
-    def dispContiniusResults(self, result, poseFrame):
+    def dispContiniusResults(self, poseFrame):
         '''
         Passed to, and called from Connector, while application runs.
         Delivers pose and the "poseframe".
-        :param result: A tuple with rvec and tvec.
-        :param poseFrame: Image of webcam + detection markers and coordinate system.
         '''
         self.showFindPoseStream(poseFrame)
 
@@ -509,6 +506,7 @@ class GUIApplication(threading.Thread):
     def savePDFParam(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator
+        TODO: aruco pose estimator should no longer be used. arucoboard should be used in stead
         :return:
         '''
         length_value = self.length_entry.get()

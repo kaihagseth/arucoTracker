@@ -128,16 +128,15 @@ class Camera():
         Grabs frame from stream
         :return:  None
         """
-        self._vidCap.grab()
+        return self._vidCap.grab()
 
     def retrieveFrame(self):
         """
         retrieves frame from stream
         :return: retval, frame
         """
-        retval, frame = self._vidCap.retrieve()
-        if retval:
-            self._frame = frame
+        return self._vidCap.retrieve()
+
 
     def getFrame(self):
         """

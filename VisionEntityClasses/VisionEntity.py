@@ -28,14 +28,13 @@ class VisionEntity:
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
-    def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que):
+    def runThreadedLoop(self, dictionary, boards):
         while True:
-            frame = self.getFrame()
-            #frame_que.put(frame)
-            singlecam_curr_pose = self.getModelPose(frame)
-            singlecam_curr_pose_que.put(singlecam_curr_pose)
-            frame_que.put(self.getPosePreviewImage())
-         #   logging.info("Running threaded loop")
+            self.grabFrame()
+            self.retrieveFrame()
+            self.detectMarkers(dictionary)
+            for board in boards:
+                self.estimatePose(board)
 
     def calibrateCameraWithTool(self):
         """
@@ -82,8 +81,6 @@ class VisionEntity:
         """
         return self._camera.getUndistortedFrame()
 
-
-
     def getPosePreviewImage(self):
         '''
 
@@ -96,7 +93,7 @@ class VisionEntity:
         Returns a raw frame from the camera
         :return: distortion coefficients of camera
         """
-        return self._camera.getSingleFrame()
+        return self._camera.getFrame()
 
     def getDistortionCoefficients(self):
         """
@@ -164,22 +161,25 @@ class VisionEntity:
         :param dictionary:
         :return:
         """
-        self.corners, self.ids, self.rejected = cv2.aruco.detectMarkers(self.frame, dictionary)
+        ret, frame = self.retrieveFrame()
+        if ret:
+            self.corners, self.ids, self.rejected = cv2.aruco.detectMarkers(frame, dictionary)
 
     def grabFrame(self):
         """
         Grabs frame from video stream
         :return:
         """
-        self.getCam().grabFrame()
+        return self.getCam().grabFrame()
 
     def retrieveFrame(self):
         """
         Retrieves grabbed frame from video stream
-        :return: retval, frame from video stream
+        :return: frame from video stream
         """
-        self.getCam().setFrame = self.getCameraStream().retrieve()
-        return self.getCam().getFrame()
+        cam = self.getCam()
+        return cam.retrieveFrame()
+
 
 
     def estimatePose(self, board):
@@ -188,8 +188,8 @@ class VisionEntity:
         :param board: Board yo estomate
         :return: None
         """
-        _, self.Mrvec, self.Mtvec = cv2.aruco.estimatePoseBoard(self.corners, self.ids, board.grid_board,
-                                                                self.intrinsic_matrix, self.distortion_coeff)
+        _, self.Mrvec, self.Mtvec = cv2.aruco.estimatePoseBoard(self.corners, self.ids, board.getGridBoard(),
+                                                                self.intrinsic_matrix, self.getDistortionCoefficients())
 
     def drawAxis(self, frame):
         """

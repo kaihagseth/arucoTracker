@@ -21,6 +21,9 @@ class arucoBoard():
         self.isVisible = True # Truth value to tell if this board is visible to at least one vision entity
         self.first_marker = self.first_marker + (self.board_height * self.board_width)
 
+    def getGridBoard(self):
+        return self._board
+
     def setRvec(self, rvec):
         """
         Sets rvec field for this object
@@ -28,6 +31,7 @@ class arucoBoard():
         :return: None
         """
         self._rvec = rvec
+
 
     def getRvec(self):
         """
