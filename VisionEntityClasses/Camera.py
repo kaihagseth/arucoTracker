@@ -1,9 +1,11 @@
-import numpy as np
 import logging
 
-from WebcamVideoStream import WebcamVideoStream
 import cv2
-import IntrinsicCalibrator as ic
+import numpy as np
+
+from VisionEntityClasses import IntrinsicCalibrator as ic
+from WebcamVideoStream import WebcamVideoStream
+
 
 class Camera():
     """

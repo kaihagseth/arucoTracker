@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
 from fpdf import FPDF
-from helperFunctions import toMatrix
 
-class arucoBoard:
+from VisionEntityClasses.helperFunctions import toMatrix
+
+
+class arucoBoard():
     # TODO: Maybe loosen up coupling by removing links to vision entity.
     first_marker = 0
 
@@ -14,6 +16,8 @@ class arucoBoard:
                                                  self.first_marker)
         self._rvec = None # Model World rvec
         self._tvec = None # Model World tvec
+        self.board_height = board_height
+        self.board_width = board_width
         self.isVisible = True # Truth value to tell if this board is visible to at least one vision entity
         self.first_marker = self.first_marker + (self.board_height * self.board_width)
 
