@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 from fpdf import FPDF
-from helperFunctions import toMatrix
+
+from VisionEntityClasses.helperFunctions import toMatrix
+
 
 class arucoBoard():
     # TODO: Maybe loosen up coupling by removing links to vision entity.
