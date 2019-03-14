@@ -3,7 +3,7 @@ import json
 import logging
 from logging.config import dictConfig
 import time
-
+from arucoPoseEstimator import ArucoPoseEstimator
 from PoseEstimator import PoseEstimator
 import threading
 from GUILogin import GUILogin
