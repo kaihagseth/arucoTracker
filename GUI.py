@@ -17,7 +17,7 @@ import threading
 class GUIApplication(threading.Thread):
     global length
 
-    def __init__(self, connector, arucoPose):
+    def __init__(self, connector):
         threading.Thread.__init__(self)
 
         msg = 'Thread: ', threading.current_thread().name
@@ -25,7 +25,7 @@ class GUIApplication(threading.Thread):
         # Camera variables
         self.counter = 0
         self.c = connector
-        self.aruco = arucoPose
+        self.aruco = Connector.ArucoPoseEstimator(3,3,20,5)
         self.camlist = self.c.initConnectedCams()
         self.camIDInUse = 1
         self.image_tk = None
@@ -161,10 +161,6 @@ class GUIApplication(threading.Thread):
         self.page_3_entry_frame.configure(borderwidth='2')
         self.page_3_entry_frame.configure(relief='groove')
 
-        self.pdf_btn = Button(self.page_3_frame, text='Save Aruco Board')
-                         #, command=arucoPoseEstimator.ArucoPoseEstimator.writeBoardToPDF(self.aruco))
-        self.pdf_btn.pack()
-
         self.page_3_label_frame.pack(side=LEFT)
         self.page_3_entry_frame.pack(side=RIGHT)
 
@@ -186,28 +182,28 @@ class GUIApplication(threading.Thread):
 
 
         self.length.pack()
-        self.length_entry.insert(0, 'Enter length...') # Add generic text
+        self.length_entry.insert(0, '3') # Add generic text
         self.length_entry.bind('<Button-1>', self.on_entry_click) # If clicked on
         self.length_entry.configure(foreground='gray')
         self.length_entry.pack()
         self.length_entry.config(validate='key', validatecommand=vcmd_length)
 
         self.width.pack()
-        self.width_entry.insert(0, 'Enter width...')
+        self.width_entry.insert(0, '3')
         self.width_entry.bind('<Button-1>', self.on_entry_click)
         self.width_entry.configure(foreground='gray')
         self.width_entry.pack()
         self.width_entry.config(validate='key', validatecommand=vcmd_width)
 
         self.size.pack()
-        self.size_entry.insert(0, 'Enter size...')
+        self.size_entry.insert(0, '40')
         self.size_entry.configure(foreground='gray')
         self.size_entry.bind('<Button-1>', self.on_entry_click)
         self.size_entry.pack()
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
 
         self.gap.pack()
-        self.gap_entry.insert(0, 'Enter gap...')
+        self.gap_entry.insert(0, '5')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
         self.gap_entry.configure(foreground='gray')
         self.gap_entry.pack()
@@ -216,7 +212,7 @@ class GUIApplication(threading.Thread):
         self.btn_frame = Frame(self.page_3)
         self.btn_frame.pack()
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
-                              command=self.aruco.writeBoardToPDF())
+                              command=lambda: self.savePDFParam())
         self.pdf_btn.pack(side=BOTTOM)
 
         # Page 4: Graph setup
@@ -424,8 +420,6 @@ class GUIApplication(threading.Thread):
             except AttributeError as e:
                 logging.error(str(e))
 
-
-
     def showFindPoseStream(self, frame):
         logging.debug('Inside posestream')
         if self.showPoseStream:
@@ -444,6 +438,7 @@ class GUIApplication(threading.Thread):
         else:
             #self.main_label.grid(row=None,column=None)
             pass
+
     def showImage(self):
         '''
         test to save single frame
@@ -518,14 +513,20 @@ class GUIApplication(threading.Thread):
     def savePDFParam(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator
-        :return: length, width, size, gap
+        :return:
         '''
-        length_value = self.length_entry.get(self)
-        width_value = self.width_entry.get(self)
-        size_value = self.size_entry.get(self)
-        gap_value = self.gap_entry.get(self)
+        length_value = self.length_entry.get()
+        length_value = int(length_value)
+        width_value = self.width_entry.get()
+        width_value = int(width_value)
+        size_value = self.size_entry.get()
+        size_value = int(size_value)
+        gap_value = self.gap_entry.get()
+        gap_value = int(gap_value)
 
-        return length_value, width_value, size_value, gap_value
+        self.aruco = Connector.ArucoPoseEstimator(length_value, width_value, size_value, gap_value)
+        self.aruco.writeBoardToPDF()
+
 
     def validate(self, string):
         '''
@@ -553,19 +554,20 @@ class GUIApplication(threading.Thread):
 # This function needs improvement so that it only checks the entry that is clicked instead of all at the same time.
     def on_entry_click(self, event):
         '''function that gets called whenever entry is clicked'''
-        if self.gap_entry.get() == 'Enter gap...':
-            self.gap_entry.delete(0, 'end')  # delete all the text in the entry
-            self.gap_entry.insert(0, '')  # Insert blank for user input
-            self.gap_entry.configure(foreground='black')
-        elif self.size_entry.get() == 'Enter size...':
-            self.size_entry.delete(0, 'end')  # delete all the text in the entry
-            self.size_entry.insert(0, '')  # Insert blank for user input
-            self.size_entry.configure(foreground='black')
-        elif self.length_entry.get() == 'Enter length...':
+        if self.length_entry.get() == '3':
             self.length_entry.delete(0, 'end')  # delete all the text in the entry
             self.length_entry.insert(0, '')  # Insert blank for user input
             self.length_entry.configure(foreground='black')
-        elif self.width_entry.get() == 'Enter width...':
+        elif self.width_entry.get() == '3':
             self.width_entry.delete(0, 'end')  # delete all the text in the entry
             self.width_entry.insert(0, '')  # Insert blank for user input
             self.width_entry.configure(foreground='black')
+        elif self.size_entry.get() == '40':
+            self.size_entry.delete(0, 'end')  # delete all the text in the entry
+            self.size_entry.insert(0, '')  # Insert blank for user input
+            self.size_entry.configure(foreground='black')
+        elif self.gap_entry.get() == '5':
+            self.gap_entry.delete(0, 'end')  # delete all the text in the entry
+            self.gap_entry.insert(0, '')  # Insert blank for user input
+            self.gap_entry.configure(foreground='black')
+

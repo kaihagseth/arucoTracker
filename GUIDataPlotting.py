@@ -35,27 +35,25 @@ class dataReading:
         self.frame_1.configure(background='#000000')
         self.frame_1.configure(width=565)
 
-        self.entry_x = tk.Entry(self.frame_1)
+        self.entry_x = tk.Text(self.frame_1)
         self.entry_x.place(relx=0.018, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_x.configure(background='white')
-        self.entry_x.configure(font='TkTextFont')
+        self.entry_x.configure(font=('TkTextFont', 24))
         self.entry_x.configure(foreground='black')
         self.entry_x.configure(width=54)
         #self.entry_x.configure(textvariable=pose[0])
 
-        self.entry_y = tk.Entry(self.frame_1)
+        self.entry_y = tk.Text(self.frame_1)
         self.entry_y.place(relx=0.177, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_y.configure(background='white')
-        self.entry_y.configure(font='TkTextFont')
+        self.entry_y.configure(font=('TkTextFont', 24))
         self.entry_y.configure(foreground='black')
         self.entry_y.configure(width=54)
-        #self.entry_y.configure(textvariable=pose[0])
 
-        self.entry_z = tk.Entry(self.frame_1)
-        self.entry_z.place(relx=0.336, rely=0.588, relheight=0.282
-                           , relwidth=0.096)
+        self.entry_z = tk.Text(self.frame_1)
+        self.entry_z.place(relx=0.336, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_z.configure(background='white')
-        self.entry_z.configure(font='TkTextFont')
+        self.entry_z.configure(font=('TkTextFont', 24))
         self.entry_z.configure(foreground='black')
         self.entry_z.configure(highlightbackground='#d9d9d9')
         self.entry_z.configure(highlightcolor='black')
@@ -64,12 +62,10 @@ class dataReading:
         self.entry_z.configure(selectforeground='black')
         self.entry_z.configure(width=54)
 
-
-        self.entry_pitch = tk.Entry(self.frame_1)
-        self.entry_pitch.place(relx=0.531, rely=0.588, relheight=0.282
-                               , relwidth=0.096)
+        self.entry_pitch = tk.Text(self.frame_1)
+        self.entry_pitch.place(relx=0.531, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_pitch.configure(background='white')
-        self.entry_pitch.configure(font='TkTextFont')
+        self.entry_pitch.configure(font=('TkTextFont', 24))
         self.entry_pitch.configure(foreground='black')
         self.entry_pitch.configure(highlightbackground='#d9d9d9')
         self.entry_pitch.configure(highlightcolor='black')
@@ -78,11 +74,10 @@ class dataReading:
         self.entry_pitch.configure(selectforeground='black')
         self.entry_pitch.configure(width=54)
 
-        self.entry_yaw = tk.Entry(self.frame_1)
-        self.entry_yaw.place(relx=0.867, rely=0.588, relheight=0.282
-                             , relwidth=0.096)
+        self.entry_yaw = tk.Text(self.frame_1)
+        self.entry_yaw.place(relx=0.867, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_yaw.configure(background='white')
-        self.entry_yaw.configure(font='TkTextFont')
+        self.entry_yaw.configure(font=('TkTextFont', 24))
         self.entry_yaw.configure(foreground='black')
         self.entry_yaw.configure(highlightbackground='#d9d9d9')
         self.entry_yaw.configure(highlightcolor='black')
@@ -90,6 +85,18 @@ class dataReading:
         self.entry_yaw.configure(selectbackground='#c4c4c4')
         self.entry_yaw.configure(selectforeground='black')
         self.entry_yaw.configure(width=54)
+
+        self.entry_roll = tk.Text(self.frame_1)
+        self.entry_roll.place(relx=0.708, rely=0.588, relheight=0.282, relwidth=0.096)
+        self.entry_roll.configure(background='white')
+        self.entry_roll.configure(font=('TkTextFont', 24))
+        self.entry_roll.configure(foreground='black')
+        self.entry_roll.configure(highlightbackground='#d9d9d9')
+        self.entry_roll.configure(highlightcolor='black')
+        self.entry_roll.configure(insertbackground='black')
+        self.entry_roll.configure(selectbackground='#c4c4c4')
+        self.entry_roll.configure(selectforeground='black')
+        self.entry_roll.configure(width=54)
 
         self.label_x = tk.Label(self.frame_1)
         self.label_x.place(relx=0.025, rely=0.235, height=21, width=47)
@@ -144,19 +151,6 @@ class dataReading:
         self.label_roll.configure(highlightcolor='black')
         self.label_roll.configure(text='''Roll''')
 
-        self.entry_yaw = tk.Entry(self.frame_1)
-        self.entry_yaw.place(relx=0.708, rely=0.588, relheight=0.282
-                             , relwidth=0.096)
-        self.entry_yaw.configure(background='white')
-        self.entry_yaw.configure(font='TkTextFont')
-        self.entry_yaw.configure(foreground='black')
-        self.entry_yaw.configure(highlightbackground='#d9d9d9')
-        self.entry_yaw.configure(highlightcolor='black')
-        self.entry_yaw.configure(insertbackground='black')
-        self.entry_yaw.configure(selectbackground='#c4c4c4')
-        self.entry_yaw.configure(selectforeground='black')
-        self.entry_yaw.configure(width=54)
-
         self.label_yaw = tk.Label(self.frame_1)
         self.label_yaw.place(relx=0.715, rely=0.235, height=21, width=44)
         self.label_yaw.configure(activebackground='#f9f9f9')
@@ -175,7 +169,7 @@ class dataReading:
         self.graph_frame.configure(borderwidth='2')
         self.graph_frame.configure(relief='ridge')
         self.graph_frame.configure(width=233)
-        self.graph_frame.configure(command=plotGraph(self.graph_frame))
+
 
         self.btn_plot = tk.Button(top)
         self.btn_plot.place(relx=0.4, rely=0.05, height=30, width=100)
@@ -184,7 +178,8 @@ class dataReading:
         self.btn_plot.configure(foreground='#FFFFFF')
         self.btn_plot.configure(text='Plot Data')
         self.btn_plot.configure(width=150)
-        #self.btn_plot.configure(command=self.textVariable(c))
+        self.btn_plot.configure(command=lambda: plotGraph(self.graph_frame))
+
 
         self.btn_save =  tk.Button(top)
         self.btn_save.place(relx=0.4, rely=0.7, height=30, width=100)
@@ -193,16 +188,8 @@ class dataReading:
         self.btn_save.configure(foreground='#FFFFFF')
         self.btn_save.configure(text='Save Data')
         self.btn_save.configure(width=150)
-        #self.btn_plot.configure(command=self.saveData())
+        #self.btn_plot.configure(command=lambda: self.saveData())
 
-
-    def textVariable(self, pose):
-        self.entry_x.configure(textvariable=pose[0][0])
-        self.entry_y.configure(textvariable=pose[0][1])
-        self.entry_y.configure(textvariable=pose[0][2])
-        self.entry_pitch.configure(textvariable=pose[1][1])
-        self.entry_yaw.configure(textvariable=pose[1][2])
-        self.entry_roll.configure(textvariable=pose[1][0])
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -240,6 +227,7 @@ def plotGraph(frame):
     loc: location of top-left corner of figure on canvas in pixels.
     Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
     '''
+    global entry_x, entry_y, entry_z
     plot3d = frame
     fig = plt.figure()
     #plot3d.title('Graph')
