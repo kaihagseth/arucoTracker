@@ -9,9 +9,12 @@ import logging
 
 class VisionEntity:
     """
+    TODO: Still only supports tracking of one board. Mrvec and Mtvec needs to be updated to a dictionary containing
+    TODO :Positions of all boards
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
     stream.
     """
+
 
     _guess_pose = None
 
@@ -82,13 +85,7 @@ class VisionEntity:
         """
         return self._camera.getUndistortedFrame()
 
-    def getModelPose(self, frame, showFrame=True):
-        """
-        Returns six axis pose of model
-        :return: Tuple of size 2 with numpy arrays (x, y, z) (pitch, yaw, roll) (angles in degrees)
-        """
-        return self._arucoPoseEstimator.getModelPose(frame, self.intrinsic_matrix,
-                                                     self.getDistortionCoefficients(), showFrame=showFrame)
+
 
     def getPosePreviewImage(self):
         '''
@@ -177,15 +174,32 @@ class VisionEntity:
         Grabs frame from video stream
         :return:
         """
-        self.getCameraStream().grab()
+        self.getCam().grabFrame()
 
     def retrieveFrame(self):
         """
         Retrieves grabbed frame from video stream
         :return: retval, frame from video stream
         """
-        return self.getCameraStream().retrieve()
+        self.getCam().setFrame = self.getCameraStream().retrieve()
+        return self.getCam().getFrame()
+
 
     def estimatePose(self, board):
+        """
+        Estimates pose and saves pose to object field
+        :param board: Board yo estomate
+        :return: None
+        """
         _, self.Mrvec, self.Mtvec = cv2.aruco.estimatePoseBoard(self.corners, self.ids, board.grid_board,
                                                                 self.intrinsic_matrix, self.distortion_coeff)
+
+    def drawAxis(self, frame):
+        """
+        Draws axis cross on image frame
+        :param frame: Image frame to be drawn on
+        :param vision_entity: Vision entity the frame came from.
+        :return:
+        """
+        return cv2.aruco.drawAxis(frame, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
+                                  self.Mrvec, self.Mtvec, 100)

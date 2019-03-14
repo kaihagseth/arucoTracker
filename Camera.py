@@ -23,6 +23,7 @@ class Camera():
         self.camera_parameters = {'mtx': None, 'ret': None, 'dist': None, 'rvecs': None, 'tvecs': None,
                                   'newcameramtx': None, 'roi': None}
         self._src = src_index
+        self._frame = None
         self._vidCap = cv2.VideoCapture(self._src)
         # Test
         if not self._vidCap.open(self._src):
@@ -119,3 +120,26 @@ class Camera():
 
     def getSrc(self):
         return self._src
+
+    def grabFrame(self):
+        """
+        Grabs frame from stream
+        :return:  None
+        """
+        self._vidCap.grab()
+
+    def retrieveFrame(self):
+        """
+        retrieves frame from stream
+        :return: retval, frame
+        """
+        retval, frame = self._vidCap.retrieve()
+        if retval:
+            self._frame = frame
+
+    def getFrame(self):
+        """
+        Returns saved frame from camera.
+        :return: Frame
+        """
+        return self._frame

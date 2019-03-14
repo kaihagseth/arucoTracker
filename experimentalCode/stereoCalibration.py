@@ -20,6 +20,7 @@ def repackCorners(board, ids):
     :param ids: ids of aruco markers
     :return: list of repacked and sorted corners.
     """
+
     corners = np.zeros((len(board) * 4, 2))
     i = 0
     for id, square in zip(ids, board):
@@ -130,4 +131,3 @@ img3,img4 = drawlines(img2, img1, lines2, pts2, pts1)
 plt.subplot(121), plt.imshow(img5)
 plt.subplot(122), plt.imshow(img3)
 plt.show()
-

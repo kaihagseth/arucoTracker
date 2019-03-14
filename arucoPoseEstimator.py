@@ -50,7 +50,7 @@ class ArucoPoseEstimator:
         :param dist_coeff: Camera Distortion coefficients
         :param showFrame: set True to show analyzed frame in window.
         :return: Relative translation of model and euler angles of model as tuple of two np.arrays.
-                 Tuple of two Nones if no position is found
+                 Tuple of two Nones if no position is found.
         """
         try:
             corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
@@ -190,6 +190,7 @@ class ArucoPoseEstimator:
         for i in range(len(ids)):
             idcornerslist.append((idlist[i],cornerlist[i][0],cornerlist[i][1]))
         return idcornerslist
+
     def getPosePreviewImage(self):
         return self.posPreviewImage
 

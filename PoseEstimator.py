@@ -3,9 +3,11 @@ import time
 import csv
 import time
 import cv2
+import numpy as np
 from VisionEntity import VisionEntity
 from arucoBoard import arucoBoard
-
+from helperFunctions import rotationMatrixToEulerAngles
+from helperFunctions import toMatrix
 
 class PoseEstimator():
     """
@@ -220,6 +222,20 @@ class PoseEstimator():
                     self._master_entity = ve
                     break
 
+    def getEulerPoses(self):
+        """
+        Returns poses from all boards. list of tuples of tuple Nx2x3
+        :return:list of tuples of tuple Nx2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
+        """
+        poses = []
+        for board in self._arucoBoards:
+            tvec = np.array(board.tvec, dtype=int)
+            evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.rvec))).astype(int)
+            pose = tvec, evec
+            poses.append(pose)
+        return poses
+
+
     def findNewMasterCam(self):
         """
         Sets the master cam to a camera that is calibrated and has the board in sight.
@@ -230,3 +246,15 @@ class PoseEstimator():
             if ve.Mrvec is not None and ve.Crvec is not None:
                 return ve
         return None
+
+    def getPosePreviewImage(self):
+        """
+        Returns a pose preview image from master camera.
+        :return: Frame drawn with axis cross, corners, and poses
+        """
+        out_frame = self._master_entity.retrieveFrame()
+        out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
+        out_frame = self._master_entity.drawAxis(out_frame)
+        for board in self._arucoBoards:
+            out_frame = self._master_entity.drawAxis(out_frame)
+        return out_frame

@@ -4,6 +4,6 @@ from GUILogin import GUILogin
 from GUI import GUIApplication
 
 c = Connector()
-mainGUI = GUIApplication(connector=c, arucoPose=ArucoPoseEstimator(5, 5, 20, 5))
+mainGUI = GUIApplication(connector=c)
 guil = GUILogin(mainGUI=mainGUI)
 guil.startLogin()
