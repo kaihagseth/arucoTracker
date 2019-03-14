@@ -2,7 +2,9 @@ import threading, queue, logging
 import time
 import csv
 import time
+import cv2
 from VisionEntity import VisionEntity
+from arucoBoard import arucoBoard
 
 
 class PoseEstimator():
@@ -11,20 +13,31 @@ class PoseEstimator():
     # TODO: group class
     Collect pose and info from all cameras, and find the best estimated pose possible.
     """
-
+    dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     def __init__(self):
         self.VisionEntityList = []  # List for holding VEs
         self.threadInfoList = []  # List for reading results from VEs.
         self._writer = None
         self._log_start_time = None
-        self.arucoBoards = []  # List of aruco boards to track.
+        self._arucoBoards = []  # List of aruco boards to track.
+        self.createArucoBoard(3, 3, 40, 5)
+        self._master_entity = None
 
-
+    def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
+        """
+        Adds an aruco board to track
+        :param board_width: Width of board
+        :param board_height: Height of board
+        :param marker_size: Size of each marker in mm
+        :param marker_gap: Gap between each marker in mm
+        :return:
+        """
+        self._arucoBoards.append(arucoBoard(board_width, board_height, marker_size, marker_gap))
 
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
-            VE = VisionEntity(cam_index, 3, 3, 50, 5)
+            VE = VisionEntity(cam_index)
             self.VisionEntityList.append(VE)
         return cam_list
 
@@ -74,11 +87,13 @@ class PoseEstimator():
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
+
     def getPosePreviewImg(self):
         # Get the image created in arucoPoseEstimator with pose and chessboard. None if empty
         imgque = self.threadInfoList[0][3]
         img = imgque.get()
         return img
+
     def collectPoses(self, useSingleCam=True):
         '''
         Get all output from the poseestimation here.
@@ -157,3 +172,62 @@ class PoseEstimator():
 
     def getVisionEntityList(self):
         return self.VisionEntityList
+
+    def updateBoardPoses(self):
+        """
+        Writes a new pose to each board in board list.
+        :return: None
+        """
+        for board in self._arucoBoards:
+            board.isVisible = False
+            for ve in self.getVisionEntityList():
+                ve.stream.grab()
+                ve.reset()
+            for ve in self.getVisionEntityList():
+                ret, ve.frame = ve.stream.retrieve()
+                ve.corners, ve.ids, ve.rejected = cv2.aruco.detectMarkers(ve.frame, board.getDictionary)
+                # Collecting frame and detecting markers for each camera.
+                if len(ve.corners) > 0:
+                    _, ve.Mrvec, ve.Mtvec = cv2.aruco.estimatePoseBoard(ve.corners, ve.ids, board.grid_board,
+                                                                          ve.intrinsic_matrix, ve.distortion_coeff)
+                    # When the board is spotted for the first time by a camera and a pose is calculated successfully, the boards
+                    # pose is set to origen, and the camera is set as the master cam.
+                    if board.rvec is None and (ve.Mrvec is not None):
+                        board.setFirstBoardPosition(ve)
+                        board.isVisible = True
+                        self._master_entity = ve
+
+            # If the master cam failed to calculate a pose, another camera is set as master.
+            if self._master_entity is None or self._master_entity.Mrvec is None:
+                self._master_entity = self.findNewMasterCam(self.getVisionEntityList())
+                continue
+            else:
+                # Update board position if the board is masterCams frame
+                board.updateBoardPosition(self._master_entity)
+                outFrame = self._master_entity.frame
+
+            # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
+            for ve in self.getVisionEntityList():
+                if self._master_entity is None:
+                    break
+                if ve.Crvec is None and ve.Mrvec is not None and self._master_entity.Mrvec is not None and ve is not \
+                        self._master_entity:
+                    ve.setCameraPosition(board)
+
+            # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
+            # the new master camera
+            for ve in self.getVisionEntityList():
+                if ve.Mrvec is not None and ve.Crvec is not None and self._master_entity.Mrvec is None:
+                    self._master_entity = ve
+                    break
+
+    def findNewMasterCam(self):
+        """
+        Sets the master cam to a camera that is calibrated and has the board in sight.
+        :param cams:
+        :return: master cam
+        """
+        for ve in self.getVisionEntityList():
+            if ve.Mrvec is not None and ve.Crvec is not None:
+                return ve
+        return None

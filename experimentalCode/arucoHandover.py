@@ -132,7 +132,6 @@ cam0.intrinsic_matrix = A1["mtx"]
 cam1.intrinsic_matrix = A2["mtx"]
 cam0.distortion_coeff = A1["dist"]
 cam1.distortion_coeff = A2["dist"]
-cam0.master = True
 cams = [cam0, cam1]
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 markerSize = 40
