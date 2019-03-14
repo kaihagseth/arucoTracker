@@ -13,8 +13,6 @@ from VisionEntityClasses.arucoBoard import arucoBoard
 
 class PoseEstimator():
     """
-    # TODO: This class will control a collection of vision entities, and will take over most jobs of today's camera
-    # TODO: group class
     Collect pose and info from all cameras, and find the best estimated pose possible.
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
@@ -257,6 +255,5 @@ class PoseEstimator():
         out_frame = self._master_entity.retrieveFrame()
         out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
         out_frame = self._master_entity.drawAxis(out_frame)
-        for board in self._arucoBoards:
-            out_frame = self._master_entity.drawAxis(out_frame)
+        out_frame = self._master_entity.drawAxis(out_frame)
         return out_frame
