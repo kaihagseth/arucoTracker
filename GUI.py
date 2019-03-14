@@ -1,18 +1,14 @@
-from tkinter import *
+import threading
 import tkinter as tk
-from tkinter import ttk
+from tkinter import *
 from tkinter import Menu
-from tkinter import messagebox
+from tkinter import ttk
+
 from PIL import ImageTk, Image
-from Camera import *
-import matplotlib as mpl
+
 import GUIDataPlotting
-import arucoPoseEstimator
-import Connector
-import threading
-import time
-import re
-import threading
+from VisionEntityClasses.Camera import *
+
 
 class GUIApplication(threading.Thread):
     global length

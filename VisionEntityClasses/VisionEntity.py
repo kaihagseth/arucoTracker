@@ -1,10 +1,7 @@
-import time
-from Camera import Camera
-from arucoPoseEstimator import ArucoPoseEstimator
 import cv2
-import numpy as np
+
 import exceptions as exc
-import logging
+from VisionEntityClasses.Camera import Camera
 
 
 class VisionEntity:

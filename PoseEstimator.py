@@ -1,10 +1,13 @@
-import threading, queue, logging
-import time
 import csv
+import logging
+import queue
+import threading
 import time
+
 import cv2
-from VisionEntity import VisionEntity
-from arucoBoard import arucoBoard
+
+from VisionEntityClasses.VisionEntity import VisionEntity
+from VisionEntityClasses.arucoBoard import arucoBoard
 
 
 class PoseEstimator():
