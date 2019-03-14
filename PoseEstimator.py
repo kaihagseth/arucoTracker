@@ -13,10 +13,13 @@ class PoseEstimator():
     """
 
     def __init__(self):
-        self.VisionEntityList = [] # List for holding VEs
-        self.threadInfoList = [] # List for reading results from VEs.
+        self.VisionEntityList = []  # List for holding VEs
+        self.threadInfoList = []  # List for reading results from VEs.
         self._writer = None
         self._log_start_time = None
+        self.arucoBoards = []  # List of aruco boards to track.
+
+
 
     def createVisionEntities(self):
         cam_list = self.findConnectedCamIndexes()

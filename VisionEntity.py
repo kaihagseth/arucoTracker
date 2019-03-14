@@ -1,6 +1,7 @@
 import time
 from Camera import Camera
 from arucoPoseEstimator import ArucoPoseEstimator
+import cv2
 import numpy as np
 import exceptions as exc
 import logging
@@ -18,11 +19,17 @@ class VisionEntity:
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
         self._arucoPoseEstimator = ArucoPoseEstimator(board_length, board_width, marker_size, marker_gap)
+        self.Mrvec = None  # Camera - Model rvec
+        self.Mtvec = None  # Camera - Model tvec
+        self.Crvec = None  # World - Camera rvec
+        self.Ctvec = None  # World - Camera tvec
+        self.corners = None
+        self.ids = None
+        self.rejected = None
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
     def runThreadedLoop(self, singlecam_curr_pose, singlecam_curr_pose_que, frame_que):
-
         while True:
             frame = self.getFrame()
             #frame_que.put(frame)
@@ -127,6 +134,23 @@ class VisionEntity:
         :return: Camera object
         """
         return self._camera
+
+    def resetModelPose(self):
+        """
+        Set model pose to None.
+        :return:
+        """
+        self.Mtvec = None
+        self.Mrvec = None
+
+    def setCameraPosition(self, board):
+        """
+        Sets the camera position in world coordinates
+        :param board: The aruco board seen from cam.
+        :param cam: Camera to be calibrated.
+        :return:
+        """
+        self.Crvec, self.Ctvec = cv2.composeRT(-board.rvec, board.tvec, -self.Mrvec, -self.Mtvec,)[0:2]
 
     def getExtrinsicMatrix(self, frame=None):
         '''
