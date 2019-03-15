@@ -31,8 +31,7 @@ class VisionEntity:
     def runThreadedLoop(self, dictionary, boards):
         while True:
             self.grabFrame()
-            ret, frame = self.retrieveFrame()
-            print("Frame retrieved")
+            self.retrieveFrame()
             self.detectMarkers(dictionary)
             for board in boards:
                 self.estimatePose(board)
@@ -141,7 +140,7 @@ class VisionEntity:
         :param cam: Camera to be calibrated.
         :return:
         """
-        self.Crvec, self.Ctvec = cv2.composeRT(-board.rvec, board.tvec, -self.Mrvec, -self.Mtvec,)[0:2]
+        self.Crvec, self.Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.Mrvec, -self.Mtvec,)[0:2]
 
     def getExtrinsicMatrix(self, frame=None):
         '''
@@ -163,7 +162,7 @@ class VisionEntity:
         :return:
         """
         frame = self.getFrame()
-        if ret:
+        if frame is not None:
             self.corners, self.ids, self.rejected = cv2.aruco.detectMarkers(frame, dictionary)
 
     def grabFrame(self):
@@ -191,6 +190,7 @@ class VisionEntity:
         """
         _, self.Mrvec, self.Mtvec = cv2.aruco.estimatePoseBoard(self.corners, self.ids, board.getGridBoard(),
                                                                 self.intrinsic_matrix, self.getDistortionCoefficients())
+
 
     def drawAxis(self, frame):
         """

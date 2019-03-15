@@ -122,4 +122,4 @@ def videoCalibration(videoName, debug=False):
     frames = np.array(frames)[1::6]
     if debug:
         print('Videocalibration starting with ' + str(len(frames)) + ' frames')
-    return IntrinsicCalibrator.calibCam(frames, debug)
+    return calibCam(frames, debug)
