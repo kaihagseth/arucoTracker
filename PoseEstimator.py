@@ -158,7 +158,7 @@ class PoseEstimator():
                 if ve.corners is not None and len(ve.corners) > 0:
                     # When the board is spotted for the first time by a camera and a pose is calculated successfully, the boards
                     # pose is set to origen, and the camera is set as the master cam.
-                    if board.getRvec is None and (ve.Mrvec is not None):
+                    if board.getRvec() is None and (ve.Mrvec is not None):
                         board.setFirstBoardPosition(ve)
                         board.isVisible = True
                         self._master_entity = ve
