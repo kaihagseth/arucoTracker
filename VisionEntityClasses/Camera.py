@@ -135,7 +135,8 @@ class Camera():
         retrieves frame from stream
         :return: retval, frame
         """
-        return self._vidCap.retrieve()
+        ret, self._frame = self._vidCap.retrieve()
+        return ret, self._vidCap.retrieve()
 
 
     def getFrame(self):

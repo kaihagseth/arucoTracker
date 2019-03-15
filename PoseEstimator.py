@@ -145,25 +145,27 @@ class PoseEstimator():
         Writes a new pose to each board in board list.
         :return: None
         """
+        print("updateboardPoses running")
         for board in self._arucoBoards:
+            print("board found")
             board.isVisible = False
             for ve in self.getVisionEntityList():
                 ve.grabFrame()
-                ve.reset()
+                ve.resetModelPose()
             for ve in self.getVisionEntityList():
-                ret, ve.frame = ve.retrieveFrame()
+                ve.retrieveFrame()
                 # Collecting frame and detecting markers for each camera.
-                if len(ve.corners) > 0:
+                if ve.corners is not None and len(ve.corners) > 0:
                     # When the board is spotted for the first time by a camera and a pose is calculated successfully, the boards
                     # pose is set to origen, and the camera is set as the master cam.
-                    if board.rvec is None and (ve.Mrvec is not None):
+                    if board.getRvec is None and (ve.Mrvec is not None):
                         board.setFirstBoardPosition(ve)
                         board.isVisible = True
                         self._master_entity = ve
 
             # If the master cam failed to calculate a pose, another camera is set as master.
             if self._master_entity is None or self._master_entity.Mrvec is None:
-                self._master_entity = self.findNewMasterCam(self.getVisionEntityList())
+                self._master_entity = self.findNewMasterCam()
                 continue
             else:
                 # Update board position if the board is masterCams frame
@@ -228,6 +230,7 @@ class PoseEstimator():
             entities = self.getVisionEntityList()
             ret, out_frame = entities[0].retrieveFrame()
         if ret:
+            print(self._master_entity)
             cv2.imshow('test', out_frame)
             cv2.waitKey(1)
         return ret, out_frame
