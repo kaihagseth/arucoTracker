@@ -31,7 +31,8 @@ class VisionEntity:
     def runThreadedLoop(self, dictionary, boards):
         while True:
             self.grabFrame()
-            self.retrieveFrame()
+            ret, frame = self.retrieveFrame()
+            print("Frame retrieved")
             self.detectMarkers(dictionary)
             for board in boards:
                 self.estimatePose(board)
@@ -161,7 +162,7 @@ class VisionEntity:
         :param dictionary:
         :return:
         """
-        ret, frame = self.retrieveFrame()
+        frame = self.getFrame()
         if ret:
             self.corners, self.ids, self.rejected = cv2.aruco.detectMarkers(frame, dictionary)
 

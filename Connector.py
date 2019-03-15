@@ -34,6 +34,7 @@ class Connector():
         while not doAbort:
             if not stopApp:
                 # Get the pose(s) from all cams.
+                self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
                 for pose in poses:
                     tvec, evec = pose # TODO: Get more poses
