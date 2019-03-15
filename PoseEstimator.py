@@ -151,17 +151,13 @@ class PoseEstimator():
             board.isVisible = False
             for ve in self.getVisionEntityList():
                 ve.grabFrame()
-                ve.resetModelPose()
             for ve in self.getVisionEntityList():
-                ve.retrieveFrame()
                 # Collecting frame and detecting markers for each camera.
-                if ve.corners is not None and len(ve.corners) > 0:
-                    # When the board is spotted for the first time by a camera and a pose is calculated successfully, the boards
-                    # pose is set to origen, and the camera is set as the master cam.
-                    if board.getRvec is None and (ve.Mrvec is not None):
-                        board.setFirstBoardPosition(ve)
-                        board.isVisible = True
-                        self._master_entity = ve
+                if board.getRvec() is None and ve.Mrvec is not None:
+                    print("Setting first position")
+                    board.setFirstBoardPosition(ve)
+                    board.isVisible = True
+                    self._master_entity = ve
 
             # If the master cam failed to calculate a pose, another camera is set as master.
             if self._master_entity is None or self._master_entity.Mrvec is None:
@@ -170,7 +166,7 @@ class PoseEstimator():
             else:
                 # Update board position if the board is masterCams frame
                 board.updateBoardPosition(self._master_entity)
-                outFrame = self._master_entity.frame
+                outFrame = self._master_entity.getFrame()
 
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
@@ -221,16 +217,15 @@ class PoseEstimator():
         Returns a pose preview image from master camera.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        try:
+        if self._master_entity is not None and self._master_entity.corners is not None and\
+                self._master_entity.Mrvec is not None:
             ret, out_frame = self._master_entity.retrieveFrame()
             out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
             out_frame = self._master_entity.drawAxis(out_frame)
-            out_frame = self._master_entity.drawAxis(out_frame)
-        except AttributeError:
-            entities = self.getVisionEntityList()
-            ret, out_frame = entities[0].retrieveFrame()
+        else:
+            out_frame = self.getVisionEntityList()[0].getFrame()
+            ret = True
         if ret:
-            print(self._master_entity)
             cv2.imshow('test', out_frame)
             cv2.waitKey(1)
         return ret, out_frame

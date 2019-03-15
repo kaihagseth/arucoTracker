@@ -136,7 +136,7 @@ class Camera():
         :return: retval, frame
         """
         ret, self._frame = self._vidCap.retrieve()
-        return ret, self._vidCap.retrieve()
+        return ret, self._frame
 
 
     def getFrame(self):

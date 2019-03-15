@@ -417,6 +417,7 @@ class GUIApplication(threading.Thread):
 
     def showFindPoseStream(self, frame):
         logging.debug('Inside posestream')
+
         if self.showPoseStream:
             try:
                 print("FRRRRAAAAAMMMMMEEE: ", frame)
