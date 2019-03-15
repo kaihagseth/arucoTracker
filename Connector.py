@@ -3,7 +3,6 @@ import json
 import logging
 from logging.config import dictConfig
 import time
-from arucoPoseEstimator import ArucoPoseEstimator
 from PoseEstimator import PoseEstimator
 import threading
 from GUILogin import GUILogin
@@ -16,7 +15,6 @@ class Connector():
     '''
 
     def __init__(self):
-        #self.cg = CameraGroup()
         self.logging_setup()
         self.PE = PoseEstimator()
 
@@ -36,14 +34,16 @@ class Connector():
         while not doAbort:
             if not stopApp:
                 # Get the pose(s) from all cams.
-                tvec, evec = self.PE.collectPoses()
+                poses = self.PE.getEulerPoses()
+                for pose in poses:
+                    tvec, evec = pose # TODO: Get more poses
                 try:
                     self.PE.writeCsvLog(tvec, evec)
                 except (AttributeError, TypeError):
                     raise AssertionError("Raw pose was returned in an invalid format.")
                 # Display the pose(s).
-                poseFrame = self.PE.getPosePreviewImg()
-                dispResFx((tvec, evec), poseFrame)
+                ret, poseFrame = self.PE.getPosePreviewImg()
+                dispResFx(poseFrame)
                 # Check if we want to abort, function from GUI.
                 stopApp = stopAppFx()
                 msg = 'StopApp: ', stopApp

@@ -27,24 +27,7 @@ class ArucoPoseEstimator:
         # Image who shows pose and inframe-coordinate system in getPose function. Only if showImage TRUE.
         self.posPreviewImage = None
 
-    @staticmethod
-    def rotationMatrixToEulerAngles(R):
-        """
-        https://www.learnopencv.com/rotation-matrix-to-euler-angles/
-        :param R: Rotation matrix
-        :return: Euler angles
-        """
-        sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
-        singular = sy < 1e-6
-        if not singular:
-            x = math.atan2(R[2, 1], R[2, 2])
-            y = math.atan2(-R[2, 0], sy)
-            z = math.atan2(R[1, 0], R[0, 0])
-        else:
-            x = math.atan2(-R[1, 2], R[1, 1])
-            y = math.atan2(-R[2, 0], sy)
-            z = 0
-        return np.array([x, y, z])
+
 
     @staticmethod
     def getRelativeTranslation(tvec, R0, T0):
@@ -67,7 +50,7 @@ class ArucoPoseEstimator:
         :param dist_coeff: Camera Distortion coefficients
         :param showFrame: set True to show analyzed frame in window.
         :return: Relative translation of model and euler angles of model as tuple of two np.arrays.
-                 Tuple of two Nones if no position is found
+                 Tuple of two Nones if no position is found.
         """
         try:
             corners, ids, rejected = cv2.aruco.detectMarkers(frame, self.dictionary)
@@ -207,6 +190,7 @@ class ArucoPoseEstimator:
         for i in range(len(ids)):
             idcornerslist.append((idlist[i],cornerlist[i][0],cornerlist[i][1]))
         return idcornerslist
+
     def getPosePreviewImage(self):
         return self.posPreviewImage
 

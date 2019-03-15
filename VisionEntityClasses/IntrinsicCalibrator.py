@@ -1,8 +1,9 @@
 import logging
-import numpy as np
+
 import cv2
+import numpy as np
+
 from exceptions import FailedCalibrationException
-import IntrinsicCalibrator
 
 """
 This module handles camera calibration.
