@@ -1,4 +1,5 @@
 from tkinter import *
+from ttkthemes import themed_tk as tk
 import os
 import time
 from GUI import GUIApplication
@@ -125,7 +126,7 @@ class GUILogin():
         '''
         global register_window
         regex = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$'
-        register_window = Toplevel(main_window)
+        register_window = Toplevel(main_window.set_theme('equilux'))
         register_window.title('Register')
         register_window.geometry('300x250')
 
@@ -158,6 +159,7 @@ class GUILogin():
         screen2 = Toplevel(main_window)
         screen2.title('Login')
         screen2.geometry('300x250')
+        screen2.configure()
         Label(screen2, text='Please enter details below to login').pack()
         Label(screen2, text='').pack()
 
@@ -186,7 +188,9 @@ class GUILogin():
         :return: None
         '''
         global main_window
-        main_window = Tk()
+        main_window = tk.ThemedTk()
+        main_window.get_themes()
+        main_window.set_theme('equilux')
         main_window.geometry('300x250')
         main_window.title('Boat Pose Estimator 1.0')
         Label(main_window, text='Boat Pose Estimator 1.0', bg='magenta', width='300', height='2', font=('Arial', 13)).pack()
