@@ -1,6 +1,5 @@
 import csv
 import logging
-import queue
 import threading
 import time
 
@@ -73,23 +72,14 @@ class PoseEstimator():
 
     def runPoseEstimator(self):
         '''
-        Do poseestimation for every VisionEntity.
-        Start threads for every VE. Save the pose in a thread-safe variable, and add it all to a list.
+        Start Vision Entity threads for pose estimation.
         :return: None
         '''
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
-            singlecam_curr_pose = [0.0,0.0,0.0],[0.0,0.0,0.0]
-            #Create a thread-safe variable to save pose to.
-            singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last written variable is most relevant.
-            singlecam_curr_pose_que.put(singlecam_curr_pose)
-            frame_que = queue.LifoQueue(maxsize=1) # Thread-safe variable for passing cam frames to GUI.
-            logging.debug('Passing queue.Queue()')
-            # Create thread, with target findPoseResult(). All are daemon-threads.
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             logging.debug('Passing thread creation.')
-            self.threadInfoList.append([VE, th, singlecam_curr_pose_que, frame_que])
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()

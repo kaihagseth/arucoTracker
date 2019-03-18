@@ -91,7 +91,8 @@ class Connector():
         return camlist
 
     def getPose(self):
-        return self.PE.runPoseEstimator().singlecam_curr_pose_que.get()
+        return self.PE.getEulerPoses()
+
 
 if __name__ == '__main__':
     # logging_setup()

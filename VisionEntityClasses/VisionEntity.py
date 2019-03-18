@@ -32,6 +32,7 @@ class VisionEntity:
 
     def runThreadedLoop(self, dictionary, boards):
         """
+        TODO: Moving grabFrame to PE might synchronize cameras.
         Runs the pose estimation loop in a thread for this vision entity.
         :param dictionary: The dictionary the pose estimator should use as a reference.
         :param boards: The board object the pose estimator should detect and calculate pose for.
