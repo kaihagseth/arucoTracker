@@ -21,8 +21,8 @@ class VisionEntity:
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
         self.__Mrvec = None  # Camera - Model rvec - Should only be written to from thread!!
         self.__Mtvec = None  # Camera - Model tvec - Should only be written to from thread!!
-        self.Crvec = None  # World - Camera rvec
-        self.Ctvec = None  # World - Camera tvec
+        self._Crvec = None  # World - Camera rvec
+        self._Ctvec = None  # World - Camera tvec
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -137,20 +137,7 @@ class VisionEntity:
         :param cam: Camera to be calibrated.
         :return:
         """
-        self.Crvec, self.Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec, )[0:2]
-
-    def getExtrinsicMatrix(self, frame=None):
-        '''
-        Returns the camera extrinsic matrix
-        :return:
-        '''
-
-        ext = self._arucoPoseEstimator.getExtrinsic(frame, self.intrinsic_matrix,
-                                                    self.getDistortionCoefficients())
-        if ext is not None:
-            return ext
-        else:
-            raise exc.MissingExtrinsicException('Extrinsic matrix not returned')
+        self._Crvec, self._Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec, )[0:2]
 
     def detectMarkers(self, dictionary):
         """
@@ -203,3 +190,10 @@ class VisionEntity:
         :return: rotation and translation vectors from camera to boards.
         """
         return self.__Mrvec, self.__Mtvec
+
+    def getCameraPose(self):
+        """
+        Returns camera pose
+        :return: Rotation and translation vectors for cameras pose.
+        """
+        return self._Crvec, self._Ctvec

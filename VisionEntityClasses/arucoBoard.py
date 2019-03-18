@@ -61,8 +61,10 @@ class arucoBoard():
         :param cam: The camera spotting the board.
         :return:
         """
-        self._rvec = cv2.composeRT(vision_entity.Crvec, vision_entity.Ctvec, vision_entity.Mrvec, vision_entity.Mtvec)[0]
-        self.getRelativeTranslation(vision_entity)
+        Mrvec, Mtvec = vision_entity.getPoses()
+        Crvec, Ctvec = vision_entity.getCameraPose()
+        self._rvec = cv2.composeRT(Crvec, Ctvec, Mrvec, Mtvec)[0]
+        self.setRelativeTranslation(vision_entity)
 
     def setFirstBoardPosition(self, ve):
         """
@@ -74,13 +76,15 @@ class arucoBoard():
         self._tvec = np.array([0, 0, 0], dtype=np.float32)
         ve.setCameraPosition(self)
 
-    def getRelativeTranslation(self, ve):
+    def setRelativeTranslation(self, ve):
         """
         Gets translation from model to vision entity.
         :param ve: Vision entity that has board in sight.
         :return: None
         """
-        self._tvec = toMatrix(ve.Crvec) * np.matrix(ve.Ctvec + ve.Mtvec)
+        Mrvec, Mtvec = ve.getPoses()
+        Crvec, Ctvec = ve.getCameraPose()
+        self._tvec = toMatrix(Crvec) * np.matrix(Ctvec + Mtvec)
 
     def writeBoardToPDF(self, width=160):
         """
