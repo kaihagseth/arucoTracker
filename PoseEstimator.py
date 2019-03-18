@@ -37,6 +37,10 @@ class PoseEstimator():
         self._arucoBoards.append(arucoBoard(board_width, board_height, marker_size, marker_gap))
 
     def createVisionEntities(self):
+        """
+        Creates vision entities based on connected cameras.
+        :return:
+        """
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
             VE = VisionEntity(cam_index)
@@ -225,7 +229,12 @@ class PoseEstimator():
         else:
             out_frame = self.getVisionEntityList()[0].getFrame()
             ret = True
-        if ret:
-            cv2.imshow('test', out_frame)
-            cv2.waitKey(1)
         return ret, out_frame
+
+    def stopThreads(self):
+        """
+        Sets stop flag for all threads in order to terminate program safely.
+        :return:
+        """
+        for VE in self.getVisionEntityList():
+            VE.runThread = False

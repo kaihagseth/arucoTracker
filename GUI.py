@@ -390,6 +390,7 @@ class GUIApplication(threading.Thread):
     def rawVideoStream(self):
         '''
         Create a simple setup for testing video stream with GUI
+        # TODO: This functions should probably not interact with the Vision Entity objects directly...
         :return: None
         '''
         print('Show video: (show_video) ', self.show_video)
@@ -418,7 +419,6 @@ class GUIApplication(threading.Thread):
 
     def showFindPoseStream(self, frame):
         logging.debug('Inside posestream')
-
         if self.showPoseStream:
             try:
                 print("FRRRRAAAAAMMMMMEEE: ", frame)

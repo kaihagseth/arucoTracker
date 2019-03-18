@@ -22,6 +22,7 @@ class Connector():
     def startApplication(self, dispResFx, stopAppFx):
         '''
         Start the application, and communicate continius with the GUI while loop is running in seperate threads.
+        #TODO: Would it be better to return pose and pass stop message in function call?
         :param dispResFx: Function to display result with
         :param doAbortFx: Function to abort the application
         '''
@@ -51,6 +52,7 @@ class Connector():
                 logging.debug(msg)
             else:
                 time.sleep(0.1)
+        self.PE.stopThreads()
         print('Ended')
 
     def initConnectedCams(self):
@@ -66,8 +68,8 @@ class Connector():
 
     def getImgFromSingleCam(self, camId):
         """
-        OMG: Not threadsafe in VisionEntity!
-        :param camId:
+        TODO: Not threadsafe in VisionEntity! This function should ask PE directly for the frame, not for the VE.
+        :param camId: Index number of camrea
         :return:
         """
         return self.PE.getVEById(camId).getFrame()

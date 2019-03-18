@@ -7,7 +7,8 @@ from VisionEntityClasses.Camera import Camera
 class VisionEntity:
     """
     TODO: Still only supports tracking of one board. Mrvec and Mtvec needs to be updated to a dictionary containing
-    TODO :Positions of all boards
+    TODO: Positions of all boards
+    TODO: Protect thread-sensitive fields.
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
     stream.
     """
@@ -18,18 +19,26 @@ class VisionEntity:
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
-        self.Mrvec = None  # Camera - Model rvec
-        self.Mtvec = None  # Camera - Model tvec
+        self.__Mrvec = None  # Camera - Model rvec - Should only be written to from thread!!
+        self.__Mtvec = None  # Camera - Model tvec - Should only be written to from thread!!
         self.Crvec = None  # World - Camera rvec
         self.Ctvec = None  # World - Camera tvec
-        self.corners = None
-        self.ids = None
-        self.rejected = None
+        self.runThread = False
+        self.__corners = None # Detected aruco corners - Should only be written to from thread.
+        self.__ids = None # Detected aruco ids - Should only be written to from thread.
+        self.__rejected = None # Rejected aruco corners - Should only be written to from thread.
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
 
     def runThreadedLoop(self, dictionary, boards):
-        while True:
+        """
+        Runs the pose estimation loop in a thread for this vision entity.
+        :param dictionary: The dictionary the pose estimator should use as a reference.
+        :param boards: The board object the pose estimator should detect and calculate pose for.
+        :return:
+        """
+
+        while self.runThread:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
@@ -61,7 +70,7 @@ class VisionEntity:
 
     def setCameraDistortionCoefficents(self, distortion_coefficients):
         """
-        Calibrates intrinsic matrix and distortion coefficients for camera.
+        Sets distortion coefficients for camera.
         :return: None
         """
         self._camera.setDistortionCoefficients(distortion_coefficients)
@@ -76,22 +85,17 @@ class VisionEntity:
 
     def getUndistortedFrame(self):
         """
-        Returns an undistorted frame from the camera basaed on the calibration
+        Returns an undistorted frame from the camera based on the calibration. This function seems redundant for the
+        current scope of this project.
         :return: Undistorted image frame
         """
         return self._camera.getUndistortedFrame()
 
-    def getPosePreviewImage(self):
-        '''
-
-        :return:
-        '''
-        return self._arucoPoseEstimator.getPosePreviewImage()
-
     def getFrame(self):
         """
-        Returns a raw frame from the camera
-        :return: distortion coefficients of camera
+        Returns the newest frame the camera has saved. Note: This function only gathers the frame, it does not create
+        a new one.
+        :return: Camera image frame
         """
         return self._camera.getFrame()
 
@@ -101,13 +105,6 @@ class VisionEntity:
         :return: distortion coefficients of camera
         """
         return self._camera.getDistortionCoefficients()
-
-    def setModelReferenceFrame(self):
-        """
-        #TODO: write this function
-        :return:
-        """
-        raise NotImplementedError("setModelReferenceFrame has not yet been written")
 
     def setIntrinsicCamParams(self):
         """
@@ -130,8 +127,8 @@ class VisionEntity:
         Set model pose to None.
         :return:
         """
-        self.Mtvec = None
-        self.Mrvec = None
+        self.__Mtvec = None
+        self.__Mrvec = None
 
     def setCameraPosition(self, board):
         """
@@ -140,7 +137,7 @@ class VisionEntity:
         :param cam: Camera to be calibrated.
         :return:
         """
-        self.Crvec, self.Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.Mrvec, -self.Mtvec,)[0:2]
+        self.Crvec, self.Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec, )[0:2]
 
     def getExtrinsicMatrix(self, frame=None):
         '''
@@ -163,7 +160,7 @@ class VisionEntity:
         """
         frame = self.getFrame()
         if frame is not None:
-            self.corners, self.ids, self.rejected = cv2.aruco.detectMarkers(frame, dictionary)
+            self.__corners, self.__ids, self.__rejected = cv2.aruco.detectMarkers(frame, dictionary)
 
     def grabFrame(self):
         """
@@ -181,16 +178,14 @@ class VisionEntity:
         return cam.retrieveFrame()
 
 
-
     def estimatePose(self, board):
         """
         Estimates pose and saves pose to object field
         :param board: Board yo estomate
         :return: None
         """
-        _, self.Mrvec, self.Mtvec = cv2.aruco.estimatePoseBoard(self.corners, self.ids, board.getGridBoard(),
-                                                                self.intrinsic_matrix, self.getDistortionCoefficients())
-
+        _, self.__Mrvec, self.__Mtvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
+                                                                    self.intrinsic_matrix, self.getDistortionCoefficients())
 
     def drawAxis(self, frame):
         """
@@ -200,4 +195,11 @@ class VisionEntity:
         :return:
         """
         return cv2.aruco.drawAxis(frame, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                  self.Mrvec, self.Mtvec, 100)
+                                  self.__Mrvec, self.__Mtvec, 100)
+
+    def getPoses(self):
+        """
+        Returns pose from private fields.
+        :return: rotation and translation vectors from camera to boards.
+        """
+        return self.__Mrvec, self.__Mtvec
