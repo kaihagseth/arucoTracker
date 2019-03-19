@@ -14,8 +14,9 @@ class arucoBoard():
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
-        self._rvec = None # Model World rvec
-        self._tvec = None # Model World tvec
+        self._rvec = None # World -> Model rvec
+        self._tvec = None # World -> Model tvec
+        self._certainty = None
         self.board_height = board_height
         self.board_width = board_width
         self.isVisible = True # Truth value to tell if this board is visible to at least one vision entity
@@ -31,7 +32,6 @@ class arucoBoard():
         :return: None
         """
         self._rvec = rvec
-
 
     def getRvec(self):
         """
@@ -63,8 +63,7 @@ class arucoBoard():
         """
         Mrvec, Mtvec = vision_entity.getPoses()
         Crvec, Ctvec = vision_entity.getCameraPose()
-        self._rvec = cv2.composeRT(Crvec, Ctvec, Mrvec, Mtvec)[0]
-        self.setRelativeTranslation(vision_entity)
+        self._rvec, self._tvec = cv2.composeRT(Crvec, Ctvec, Mrvec, Mtvec)[0:2]
 
     def setFirstBoardPosition(self, ve):
         """
@@ -76,15 +75,12 @@ class arucoBoard():
         self._tvec = np.array([0, 0, 0], dtype=np.float32)
         ve.setCameraPosition(self)
 
-    def setRelativeTranslation(self, ve):
-        """
-        Gets translation from model to vision entity.
-        :param ve: Vision entity that has board in sight.
-        :return: None
-        """
-        Mrvec, Mtvec = ve.getPoses()
-        Crvec, Ctvec = ve.getCameraPose()
-        self._tvec = toMatrix(Crvec) * np.matrix(Ctvec + Mtvec)
+
+    def setCertainty(self, certainty):
+        self._certainty = certainty
+
+    def getCertainty(self):
+        return self._certainty
 
     def writeBoardToPDF(self, width=160):
         """

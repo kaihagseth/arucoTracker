@@ -19,10 +19,10 @@ class VisionEntity:
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
-        self.__Mrvec = None  # Camera - Model rvec - Should only be written to from thread!!
-        self.__Mtvec = None  # Camera - Model tvec - Should only be written to from thread!!
-        self._Crvec = None  # World - Camera rvec
-        self._Ctvec = None  # World - Camera tvec
+        self.__Mrvec = None  # Camera -> Model rvec - Should only be written to from thread!!
+        self.__Mtvec = None  # Camera -> Model tvec - Should only be written to from thread!!
+        self._Crvec = None  # World -> Camera rvec
+        self._Ctvec = None  # World -> Camera tvec
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -75,14 +75,6 @@ class VisionEntity:
         :return: None
         """
         self._camera.setDistortionCoefficients(distortion_coefficients)
-
-
-    def getCameraStream(self):
-        """
-        returns Video stream from Camera
-        :return: Video stream from camera.
-        """
-        return self._camera.getStream()
 
     def getUndistortedFrame(self):
         """
@@ -138,7 +130,7 @@ class VisionEntity:
         :param cam: Camera to be calibrated.
         :return:
         """
-        self._Crvec, self._Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec, )[0:2]
+        self._Crvec, self._Ctvec = cv2.composeRT(board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec,)[0:2]
 
     def detectMarkers(self, dictionary):
         """
@@ -175,15 +167,18 @@ class VisionEntity:
         _, self.__Mrvec, self.__Mtvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                                     self.intrinsic_matrix, self.getDistortionCoefficients())
 
-    def drawAxis(self, frame):
+    def drawAxis(self):
         """
         Draws axis cross on image frame
         :param frame: Image frame to be drawn on
         :param vision_entity: Vision entity the frame came from.
         :return:
         """
-        return cv2.aruco.drawAxis(frame, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                  self.__Mrvec, self.__Mtvec, 100)
+        image = self.getFrame()
+        image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
+        image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
+                                   self.__Mrvec, self.__Mtvec, 100)
+        return image
 
     def getPoses(self):
         """
@@ -198,3 +193,7 @@ class VisionEntity:
         :return: Rotation and translation vectors for cameras pose.
         """
         return self._Crvec, self._Ctvec
+
+    def getCornerDetectionAttributes(self):
+        return self.__corners, self.__ids, self.__rejected
+
