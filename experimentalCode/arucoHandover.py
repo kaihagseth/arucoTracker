@@ -64,7 +64,7 @@ class board:
         """
         self.rvec = np.array([0, 0, 0], dtype=np.float32)
         self.tvec = np.array([0, 0, 0], dtype=np.float32)
-        cam.setCameraPosition(self)
+        cam.setCameraPose(self)
 
     def getRelativeTranslation(self, cam):
         """

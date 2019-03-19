@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 from fpdf import FPDF
 
-from VisionEntityClasses.helperFunctions import toMatrix
+
+from VisionEntityClasses.helperFunctions import *
 
 
 class arucoBoard():
@@ -14,8 +15,7 @@ class arucoBoard():
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
-        self._rvec = None # World -> Model rvec
-        self._tvec = None # World -> Model tvec
+        self._transformationMatrix = None # World -> Model transformation
         self._certainty = None
         self.board_height = board_height
         self.board_width = board_width
@@ -25,45 +25,32 @@ class arucoBoard():
     def getGridBoard(self):
         return self._board
 
-    def setRvec(self, rvec):
+    def getRvecTvec(self):
         """
-        Sets rvec field for this object
-        :param rvec: new rvec
-        :return: None
+        Returns pose in rvec, tvec-format
+        :return: rvec, tvec
         """
-        self._rvec = rvec
 
-    def getRvec(self):
-        """
-        Retuns objects rvec-field
-        :return: rvec
-        """
-        return self._rvec
+        return transMatrixToRvecTvec(self._transformationMatrix)
 
-    def setTvec(self, tvec):
-        """
-        Sets tvec field for this object
-        :param rvec: new rvec
-        :return: None
-        """
-        self._tvec = tvec
 
-    def getTvec(self):
+    def getTransformationMatrix(self):
         """
-        Retuns objects tvec-field
-        :return: tvec
+        Retuns board pose transformation matrix
+        :return: board pose transformation matrix
         """
-        return self._tvec
+        return self._transformationMatrix
 
-    def updateBoardPosition(self, vision_entity):
+    def updateBoardPose(self, vision_entity):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
         :param cam: The camera spotting the board.
         :return:
         """
-        Mrvec, Mtvec = vision_entity.getPoses()
-        Crvec, Ctvec = vision_entity.getCameraPose()
-        self._rvec, self._tvec = cv2.composeRT(Crvec, Ctvec, Mrvec, Mtvec)[0:2]
+        camera_to_model_transformation = vision_entity.getPoses()
+        world_to_camera_transformation = vision_entity.getCameraPose()
+        world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation
+        self._transformationMatrix = world_to_model_transformation
 
     def setFirstBoardPosition(self, ve):
         """
@@ -71,9 +58,8 @@ class arucoBoard():
         :param ve: Vision entity to calibrate
         :return:
         """
-        self._rvec = np.array([0, 0, 0], dtype=np.float32)
-        self._tvec = np.array([0, 0, 0], dtype=np.float32)
-        ve.setCameraPosition(self)
+        self._transformationMatrix = np.matrix(np.eye((4, 4), dtype=np.float32))
+        ve.setCameraPose(self)
 
 
     def setCertainty(self, certainty):

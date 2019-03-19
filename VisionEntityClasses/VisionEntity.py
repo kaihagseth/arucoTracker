@@ -1,7 +1,9 @@
 import cv2
-
+import numpy as np
 import exceptions as exc
 from VisionEntityClasses.Camera import Camera
+from VisionEntityClasses.helperFunctions import *
+
 
 
 class VisionEntity:
@@ -19,10 +21,8 @@ class VisionEntity:
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
-        self.__Mrvec = None  # Camera -> Model rvec - Should only be written to from thread!!
-        self.__Mtvec = None  # Camera -> Model tvec - Should only be written to from thread!!
-        self._Crvec = None  # World -> Camera rvec
-        self._Ctvec = None  # World -> Camera tvec
+        self.__cameraToModelMatrix = None  # Camera -> Model transformation - Should only be written to from thread!!
+        self._cameraPoseMatrix = None
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -115,22 +115,26 @@ class VisionEntity:
         """
         return self._camera
 
-    def resetModelPose(self):
+    def resetExtrinsicMatrix(self):
         """
         Set model pose to None.
         :return:
         """
-        self.__Mtvec = None
-        self.__Mrvec = None
+        self._cameraPoseMatrix = None
 
-    def setCameraPosition(self, board):
+    def setCameraPose(self, board):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
         :param cam: Camera to be calibrated.
         :return:
         """
-        self._Crvec, self._Ctvec = cv2.composeRT(board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec,)[0:2]
+        origin_to_model = board.getTransformationMatrix()
+        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrix)
+        origin_to_camera = origin_to_model * model_to_camera
+        origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
+        self._cameraPoseMatrix = origin_to_camera
+
 
     def detectMarkers(self, dictionary):
         """
@@ -164,8 +168,9 @@ class VisionEntity:
         :param board: Board yo estomate
         :return: None
         """
-        _, self.__Mrvec, self.__Mtvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
-                                                                    self.intrinsic_matrix, self.getDistortionCoefficients())
+        _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
+                                                      self.intrinsic_matrix, self.getDistortionCoefficients())
+        self.__cameraToModelMatrix = rvecTvecToTransMatrix(rvec, tvec)
 
     def drawAxis(self):
         """
@@ -176,23 +181,24 @@ class VisionEntity:
         """
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
+        rvec, tvec = transMatrixToRvecTvec(self.__cameraToModelMatrix)
         image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                   self.__Mrvec, self.__Mtvec, 100)
+                                   rvec, tvec, 100)
         return image
 
     def getPoses(self):
         """
         Returns pose from private fields.
-        :return: rotation and translation vectors from camera to boards.
+        :return: Transformation matrix from camera to model
         """
-        return self.__Mrvec, self.__Mtvec
+        return self.__cameraToModelMatrix
 
-    def getCameraPose(self):
+    def getCameraPoseMatrix(self):
         """
-        Returns camera pose
+        Returns homogenous camera extrinsic matrix
         :return: Rotation and translation vectors for cameras pose.
         """
-        return self._Crvec, self._Ctvec
+        return self._cameraPoseMatrix
 
     def getCornerDetectionAttributes(self):
         return self.__corners, self.__ids, self.__rejected

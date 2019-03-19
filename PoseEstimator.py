@@ -148,8 +148,8 @@ class PoseEstimator():
                 ve.grabFrame()
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
-                Mrvec, Mtvec = ve.getPoses()
-                if board.getRvec() is None and Mrvec is not None:
+                model_pose = ve.getPoses()
+                if board.getPose() is None and model_pose is not None:
                     print("Setting first position")
                     board.setFirstBoardPosition(ve)
                     board.isVisible = True
@@ -161,7 +161,7 @@ class PoseEstimator():
                 continue
             else:
                 # Update board position if the board is masterCams frame
-                board.updateBoardPosition(self._master_entity)
+                board.updateBoardPose(self._master_entity)
 
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
@@ -169,7 +169,7 @@ class PoseEstimator():
                     break
                 if ve.getCameraPose()[0] is None and ve.getPoses()[0] is not None and self._master_entity.getPoses()[0] is not None and ve is not \
                         self._master_entity:
-                    ve.setCameraPosition(board)
+                    ve.setCameraPose(board)
 
             # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
             # the new master camera
@@ -186,8 +186,8 @@ class PoseEstimator():
         poses = []
         for board in self._arucoBoards:
             try:
-                tvec = np.array(board.getTvec(), dtype=int)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getRvec()))).astype(int)
+                rvec, tvec = np.array(board.getTvec(), dtype=int)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getPose()))).astype(int)
             except TypeError:
                 tvec = None
                 evec = None
@@ -203,9 +203,9 @@ class PoseEstimator():
         :return: master cam
         """
         for ve in self.getVisionEntityList():
-            Mrvec, Trvec = ve.getPoses()
-            Crvec, Ctvec = ve.getCameraPose()
-            if Mrvec is not None and Crvec is not None:
+            model_pose = ve.getPoses()
+            camera_pose = ve.getCameraPose()
+            if model_pose is not None and camera_pose is not None:
                 return ve
         return None
 
