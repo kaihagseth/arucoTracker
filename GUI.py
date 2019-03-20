@@ -2,7 +2,6 @@ import threading
 import tkinter as tk
 from tkinter import *
 from tkinter import Menu
-from tkinter import ttk
 
 from PIL import ImageTk, Image
 
