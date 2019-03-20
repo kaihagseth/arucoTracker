@@ -220,6 +220,14 @@ class PoseEstimator():
             out_frame = self.getVisionEntityList()[0].getFrame()
             ret = True
         return ret, out_frame
+    def getRawPreviewImage(self, camID):
+        '''
+        Get a raw, unfiltered image from the camera on selected ID.
+        :return: Raw, unfiltered image. Return None if unsuccessfull, or camera used elsewhere.
+        '''
+        VE = self.getVEById(camID)
+        frame = VE.grabFrame()
+        return frame
 
     def stopThreads(self):
         """

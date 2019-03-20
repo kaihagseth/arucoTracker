@@ -26,7 +26,7 @@ class arucoBoard():
 
     def setRvec(self, rvec):
         """
-        Sets rvec field for this object
+        Sets rvec field for this object, relative to world origo (?).
         :param rvec: new rvec
         :return: None
         """
@@ -35,14 +35,14 @@ class arucoBoard():
 
     def getRvec(self):
         """
-        Retuns objects rvec-field
+        Retuns objects rvec-field, relative to world origo (?)
         :return: rvec
         """
         return self._rvec
 
     def setTvec(self, tvec):
         """
-        Sets tvec field for this object
+        Sets tvec field for this object, relative to world origo (?).
         :param rvec: new rvec
         :return: None
         """
@@ -50,7 +50,7 @@ class arucoBoard():
 
     def getTvec(self):
         """
-        Retuns objects tvec-field
+        Retuns objects tvec-field, relative to world origo (?)
         :return: tvec
         """
         return self._tvec
