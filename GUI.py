@@ -8,6 +8,7 @@ from PIL import ImageTk, Image
 
 import GUIDataPlotting
 from VisionEntityClasses.Camera import *
+from VisionEntityClasses.arucoBoard import arucoBoard
 
 
 class GUIApplication(threading.Thread):
@@ -507,8 +508,8 @@ class GUIApplication(threading.Thread):
         gap_value = self.gap_entry.get()
         gap_value = int(gap_value)
 
-        self.aruco = Connector.ArucoPoseEstimator(length_value, width_value, size_value, gap_value)
-        self.aruco.writeBoardToPDF()
+        self.board = arucoBoard(length_value, width_value, size_value, gap_value)
+        self.board.writeBoardToPDF()
 
     def validate(self, string):
         '''

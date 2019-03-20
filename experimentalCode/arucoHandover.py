@@ -64,7 +64,7 @@ class board:
         """
         self.rvec = np.array([0, 0, 0], dtype=np.float32)
         self.tvec = np.array([0, 0, 0], dtype=np.float32)
-        cam.setCameraPosition(self)
+        cam.setCameraPose(self)
 
     def getRelativeTranslation(self, cam):
         """
@@ -127,7 +127,7 @@ def findNewMasterCam(cams):
 cam0 = VE(cv2.VideoCapture(0))
 cam1 = VE(cv2.VideoCapture(1))
 A1 = np.load("calibValues\A1calib.npz")
-A2 = np.load("calibVAlues\A2calib.npz")
+A2 = np.load("calibValues\A2calib.npz")
 cam0.intrinsic_matrix = A1["mtx"]
 cam1.intrinsic_matrix = A2["mtx"]
 cam0.distortion_coeff = A1["dist"]

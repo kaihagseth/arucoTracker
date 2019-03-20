@@ -78,6 +78,7 @@ class PoseEstimator():
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
+            VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             logging.debug('Passing thread creation.')
             print()
@@ -146,34 +147,34 @@ class PoseEstimator():
             for ve in self.getVisionEntityList():
                 ve.grabFrame()
             for ve in self.getVisionEntityList():
-                # Collecting frame and detecting markers for each camera.
-                if board.getRvec() is None and ve.Mrvec is not None:
+                # Collecting frame and detecting markers for each camera
+                model_pose = ve.getPoses()
+                if board.getPose() is None and model_pose is not None:
                     print("Setting first position")
                     board.setFirstBoardPosition(ve)
                     board.isVisible = True
                     self._master_entity = ve
 
             # If the master cam failed to calculate a pose, another camera is set as master.
-            if self._master_entity is None or self._master_entity.Mrvec is None:
+            if self._master_entity is None or self._master_entity.getPoses()[0] is None:
                 self._master_entity = self.findNewMasterCam()
                 continue
             else:
                 # Update board position if the board is masterCams frame
-                board.updateBoardPosition(self._master_entity)
-                outFrame = self._master_entity.getFrame()
+                board.updateBoardPose(self._master_entity)
 
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                if ve.Crvec is None and ve.Mrvec is not None and self._master_entity.Mrvec is not None and ve is not \
+                if ve.getCameraPose()[0] is None and ve.getPoses()[0] is not None and self._master_entity.getPoses()[0] is not None and ve is not \
                         self._master_entity:
-                    ve.setCameraPosition(board)
+                    ve.setCameraPose(board)
 
             # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
             # the new master camera
             for ve in self.getVisionEntityList():
-                if ve.Mrvec is not None and ve.Crvec is not None and self._master_entity.Mrvec is None:
+                if ve.getPoses()[0] is not None and ve.getCameraPose()[0] is not None and self._master_entity.getPoses()[0] is None:
                     self._master_entity = ve
                     break
 
@@ -185,8 +186,8 @@ class PoseEstimator():
         poses = []
         for board in self._arucoBoards:
             try:
-                tvec = np.array(board.getTvec(), dtype=int)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getRvec()))).astype(int)
+                rvec, tvec = np.array(board.getTvec(), dtype=int)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getPose()))).astype(int)
             except TypeError:
                 tvec = None
                 evec = None
@@ -202,23 +203,31 @@ class PoseEstimator():
         :return: master cam
         """
         for ve in self.getVisionEntityList():
-            if ve.Mrvec is not None and ve.Crvec is not None:
+            model_pose = ve.getPoses()
+            camera_pose = ve.getCameraPose()
+            if model_pose is not None and camera_pose is not None:
                 return ve
         return None
 
     def getPosePreviewImg(self):
         """
-        Returns a pose preview image from master camera.
+        Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
+        index 0.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        if self._master_entity is not None and self._master_entity.corners is not None and\
-                self._master_entity.Mrvec is not None:
-            ret, out_frame = self._master_entity.retrieveFrame()
-            out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
-            out_frame = self._master_entity.drawAxis(out_frame)
+        if self._master_entity is not None and self._master_entity.getCornerDetectionAttributes()[0] is not None and\
+                self._master_entity.getPoses()[0] is not None:
+            out_frame = self._master_entity.drawAxis()
+            e = self.getEulerPoses()
+            cv2.putText(out_frame, str(e), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                        (0, 0, 255), 2)
+            ret = True
         else:
             out_frame = self.getVisionEntityList()[0].getFrame()
             ret = True
+
+        cv2.imshow('demo', out_frame)
+        cv2.waitKey(1)
         return ret, out_frame
     def getRawPreviewImage(self, camID):
         '''

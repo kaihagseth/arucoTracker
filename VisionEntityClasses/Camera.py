@@ -80,13 +80,6 @@ class Camera():
         """
         return self.camera_parameters['dist']
 
-    def getSingleFrame(self):
-        '''Get non-threaded camera frame.'''
-        grabbed, frame = self._vidCap.read()
-        if not grabbed:
-            logging.error('Camera grabbed unsuccesfully.')
-        return frame
-
     def calibrateCam(self, cbFrames):
         '''
         Calibrate the camera in the IC-section.
@@ -137,7 +130,6 @@ class Camera():
         """
         ret, self._frame = self._vidCap.retrieve()
         return ret, self._frame
-
 
     def getFrame(self):
         """
