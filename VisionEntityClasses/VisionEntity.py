@@ -10,7 +10,6 @@ class VisionEntity:
     """
     TODO: Still only supports tracking of one board. Mrvec and Mtvec needs to be updated to a dictionary containing
     TODO: Positions of all boards
-    TODO: Protect thread-sensitive fields.
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
     stream.
     """
@@ -23,6 +22,8 @@ class VisionEntity:
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
         self.__cameraToModelMatrix = None  # Camera -> Model transformation - Should only be written to from thread!!
         self._cameraPoseMatrix = None
+        self._cameraPoseQuality = 0
+        self._detection_quality = 0
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -43,6 +44,10 @@ class VisionEntity:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
+            if self.getFrame() is not None:
+                print("Frame found")
+            else:
+                print("No frame retrieved")
             for board in boards:
                 self.estimatePose(board)
 
@@ -134,7 +139,33 @@ class VisionEntity:
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
+        self.setCameraPoseQuality(board)
 
+    def setCameraPoseQuality(self, board):
+        """
+        Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
+        camera to be calibrated and the master camera.
+        :param board:
+        :return:
+        """
+        w, h = board.getGridBoardSize()
+        detectionQuality = self.getDetectionQuality()
+        boardPoseQuality = board.getPoseQuality()
+        self._cameraPoseQuality = min(detectionQuality, boardPoseQuality)
+
+    def getCameraPoseQuality(self):
+        """
+        Returns camera pose quality
+        :return: camera pose quality
+        """
+        return self._cameraPoseQuality
+
+    def getDetectionQuality(self):
+        """
+        returns model pose quality
+        :return: Model pose quality
+        """
+        return self._detection_quality
 
     def detectMarkers(self, dictionary):
         """
@@ -151,11 +182,15 @@ class VisionEntity:
         Grabs frame from video stream
         :return:
         """
+        """
         if not self.runThread: # If not interferring with poseestimation
-            ret, frame = self.getCam().retrieveFrame()
+            ret, frame = self.getCam().grabFrame()
             if ret:
                 return frame
-        return None
+        return None"""
+        cam = self.getCam()
+        return cam.grabFrame()
+
     def retrieveFrame(self):
         """
         Retrieves grabbed frame from video stream
@@ -173,7 +208,21 @@ class VisionEntity:
         """
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                       self.intrinsic_matrix, self.getDistortionCoefficients())
+        self.setModelPoseQuality(board)
         self.__cameraToModelMatrix = rvecTvecToTransMatrix(rvec, tvec)
+
+    def setModelPoseQuality(self, board):
+        """
+        Calculates the quality of the current pose estimation between the camera and the model
+        :return: None
+        """
+        w, h = board.getGridBoardSize()
+        total_marker_count = w * h
+        if self.__ids is not None:
+            visible_marker_count = len(self.__ids)
+        else:
+            visible_marker_count = 0
+        self._detection_quality = visible_marker_count / total_marker_count
 
     def drawAxis(self):
         """

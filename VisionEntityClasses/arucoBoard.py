@@ -16,11 +16,13 @@ class arucoBoard():
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
         self._transformationMatrix = None # World -> Model transformation
-        self._certainty = None
+        self._poseQuality = None # How good the current estimated pose is from a scale from 0 to 1.
         self.board_height = board_height
         self.board_width = board_width
-        self.isVisible = True # Truth value to tell if this board is visible to at least one vision entity
         self.first_marker = self.first_marker + (self.board_height * self.board_width)
+
+    def getGridBoardSize(self):
+        return self._board.getGridSize()
 
     def getGridBoard(self):
         return self._board
@@ -40,16 +42,17 @@ class arucoBoard():
         """
         return self._transformationMatrix
 
-    def updateBoardPose(self, vision_entity):
+    def updateBoardPose(self, master_entity):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = vision_entity.getPoses()
-        world_to_camera_transformation = vision_entity.getCameraPose()
+        camera_to_model_transformation = master_entity.getPoses()
+        world_to_camera_transformation = master_entity.getCameraPose()
         world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation
         self._transformationMatrix = world_to_model_transformation
+        self.setPoseQuality(master_entity)
 
     def setFirstBoardPosition(self, ve):
         """
@@ -58,14 +61,20 @@ class arucoBoard():
         :return:
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
+        self._poseQuality = 1
         ve.setCameraPose(self)
 
 
-    def setCertainty(self, certainty):
-        self._certainty = certainty
+    def setPoseQuality(self, master_entity):
+        """
+        Calculates and sets pose quality based on the vision entity's camera pose quality and pose estimation quality.
+        :param master_entity:
+        :return:
+        """
+        self._poseQuality = master_entity.getDetectionQuality() * master_entity.getCameraPoseQuality()
 
-    def getCertainty(self):
-        return self._certainty
+    def getPoseQuality(self):
+        return self._poseQuality
 
     def writeBoardToPDF(self, width=160):
         """

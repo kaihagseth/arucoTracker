@@ -140,43 +140,28 @@ class PoseEstimator():
         Writes a new pose to each board in board list.
         :return: None
         """
-        print("updateboardPoses running")
         for board in self._arucoBoards:
-            print("board found")
-            board.isVisible = False
-            for ve in self.getVisionEntityList():
-                ve.grabFrame()
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
                 model_pose = ve.getPoses()
                 if board.getTransformationMatrix() is None and model_pose is not None:
-                    print("Setting first position")
                     board.setFirstBoardPosition(ve)
-                    board.isVisible = True
                     self._master_entity = ve
 
-            # If the master cam failed to calculate a pose, another camera is set as master.
-            if self._master_entity is None or self._master_entity.getPoses() is None:
-                self._master_entity = self.findNewMasterCam()
-                continue
-            else:
-                # Update board position if the board is masterCams frame
+            self._master_entity = self.chooseMasterCam()
+            if self._master_entity is not None:
                 board.updateBoardPose(self._master_entity)
 
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                if ve.getCameraPose() is None and ve.getPoses() is not None and self._master_entity.getPoses() is not None and ve is not \
-                        self._master_entity:
-                    ve.setCameraPose(board)
-
-            # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
-            # the new master camera
-            for ve in self.getVisionEntityList():
-                if ve.getPoses() is not None and ve.getCameraPose() is not None and self._master_entity.getPoses() is None:
-                    self._master_entity = ve
-                    break
+                 # TODO: Should set new camera pose if it would have higher quality than current pose
+                if ve.getPoses() is not None and self._master_entity.getPoses() is not None:
+                    currentCameraPoseQuality = ve.getCameraPoseQuality()
+                    potentialCameraPoseQuality = ve.getDetectionQuality() * board.getPoseQuality()
+                    if potentialCameraPoseQuality > currentCameraPoseQuality:
+                        ve.setCameraPose(board)
 
     def getEulerPoses(self):
         """
@@ -197,18 +182,20 @@ class PoseEstimator():
         return poses
 
 
-    def findNewMasterCam(self):
+    def chooseMasterCam(self):
         """
-        Sets the master cam to a camera that is calibrated and has the board in sight.
+        Chooses a master vision entity based on the potential board positional quality they can deliver
         :param cams:
         :return: master cam
         """
+        highest_potential_board_quality = 0
+        master_ve = None
         for ve in self.getVisionEntityList():
-            model_pose = ve.getPoses()
-            camera_pose = ve.getCameraPose()
-            if model_pose is not None and camera_pose is not None:
-                return ve
-        return None
+            potential_board_quality = ve.getCameraPoseQuality() * ve.getDetectionQuality()
+            if potential_board_quality > highest_potential_board_quality:
+                highest_potential_board_quality = potential_board_quality
+                master_ve = ve
+        return master_ve
 
     def getPosePreviewImg(self):
         """
@@ -219,19 +206,25 @@ class PoseEstimator():
         if self._master_entity is not None and self._master_entity.getCornerDetectionAttributes()[0] is not None and\
                 self._master_entity.getPoses() is not None:
             out_frame = self._master_entity.drawAxis()
+            board = self._arucoBoards[0]
             poses = self.getEulerPoses()
             evec, tvec = poses[0]
             print(poses)
-            cv2.putText(out_frame, str(poses[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
+            cv2.putText(out_frame, "Pose: " + str(poses[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
-            ret = True
+            cv2.putText(out_frame, "Quality: " + str(board.getPoseQuality()), (10, 130), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                        (0, 0, 255), 2)
         else:
             out_frame = self.getVisionEntityList()[0].getFrame()
-            ret = True
 
-        cv2.imshow('demo', out_frame)
-        cv2.waitKey(1)
+        if out_frame is not None:
+            ret = True
+            cv2.imshow('demo', out_frame)
+            cv2.waitKey(1)
+        else:
+            ret = False
         return ret, out_frame
+
     def getRawPreviewImage(self, camID):
         '''
         Get a raw, unfiltered image from the camera on selected ID.
