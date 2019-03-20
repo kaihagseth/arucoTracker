@@ -193,7 +193,7 @@ class VisionEntity:
         """
         return self.__cameraToModelMatrix
 
-    def getCameraPoseMatrix(self):
+    def getCameraPose(self):
         """
         Returns homogenous camera extrinsic matrix
         :return: Rotation and translation vectors for cameras pose.

@@ -37,12 +37,12 @@ def rvecTvecToTransMatrix(rvec, tvec):
     :param tvec: Translation vector
     :return: Transformation-matrix
     """
+    if rvec is None:
+        return None
     R = np.matrix(cv2.Rodrigues(rvec)[0], dtype=np.float32)
     T = np.matrix(tvec, dtype=np.float32)
-    T = np.reshape(T, (1, 3))
-    RT = np.eye((4, 4))
-    RT[0:3, 0:3] = R
-    RT[3, 0:3] = T
+    T = np.reshape(T, (3, 1))
+    RT = np.matrix(np.vstack((np.hstack((R, T)), [0, 0, 0, 1])))
     return RT
 
 def transMatrixToRvecTvec(RT):
@@ -53,7 +53,8 @@ def transMatrixToRvecTvec(RT):
     """
     R = RT[0:3, 0:3]
     rvec = cv2.Rodrigues(R)[0]
-    tvec = RT[3, 0:3]
+    tvec = np.asarray(RT[0:3, 3])
+
     return rvec, tvec
 
 def invertTransformationMatrix(RT):
@@ -62,11 +63,10 @@ def invertTransformationMatrix(RT):
     :param RT: Transformation matrix to be inverted
     :return: Inverted transformation matrix
     """
+    RT = np.matrix(RT)
     R0 = RT[0:3, 0:3]  # Get rotation matrix
     R1 = R0.T  # Transpose rotation matrix to find inverse rotation
-    T0 = RT[3, 0:3]  # Get translation vector
+    T0 = np.matrix(RT[0:3, 3])  # Get translation vector
     T1 = -(R1 * T0)  # Find opposite direction of translation vector
-    RT = np.matrix(np.eye(4, 4))
-    RT[0:3, 0:3] = R1
-    RT[3, 0:3] = T1 #Compose new matrix
-    return RT
+    RT1 = np.matrix(np.vstack((np.hstack((R1, T1)), [0, 0, 0, 1])))
+    return RT1

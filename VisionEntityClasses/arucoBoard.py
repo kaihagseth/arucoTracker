@@ -30,7 +30,6 @@ class arucoBoard():
         Returns pose in rvec, tvec-format
         :return: rvec, tvec
         """
-
         return transMatrixToRvecTvec(self._transformationMatrix)
 
 
@@ -58,7 +57,7 @@ class arucoBoard():
         :param ve: Vision entity to calibrate
         :return:
         """
-        self._transformationMatrix = np.matrix(np.eye((4, 4), dtype=np.float32))
+        self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
         ve.setCameraPose(self)
 
 

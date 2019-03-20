@@ -40,6 +40,7 @@ class Connector():
                 for pose in poses:
                     tvec, evec = pose # TODO: Get more poses
                 try:
+                    print(evec, tvec)
                     self.PE.writeCsvLog(tvec, evec)
                 except (AttributeError, TypeError):
                     raise AssertionError("Raw pose was returned in an invalid format.")

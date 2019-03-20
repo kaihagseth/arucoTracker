@@ -149,14 +149,14 @@ class PoseEstimator():
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
                 model_pose = ve.getPoses()
-                if board.getPose() is None and model_pose is not None:
+                if board.getTransformationMatrix() is None and model_pose is not None:
                     print("Setting first position")
                     board.setFirstBoardPosition(ve)
                     board.isVisible = True
                     self._master_entity = ve
 
             # If the master cam failed to calculate a pose, another camera is set as master.
-            if self._master_entity is None or self._master_entity.getPoses()[0] is None:
+            if self._master_entity is None or self._master_entity.getPoses() is None:
                 self._master_entity = self.findNewMasterCam()
                 continue
             else:
@@ -167,14 +167,14 @@ class PoseEstimator():
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                if ve.getCameraPose()[0] is None and ve.getPoses()[0] is not None and self._master_entity.getPoses()[0] is not None and ve is not \
+                if ve.getCameraPose() is None and ve.getPoses() is not None and self._master_entity.getPoses() is not None and ve is not \
                         self._master_entity:
                     ve.setCameraPose(board)
 
             # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
             # the new master camera
             for ve in self.getVisionEntityList():
-                if ve.getPoses()[0] is not None and ve.getCameraPose()[0] is not None and self._master_entity.getPoses()[0] is None:
+                if ve.getPoses() is not None and ve.getCameraPose() is not None and self._master_entity.getPoses() is None:
                     self._master_entity = ve
                     break
 
@@ -186,8 +186,9 @@ class PoseEstimator():
         poses = []
         for board in self._arucoBoards:
             try:
-                rvec, tvec = np.array(board.getTvec(), dtype=int)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getPose()))).astype(int)
+                rvec, tvec = board.getRvecTvec()
+                tvec = tvec.astype(int).reshape(-1)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(int)
             except TypeError:
                 tvec = None
                 evec = None
@@ -216,10 +217,12 @@ class PoseEstimator():
         :return: Frame drawn with axis cross, corners, and poses
         """
         if self._master_entity is not None and self._master_entity.getCornerDetectionAttributes()[0] is not None and\
-                self._master_entity.getPoses()[0] is not None:
+                self._master_entity.getPoses() is not None:
             out_frame = self._master_entity.drawAxis()
-            e = self.getEulerPoses()
-            cv2.putText(out_frame, str(e), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
+            poses = self.getEulerPoses()
+            evec, tvec = poses[0]
+            print(poses)
+            cv2.putText(out_frame, str(poses[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
             ret = True
         else:
