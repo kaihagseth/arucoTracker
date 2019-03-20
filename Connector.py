@@ -69,11 +69,11 @@ class Connector():
 
     def getImgFromSingleCam(self, camId):
         """
-        TODO: Not threadsafe in VisionEntity! This function should ask PE directly for the frame, not for the VE.
+        Get raw image, if poseEstimation is not running.
         :param camId: Index number of camrea
-        :return:
+        :return: Frame from cam on given ID. None if VE ThreadLoop is running.
         """
-        return self.PE.getVEById(camId).getFrame()
+        return self.PE.getRawPreviewImage(camId)
 
     def getVEFromCamIndex(self, index):
         return self.PE.getVEById(index)

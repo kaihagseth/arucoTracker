@@ -151,8 +151,11 @@ class VisionEntity:
         Grabs frame from video stream
         :return:
         """
-        return self.getCam().grabFrame()
-
+        if not self.runThread: # If not interferring with poseestimation
+            ret, frame = self.getCam().retrieveFrame()
+            if ret:
+                return frame
+        return None
     def retrieveFrame(self):
         """
         Retrieves grabbed frame from video stream

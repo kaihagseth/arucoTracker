@@ -232,6 +232,14 @@ class PoseEstimator():
         cv2.imshow('demo', out_frame)
         cv2.waitKey(1)
         return ret, out_frame
+    def getRawPreviewImage(self, camID):
+        '''
+        Get a raw, unfiltered image from the camera on selected ID.
+        :return: Raw, unfiltered image. Return None if unsuccessfull, or camera used elsewhere.
+        '''
+        VE = self.getVEById(camID)
+        frame = VE.grabFrame()
+        return frame
 
     def stopThreads(self):
         """
