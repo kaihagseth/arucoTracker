@@ -197,15 +197,23 @@ class PoseEstimator():
                 master_ve = ve
         return master_ve
 
-    def getPosePreviewImg(self):
+    def getPosePreviewImg(self, camID):
         """
         Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
         index 0.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        if self._master_entity is not None and self._master_entity.getCornerDetectionAttributes()[0] is not None and\
-                self._master_entity.getPoses() is not None:
-            out_frame = self._master_entity.drawAxis()
+        if camID == -1:
+            if self._master_entity is None:
+                vision_entity = self.getVEById(0)
+            else:
+                vision_entity = self._master_entity
+        else:
+            vision_entity = self.getVEById(camID)
+
+        if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
+                vision_entity.getPoses() is not None:
+            out_frame = vision_entity.drawAxis()
             board = self._arucoBoards[0]
             poses = self.getEulerPoses()
             evec, tvec = poses[0]
@@ -214,24 +222,18 @@ class PoseEstimator():
                         (0, 0, 255), 2)
             cv2.putText(out_frame, "Quality: " + str(board.getPoseQuality()), (10, 130), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
+            ret = True
         else:
             out_frame = self.getVisionEntityList()[0].getFrame()
-
-        if out_frame is not None:
-            ret = True
-            cv2.imshow('demo', out_frame)
-            cv2.waitKey(1)
-        else:
-            ret = False
-        return ret, out_frame
+        return out_frame
 
     def getRawPreviewImage(self, camID):
         '''
         Get a raw, unfiltered image from the camera on selected ID.
-        :return: Raw, unfiltered image. Return None if unsuccessfull, or camera used elsewhere.
+        :return: Raw, unfiltered image. Return None if unsuccessful, or camera used elsewhere.
         '''
         VE = self.getVEById(camID)
-        frame = VE.grabFrame()
+        frame = VE.getFrame()
         return frame
 
     def stopThreads(self):

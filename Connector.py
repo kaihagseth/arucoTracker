@@ -93,6 +93,15 @@ class Connector():
     def getPose(self):
         return self.PE.getEulerPoses()
 
+    def getOutputImage(self, camID=-1):
+        """
+        Return image with overlay from pose estimator. Select cam with camID, or set camID to -1 for automatic switching
+        between cameras.
+        :param camID:
+        :return:
+        """
+        self.PE.getPosePreviewImg(camID)
+
 
 if __name__ == '__main__':
     # logging_setup()

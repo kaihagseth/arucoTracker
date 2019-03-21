@@ -396,7 +396,7 @@ class GUIApplication(threading.Thread):
         print('Show video: (show_video) ', self.show_video)
         if self.show_video is True:
             try:
-                self.frame = self.c.getImgFromSingleCam(self.v.get())  # currCap.read()
+                self.frame = self.c.getOutputImage(self.v.get())  # currCap.read()
                 if self.frame is not None:
                     self.cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
                     self.img_video = Image.fromarray(self.cv2image)
