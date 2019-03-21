@@ -7,6 +7,7 @@ from PIL import ImageTk, Image
 
 import GUIDataPlotting
 from VisionEntityClasses.Camera import *
+from VisionEntityClasses.arucoBoard import arucoBoard
 
 
 class GUIApplication(threading.Thread):
@@ -388,20 +389,13 @@ class GUIApplication(threading.Thread):
 
     def rawVideoStream(self):
         '''
-        Create a simple setup for testing video stream with GUI
+        Create a simple setup for testing video stream with GUI. Not working if PoseEstimation is running.
         :return: None
         '''
         print('Show video: (show_video) ', self.show_video)
         if self.show_video is True:
             try:
-                # counter += 1
-                # currCap = video_streams[int(var.get())]
-                print("Var value: ", self.var.get())
                 self.frame = self.c.getImgFromSingleCam(self.v.get())  # currCap.read()
-                # Check if the webcam is opened correctly
-                # if not currCap.isOpened():
-                #    raise IOError("Cannot open webcam")
-                print("ID: ", self.camIDInUse)
                 if self.frame is not None:
                     self.cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
                     self.img_video = Image.fromarray(self.cv2image)
@@ -417,11 +411,8 @@ class GUIApplication(threading.Thread):
 
     def showFindPoseStream(self, frame):
         logging.debug('Inside posestream')
-
         if self.showPoseStream:
             try:
-                print("FRRRRAAAAAMMMMMEEE: ", frame)
-                print('Image_tk: ', self.image_tk)
                 if frame is not None:
                     self.cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     self.img_video = Image.fromarray(self.cv2image)
@@ -516,8 +507,8 @@ class GUIApplication(threading.Thread):
         gap_value = self.gap_entry.get()
         gap_value = int(gap_value)
 
-        self.aruco = Connector.ArucoPoseEstimator(length_value, width_value, size_value, gap_value)
-        self.aruco.writeBoardToPDF()
+        self.board = arucoBoard(length_value, width_value, size_value, gap_value)
+        self.board.writeBoardToPDF()
 
     def validate(self, string):
         '''

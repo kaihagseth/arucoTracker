@@ -27,6 +27,8 @@ class Camera():
         self._src = src_index
         self._frame = None
         self._vidCap = cv2.VideoCapture(self._src)
+        self._vidCap.set(cv2.CAP_PROP_AUTOFOCUS, False)
+        self._vidCap.set(cv2.CAP_PROP_FOCUS, 0.0)
         # Test
         if not self._vidCap.open(self._src):
             logging.error('Camera not opened!')
@@ -80,13 +82,6 @@ class Camera():
         """
         return self.camera_parameters['dist']
 
-    def getSingleFrame(self):
-        '''Get non-threaded camera frame.'''
-        grabbed, frame = self._vidCap.read()
-        if not grabbed:
-            logging.error('Camera grabbed unsuccesfully.')
-        return frame
-
     def calibrateCam(self, cbFrames):
         '''
         Calibrate the camera in the IC-section.
@@ -137,7 +132,6 @@ class Camera():
         """
         ret, self._frame = self._vidCap.retrieve()
         return ret, self._frame
-
 
     def getFrame(self):
         """

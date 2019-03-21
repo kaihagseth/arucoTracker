@@ -1,6 +1,5 @@
 import csv
 import logging
-import queue
 import threading
 import time
 
@@ -37,6 +36,10 @@ class PoseEstimator():
         self._arucoBoards.append(arucoBoard(board_width, board_height, marker_size, marker_gap))
 
     def createVisionEntities(self):
+        """
+        Creates vision entities based on connected cameras.
+        :return:
+        """
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
             VE = VisionEntity(cam_index)
@@ -69,23 +72,15 @@ class PoseEstimator():
 
     def runPoseEstimator(self):
         '''
-        Do poseestimation for every VisionEntity.
-        Start threads for every VE. Save the pose in a thread-safe variable, and add it all to a list.
+        Start Vision Entity threads for pose estimation.
         :return: None
         '''
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
-            singlecam_curr_pose = [0.0,0.0,0.0],[0.0,0.0,0.0]
-            #Create a thread-safe variable to save pose to.
-            singlecam_curr_pose_que = queue.LifoQueue() # LifoQueue because last written variable is most relevant.
-            singlecam_curr_pose_que.put(singlecam_curr_pose)
-            frame_que = queue.LifoQueue(maxsize=1) # Thread-safe variable for passing cam frames to GUI.
-            logging.debug('Passing queue.Queue()')
-            # Create thread, with target findPoseResult(). All are daemon-threads.
+            VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             logging.debug('Passing thread creation.')
-            self.threadInfoList.append([VE, th, singlecam_curr_pose_que, frame_que])
             print()
             print('ThreadInfoList: ', self.threadInfoList)
             th.start()
@@ -145,43 +140,28 @@ class PoseEstimator():
         Writes a new pose to each board in board list.
         :return: None
         """
-        print("updateboardPoses running")
         for board in self._arucoBoards:
-            print("board found")
-            board.isVisible = False
             for ve in self.getVisionEntityList():
-                ve.grabFrame()
-            for ve in self.getVisionEntityList():
-                # Collecting frame and detecting markers for each camera.
-                if board.getRvec() is None and ve.Mrvec is not None:
-                    print("Setting first position")
+                # Collecting frame and detecting markers for each camera
+                model_pose = ve.getPoses()
+                if board.getTransformationMatrix() is None and model_pose is not None:
                     board.setFirstBoardPosition(ve)
-                    board.isVisible = True
                     self._master_entity = ve
 
-            # If the master cam failed to calculate a pose, another camera is set as master.
-            if self._master_entity is None or self._master_entity.Mrvec is None:
-                self._master_entity = self.findNewMasterCam()
-                continue
-            else:
-                # Update board position if the board is masterCams frame
-                board.updateBoardPosition(self._master_entity)
-                outFrame = self._master_entity.getFrame()
+            self._master_entity = self.chooseMasterCam()
+            if self._master_entity is not None:
+                board.updateBoardPose(self._master_entity)
 
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                if ve.Crvec is None and ve.Mrvec is not None and self._master_entity.Mrvec is not None and ve is not \
-                        self._master_entity:
-                    ve.setCameraPosition(board)
-
-            # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
-            # the new master camera
-            for ve in self.getVisionEntityList():
-                if ve.Mrvec is not None and ve.Crvec is not None and self._master_entity.Mrvec is None:
-                    self._master_entity = ve
-                    break
+                 # TODO: Should set new camera pose if it would have higher quality than current pose
+                if ve.getPoses() is not None and self._master_entity.getPoses() is not None:
+                    currentCameraPoseQuality = ve.getCameraPoseQuality()
+                    potentialCameraPoseQuality = ve.getDetectionQuality() * board.getPoseQuality()
+                    if potentialCameraPoseQuality > currentCameraPoseQuality:
+                        ve.setCameraPose(board)
 
     def getEulerPoses(self):
         """
@@ -191,8 +171,9 @@ class PoseEstimator():
         poses = []
         for board in self._arucoBoards:
             try:
-                tvec = np.array(board.getTvec(), dtype=int)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getRvec()))).astype(int)
+                rvec, tvec = board.getRvecTvec()
+                tvec = tvec.astype(int).reshape(-1)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(int)
             except TypeError:
                 tvec = None
                 evec = None
@@ -201,31 +182,62 @@ class PoseEstimator():
         return poses
 
 
-    def findNewMasterCam(self):
+    def chooseMasterCam(self):
         """
-        Sets the master cam to a camera that is calibrated and has the board in sight.
+        Chooses a master vision entity based on the potential board positional quality they can deliver
         :param cams:
         :return: master cam
         """
+        highest_potential_board_quality = 0
+        master_ve = None
         for ve in self.getVisionEntityList():
-            if ve.Mrvec is not None and ve.Crvec is not None:
-                return ve
-        return None
+            potential_board_quality = ve.getCameraPoseQuality() * ve.getDetectionQuality()
+            if potential_board_quality > highest_potential_board_quality:
+                highest_potential_board_quality = potential_board_quality
+                master_ve = ve
+        return master_ve
 
     def getPosePreviewImg(self):
         """
-        Returns a pose preview image from master camera.
+        Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
+        index 0.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        if self._master_entity is not None and self._master_entity.corners is not None and\
-                self._master_entity.Mrvec is not None:
-            ret, out_frame = self._master_entity.retrieveFrame()
-            out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
-            out_frame = self._master_entity.drawAxis(out_frame)
+        if self._master_entity is not None and self._master_entity.getCornerDetectionAttributes()[0] is not None and\
+                self._master_entity.getPoses() is not None:
+            out_frame = self._master_entity.drawAxis()
+            board = self._arucoBoards[0]
+            poses = self.getEulerPoses()
+            evec, tvec = poses[0]
+            print(poses)
+            cv2.putText(out_frame, "Pose: " + str(poses[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                        (0, 0, 255), 2)
+            cv2.putText(out_frame, "Quality: " + str(board.getPoseQuality()), (10, 130), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                        (0, 0, 255), 2)
         else:
             out_frame = self.getVisionEntityList()[0].getFrame()
+
+        if out_frame is not None:
             ret = True
-        if ret:
-            cv2.imshow('test', out_frame)
+            cv2.imshow('demo', out_frame)
             cv2.waitKey(1)
+        else:
+            ret = False
         return ret, out_frame
+
+    def getRawPreviewImage(self, camID):
+        '''
+        Get a raw, unfiltered image from the camera on selected ID.
+        :return: Raw, unfiltered image. Return None if unsuccessfull, or camera used elsewhere.
+        '''
+        VE = self.getVEById(camID)
+        frame = VE.grabFrame()
+        return frame
+
+    def stopThreads(self):
+        """
+        Sets stop flag for all threads in order to terminate program safely.
+        :return:
+        """
+        for VE in self.getVisionEntityList():
+            VE.runThread = False

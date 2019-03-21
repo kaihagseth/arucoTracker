@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 from fpdf import FPDF
 
-from VisionEntityClasses.helperFunctions import toMatrix
+
+from VisionEntityClasses.helperFunctions import *
 
 
 class arucoBoard():
@@ -14,55 +15,44 @@ class arucoBoard():
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
-        self._rvec = None # Model World rvec
-        self._tvec = None # Model World tvec
+        self._transformationMatrix = None # World -> Model transformation
+        self._poseQuality = None # How good the current estimated pose is from a scale from 0 to 1.
         self.board_height = board_height
         self.board_width = board_width
-        self.isVisible = True # Truth value to tell if this board is visible to at least one vision entity
         self.first_marker = self.first_marker + (self.board_height * self.board_width)
+
+    def getGridBoardSize(self):
+        return self._board.getGridSize()
 
     def getGridBoard(self):
         return self._board
 
-    def setRvec(self, rvec):
+    def getRvecTvec(self):
         """
-        Sets rvec field for this object
-        :param rvec: new rvec
-        :return: None
+        Returns pose in rvec, tvec-format
+        :return: rvec, tvec
         """
-        self._rvec = rvec
+        return transMatrixToRvecTvec(self._transformationMatrix)
 
 
-    def getRvec(self):
+    def getTransformationMatrix(self):
         """
-        Retuns objects rvec-field
-        :return: rvec
+        Retuns board pose transformation matrix
+        :return: board pose transformation matrix
         """
-        return self._rvec
+        return self._transformationMatrix
 
-    def setTvec(self, tvec):
-        """
-        Sets tvec field for this object
-        :param rvec: new rvec
-        :return: None
-        """
-        self._tvec = tvec
-
-    def getTvec(self):
-        """
-        Retuns objects tvec-field
-        :return: tvec
-        """
-        return self._tvec
-
-    def updateBoardPosition(self, vision_entity):
+    def updateBoardPose(self, master_entity):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
         :param cam: The camera spotting the board.
         :return:
         """
-        self._rvec = cv2.composeRT(vision_entity.Crvec, vision_entity.Ctvec, vision_entity.Mrvec, vision_entity.Mtvec)[0]
-        self.getRelativeTranslation(vision_entity)
+        camera_to_model_transformation = master_entity.getPoses()
+        world_to_camera_transformation = master_entity.getCameraPose()
+        world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation
+        self._transformationMatrix = world_to_model_transformation
+        self.setPoseQuality(master_entity)
 
     def setFirstBoardPosition(self, ve):
         """
@@ -70,17 +60,21 @@ class arucoBoard():
         :param ve: Vision entity to calibrate
         :return:
         """
-        self._rvec = np.array([0, 0, 0], dtype=np.float32)
-        self._tvec = np.array([0, 0, 0], dtype=np.float32)
-        ve.setCameraPosition(self)
+        self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
+        self._poseQuality = 1
+        ve.setCameraPose(self)
 
-    def getRelativeTranslation(self, ve):
+
+    def setPoseQuality(self, master_entity):
         """
-        Gets translation from model to vision entity.
-        :param ve: Vision entity that has board in sight.
-        :return: None
+        Calculates and sets pose quality based on the vision entity's camera pose quality and pose estimation quality.
+        :param master_entity:
+        :return:
         """
-        self._tvec = toMatrix(ve.Crvec) * np.matrix(ve.Ctvec + ve.Mtvec)
+        self._poseQuality = master_entity.getDetectionQuality() * master_entity.getCameraPoseQuality()
+
+    def getPoseQuality(self):
+        return self._poseQuality
 
     def writeBoardToPDF(self, width=160):
         """

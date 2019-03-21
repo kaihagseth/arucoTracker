@@ -22,6 +22,7 @@ class Connector():
     def startApplication(self, dispResFx, stopAppFx):
         '''
         Start the application, and communicate continius with the GUI while loop is running in seperate threads.
+        #TODO: Would it be better to return pose and pass stop message in function call?
         :param dispResFx: Function to display result with
         :param doAbortFx: Function to abort the application
         '''
@@ -51,6 +52,7 @@ class Connector():
                 logging.debug(msg)
             else:
                 time.sleep(0.1)
+        self.PE.stopThreads()
         print('Ended')
 
     def initConnectedCams(self):
@@ -66,11 +68,11 @@ class Connector():
 
     def getImgFromSingleCam(self, camId):
         """
-        OMG: Not threadsafe in VisionEntity!
-        :param camId:
-        :return:
+        Get raw image, if poseEstimation is not running.
+        :param camId: Index number of camrea
+        :return: Frame from cam on given ID. None if VE ThreadLoop is running.
         """
-        return self.PE.getVEById(camId).getFrame()
+        return self.PE.getRawPreviewImage(camId)
 
     def getVEFromCamIndex(self, index):
         return self.PE.getVEById(index)
@@ -89,7 +91,8 @@ class Connector():
         return camlist
 
     def getPose(self):
-        return self.PE.runPoseEstimator().singlecam_curr_pose_que.get()
+        return self.PE.getEulerPoses()
+
 
 if __name__ == '__main__':
     # logging_setup()
