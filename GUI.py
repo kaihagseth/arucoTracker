@@ -128,32 +128,23 @@ class GUIApplication(threading.Thread):
         self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)  # , orient=HORIZONTAL)
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1, columnspan=6)
 
-        evec, tvec = self.getPoses()[0]
-        if evec is None:
-            evec = [0,0,0]
-
-        if tvec is None:
-            tvec = [0,0,0]
-
-        x,y,z = tvec
-        roll,pitch, yaw = evec
-
-        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=x,
-                                          font=(self.poseFontType, self.poseFontSize),bg='black',fg='white' , padx=25)
+        # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='x',
+                                          font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispX_camPaneTabMain.grid(column=0, row=0)
-        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=y,bg='black',fg='white',
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='y',bg='red',fg='white',
                                           font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispY_camPaneTabMain.grid(column=1, row=0)
-        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=z,bg='black',fg='white',
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='z',bg='green',fg='white',
                                           font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispZ_camPaneTabMain.grid(column=2, row=0)
-        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=roll,bg='black',fg='white'
+        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='roll',bg='blue',fg='white'
                                              ,font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispRoll_camPaneTabMain.grid(column=0, row=1)
-        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=pitch,
+        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='pitch',
                                               bg='black', fg='white',font=(self.poseFontType,self.poseFontSize), padx=25)
         self.dispPitch_camPaneTabMain.grid(column=1, row=1)
-        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=yaw,bg='black',fg='white',
+        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='yaw',bg='magenta',fg='white',
                                             font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispYaw_camPaneTabMain.grid(column=2, row=1)
 
@@ -267,18 +258,15 @@ class GUIApplication(threading.Thread):
         self.calibrate_btn.grid_rowconfigure(1, weight=1)
         self.calibrate_btn.grid_columnconfigure(1, weight=1)
 
-        # Camera temp variables.
-        # cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
-        self.var = IntVar()
+        # Variable for camera index
+        self.cam_index_btn = tk.IntVar()
+        self.cam_index_btn.set(-1)  # initializing the choice, i.e. Python
 
-        self.v = tk.IntVar()
-        self.v.set(-1)  # initializing the choice, i.e. Python
-
-        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.v, value=-1).pack()
+        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.cam_index_btn, value=-1).pack()
         for vali, cam in enumerate(self.camlist):
-            tk.Radiobutton(self.left_camPaneTabMain,text=str(vali),
+            tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
                            padx=20,
-                           variable=self.v,
+                           variable=self.cam_index_btn,
                            value=vali).pack()  # grid(column=1,row=0+vali)
 
         # invoke the button on the return key
@@ -296,17 +284,17 @@ class GUIApplication(threading.Thread):
         # Start it all
         self.root.mainloop()
 
-
-
         # Configuration setup
 
     def setupConfigTab(self):
         self.configPaneTabMain = PanedWindow(self.page_5, bg='gray40')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
+
         # Create paned windows
         self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)  # , text="left pane")
         self.configPaneTabMain.add(self.left_configPaneTabMain)
 
+        # Mid section Pane for configuring
         self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
         self.configPaneTabMain.add(self.midSection_configPaneTabMain)
 
@@ -375,39 +363,26 @@ class GUIApplication(threading.Thread):
         self.saveFrame()
         self.show_video = False
 
-        # self.main_label.configure(text='Stopping video stream')
-
-    #   if not show_video:
-    #      start_btn.grid(column=0, row=2)
-    #     stop_btn.grid(column=None, row=None)
-    # elif show_video:
-    #   stop_btn.grid(column=1, row=2)
-    #  start_btn.grid(column=None, row=None)
-
     def hideCamBtnClicked(self):
         # Hide the cam.
-
         # Don't access new frames.
         self.show_video = False
-        self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+        self.image_tk = ImageTk.PhotoImage(image=self.frame)
         #self.main_label.image_tk = self.image_tk
         #self.main_label.configure(image='', text='Image hidden.')
 
     def showFindPoseStream(self):
         try:
-            self.frame = self.c.getOutputImage(self.v.get())
+            self.frame = self.c.getOutputImage(self.cam_index_btn.get())
             image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
             self.main_label.configure(image=image)
             self.main_label.image = image
-
-
         except AttributeError as e:
             logging.error(str(e))
         except cv2.error as e:
             logging.error(str(e))
-
 
     def showImage(self):
         '''
