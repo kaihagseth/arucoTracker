@@ -44,12 +44,9 @@ class Connector():
                 except (AttributeError, TypeError):
                     raise AssertionError("Raw pose was returned in an invalid format.")
                 # Display the pose(s).
-                ret, poseFrame = self.PE.getPosePreviewImg()
-                dispResFx(poseFrame)
+                dispResFx()
                 # Check if we want to abort, function from GUI.
                 stopApp = stopAppFx()
-                msg = 'StopApp: ', stopApp
-                logging.debug(msg)
             else:
                 time.sleep(0.1)
         self.PE.stopThreads()
@@ -100,7 +97,7 @@ class Connector():
         :param camID:
         :return:
         """
-        self.PE.getPosePreviewImg(camID)
+        return self.PE.getPosePreviewImg(camID)
 
 
 if __name__ == '__main__':

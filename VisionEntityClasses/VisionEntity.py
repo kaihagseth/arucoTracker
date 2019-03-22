@@ -44,10 +44,6 @@ class VisionEntity:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
-            if self.getFrame() is not None:
-                print("Frame found")
-            else:
-                print("No frame retrieved")
             for board in boards:
                 self.estimatePose(board)
 
