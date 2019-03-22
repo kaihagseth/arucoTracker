@@ -1,11 +1,12 @@
 import threading
 import tkinter as tk
+import ttkthemes
 from tkinter import *
 from tkinter import Menu
-
+from tkinter import ttk
 from PIL import ImageTk, Image
-
 import GUIDataPlotting
+import Connector
 from VisionEntityClasses.Camera import *
 from VisionEntityClasses.arucoBoard import arucoBoard
 
@@ -37,12 +38,14 @@ class GUIApplication(threading.Thread):
 
         # Set up main window.
         self.root = Tk()
+        self.root.style = ttkthemes.ThemedStyle()
         self.root.title('Boat Pose Estimator')
         self.root.geometry('850x750')
         self.root.configure(background='black')
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
+        self.root.style.theme_use('black')
 
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
@@ -120,22 +123,32 @@ class GUIApplication(threading.Thread):
         self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)  # , orient=HORIZONTAL)
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1, columnspan=6)
 
-        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='x0',
-                                          font=(self.poseFontType, self.poseFontSize), padx=25)
+        evec, tvec = self.getPoses()[0]
+        if evec is None:
+            evec = [0,0,0]
+
+        if tvec is None:
+            tvec = [0,0,0]
+
+        x,y,z = tvec
+        roll,pitch, yaw = evec
+
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=x,
+                                          font=(self.poseFontType, self.poseFontSize),bg='black',fg='white' , padx=25)
         self.dispX_camPaneTabMain.grid(column=0, row=0)
-        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='y0',
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=y,bg='black',fg='white',
                                           font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispY_camPaneTabMain.grid(column=1, row=0)
-        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='z0',
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=z,bg='black',fg='white',
                                           font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispZ_camPaneTabMain.grid(column=2, row=0)
-        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='roll0',
-                                             font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=roll,bg='black',fg='white'
+                                             ,font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispRoll_camPaneTabMain.grid(column=0, row=1)
-        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='pitch0',
-                                              font=(self.poseFontType, self.poseFontSize), padx=25)
+        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=pitch,
+                                              bg='black', fg='white',font=(self.poseFontType,self.poseFontSize), padx=25)
         self.dispPitch_camPaneTabMain.grid(column=1, row=1)
-        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='yaw0',
+        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=yaw,bg='black',fg='white',
                                             font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispYaw_camPaneTabMain.grid(column=2, row=1)
 
@@ -211,7 +224,7 @@ class GUIApplication(threading.Thread):
         self.btn_frame = Frame(self.page_3)
         self.btn_frame.pack()
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
-                              command=lambda: self.savePDFParam())
+                              command=lambda: [self.savePDFParam()])
         self.pdf_btn.pack(side=BOTTOM)
 
         # Page 4: Graph setup
@@ -254,7 +267,7 @@ class GUIApplication(threading.Thread):
         self.var = IntVar()
 
         self.v = tk.IntVar()
-        self.v.set(1)  # initializing the choice, i.e. Python
+        self.v.set(-1)  # initializing the choice, i.e. Python
 
         for vali, cam in enumerate(self.camlist):
             tk.Radiobutton(self.left_camPaneTabMain,text=str(vali),
@@ -268,10 +281,22 @@ class GUIApplication(threading.Thread):
         self.stopCamApp.pack()
         deadSpace2 = Frame(self.left_camPaneTabMain, height=50).pack()
 
-        # Setu the config tab
+        # invoke the button on the return key
+        self.root.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+
+        # remove the default behavior of invoking the button with the space key
+        self.root.unbind_class("Button", "<Key-space>")
+
+        # Setup the config tab
         self.setupConfigTab()
+
+        # Set focus to start button
+        self.start_btn.focus()
+
         # Start it all
         self.root.mainloop()
+
+
 
         # Configuration setup
 
@@ -395,7 +420,7 @@ class GUIApplication(threading.Thread):
         print('Show video: (show_video) ', self.show_video)
         if self.show_video is True:
             try:
-                self.frame = self.c.getImgFromSingleCam(self.v.get())  # currCap.read()
+                self.frame = self.c.getOutputImage(self.v.get())  # currCap.read()
                 if self.frame is not None:
                     self.cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
                     self.img_video = Image.fromarray(self.cv2image)
@@ -532,6 +557,10 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         return self.validate(P)
+
+    def getPoses(self):
+        poses = self.c.PE.getEulerPoses()
+        return poses
 
     # This function needs improvement so that it only checks the entry that is clicked instead of all at the same time.
     def on_entry_click(self, event):

@@ -1,5 +1,7 @@
 from tkinter import *
-from ttkthemes import themed_tk as tk
+import tkinter as tk
+from tkinter import ttk
+import ttkthemes
 import os
 import time
 from GUI import GUIApplication
@@ -18,6 +20,13 @@ class GUILogin():
         # Start the main GUI.
         self.mainGUI.start()
 
+    def enterPressed(self, event=None):
+        '''
+        Register when enter is pressed and if focus is on a button press the button
+        :param event:
+        :return:
+        '''
+
     def deleteWindows(self):
         '''
         Delete the windows not used when running GUI
@@ -28,15 +37,12 @@ class GUILogin():
         main_window.destroy()
         self.startMainApplication()
 
-
-
     def deleteEntryWindow(self):
         '''
         Delete the popup box for wrong user/pass
         :return: None
         '''
         screen4.destroy()
-
 
     def loginSuccessful(self):
         '''
@@ -53,7 +59,6 @@ class GUILogin():
         self.deleteWindows()
         #Button(screen3, text='OK', command=self.deleteWindows).pack()
 
-
     def wrongEntry(self):
         '''
         Popup for wrong password/email
@@ -65,7 +70,6 @@ class GUILogin():
         screen4.geometry('200x100')
         Label(screen4, text='Wrong Email or Password').pack()
         Button(screen4, text='OK', command=self.deleteEntryWindow).pack()
-
 
     def registerUser(self):
         '''
@@ -90,7 +94,6 @@ class GUILogin():
             email_entry.delete(0, END)
             password_entry.delete(0, END)
             Label(register_window, text='Registration Failed', fg='red', font=('calibri', 11)).pack()
-
 
     def loginVerify(self):
         '''
@@ -117,7 +120,6 @@ class GUILogin():
         else:
             self.wrongEntry()
 
-
     def register(self):
         '''
         Create a new window where the user can register.
@@ -126,7 +128,7 @@ class GUILogin():
         '''
         global register_window
         regex = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$'
-        register_window = Toplevel(main_window.set_theme('equilux'))
+        register_window = Toplevel(main_window)
         register_window.title('Register')
         register_window.geometry('300x250')
 
@@ -172,15 +174,23 @@ class GUILogin():
         global email_entry
         global password_entry1
 
-        Label(screen2, text='Username: ').pack()
+        email_label = Label(screen2, text='Username: ')
+        email_label.pack()
         email_entry = Entry(screen2, textvariable=email_verify)
         email_entry.pack()
         Label(screen2, text='').pack()
         Label(screen2, text='Password: ').pack()
         password_entry1 = Entry(screen2, show='*', textvariable=password_verify)
         password_entry1.pack()
-        Label(screen2, text='').pack()
-        Button(screen2, text='Login', width=10, height=1, command=self.loginVerify).pack()
+        Label(screen2, text='',).pack()
+        login_btn = Button(screen2, text='Login', width=10, height=1, command=self.loginVerify).pack()
+        email_entry.focus_set()
+
+        # invoke the button on the return key
+        screen2.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+
+        # remove the default behavior of invoking the button with the space key
+        screen2.unbind_class("Button", "<Key-space>")
 
     def startLogin(self):
         '''
@@ -188,19 +198,28 @@ class GUILogin():
         :return: None
         '''
         global main_window
-        main_window = tk.ThemedTk()
-        main_window.get_themes()
-        main_window.set_theme('equilux')
+
+        main_window = tk.Tk()
+        main_window.style = ttkthemes.ThemedStyle()
+        main_window.style.theme_use('black')
         main_window.geometry('300x250')
         main_window.title('Boat Pose Estimator 1.0')
+        main_window.configure(background='black')
+        main_window.bind('<Return>', self.enterPressed)
         Label(main_window, text='Boat Pose Estimator 1.0', bg='magenta', width='300', height='2', font=('Arial', 13)).pack()
-        Label(main_window,text='').pack()
-        Button(main_window,text='Login', height='2', width='25', command=self.login).pack()
-        Label(main_window,text='').pack()
-        Button(main_window,text='Register', height='2', width='25', command=self.register).pack()
-        #Button(main_window, text='Hack', height='2', width='25', command=self.loginSuccessful).pack()
-        self.login()
+        Label(main_window, text='', background='black').pack()
+        login_btn = Button(main_window, text='Login', height='2', width='25',relief='groove', command=self.login)
+        #login_btn.configure(main_window.style.theme_use('black'))
+        login_btn.pack()
+        Label(main_window,text='', background='black').pack()
+        Button(main_window,text='Register', height='2', width='25',relief='groove', command=self.register).pack()
+        login_btn.focus_set()
+        # invoke the button on the return key
+        main_window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
 
+        # remove the default behavior of invoking the button with the space key
+        main_window.unbind_class("Button", "<Key-space>")
+        self.login()
         main_window.mainloop()
 
 
