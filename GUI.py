@@ -19,20 +19,25 @@ class GUIApplication(threading.Thread):
 
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
+
         # Camera variables
         self.counter = 0
         self.c = connector
         self.camlist = self.c.initConnectedCams()
         self.camIDInUse = 1
         self.image_tk = None
+        self.frame = None
+
         # GUI Handling flags
         self.doStopApp = False
         self.show_video = False
         self.showPoseStream = False
+        self.videoPanel = None
 
     def run(self):
         '''
         Run the main application.
+        TODO: Please add comments
         '''
         self.camIDInUse = 0
 
@@ -105,9 +110,9 @@ class GUIApplication(threading.Thread):
         self.top = PanedWindow(self.midSection_camPaneTabMain)
         # self.top.config(height=60)
         self.midSection_camPaneTabMain.add(self.top, height=500)
-
+        self.main_label = None
         self.main_label = Label(self.top, text='Camera Views')
-        # self.main_label.config(height=40)
+        self.main_label.config(height=480)
         self.main_label.grid(column=0, row=0)
 
         self.bottom = PanedWindow(self.midSection_camPaneTabMain)
@@ -245,9 +250,9 @@ class GUIApplication(threading.Thread):
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='gray80')  # , orient=HORIZONTAL)
 
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start', command=self.startRawCameraClicked)
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', command=self.startFindPoseApp)
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', command=self.stopRawCameraClicked)
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', command=self.setFindPoseFalse)
         self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked)
         self.camFrameSettingSection.pack()
         self.calibrate_btn = Button(self.page_2, text='Calibrate', command=None)
@@ -269,17 +274,12 @@ class GUIApplication(threading.Thread):
         self.v = tk.IntVar()
         self.v.set(-1)  # initializing the choice, i.e. Python
 
+        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.v, value=-1).pack()
         for vali, cam in enumerate(self.camlist):
             tk.Radiobutton(self.left_camPaneTabMain,text=str(vali),
                            padx=20,
                            variable=self.v,
                            value=vali).pack()  # grid(column=1,row=0+vali)
-        deadSpace1 = Frame(self.left_camPaneTabMain, height=100).pack()
-        self.startCamApp = Button(self.left_camPaneTabMain, text='Start application', command=self.startFindPoseApp)
-        self.stopCamApp = Button(self.left_camPaneTabMain, text='Stop application', command=self.setFindPoseFalse)
-        self.startCamApp.pack()
-        self.stopCamApp.pack()
-        deadSpace2 = Frame(self.left_camPaneTabMain, height=50).pack()
 
         # invoke the button on the return key
         self.root.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
@@ -367,22 +367,6 @@ class GUIApplication(threading.Thread):
         if self.poseEstimationIsRunning:
             logging.info()
 
-    def startRawCameraClicked(self):
-        '''
-        Start Video Stream
-        :return: None
-        '''
-        self.show_video = True
-        self.main_label.configure(text='Starting video stream')
-        self.rawVideoStream()
-
-    #    if not show_video:
-    #       start_btn.grid(column=0, row=2)
-    #      stop_btn.grid(column=None, row=None)
-    # elif show_video:
-    #    stop_btn.grid(column=1, row=2)
-    #   start_btn.grid(column=None, row=None)
-
     def stopRawCameraClicked(self):
         '''
         Stops video stream. Possible to add more functionality later on for saving data etc.
@@ -391,7 +375,7 @@ class GUIApplication(threading.Thread):
         self.saveFrame()
         self.show_video = False
 
-        self.main_label.configure(text='Stopping video stream')
+        # self.main_label.configure(text='Stopping video stream')
 
     #   if not show_video:
     #      start_btn.grid(column=0, row=2)
@@ -404,52 +388,26 @@ class GUIApplication(threading.Thread):
         # Hide the cam.
 
         # Don't access new frames.
-
         self.show_video = False
         self.image_tk = ImageTk.PhotoImage(image=self.img_video)
-        self.main_label.image_tk = self.image_tk
-        self.main_label.configure(image='', text='Image hidden.')
-        # self.main_label.after(1, self.rawVideoStream)
-        # self.main_label.grid(column=0, row=0)
+        #self.main_label.image_tk = self.image_tk
+        #self.main_label.configure(image='', text='Image hidden.')
 
-    def rawVideoStream(self):
-        '''
-        Create a simple setup for testing video stream with GUI. Not working if PoseEstimation is running.
-        :return: None
-        '''
-        print('Show video: (show_video) ', self.show_video)
-        if self.show_video is True:
-            try:
-                self.frame = self.c.getOutputImage(self.v.get())  # currCap.read()
-                if self.frame is not None:
-                    self.cv2image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
-                    self.img_video = Image.fromarray(self.cv2image)
-                    self.image_tk = ImageTk.PhotoImage(image=self.img_video)
-                    # self.main_label.config(height=40)
-                    self.main_label.image_tk = self.image_tk
-                    self.main_label.configure(image=self.image_tk)
-                    self.main_label.after(1, self.rawVideoStream)
-                else:
-                    logging.info("Frame is None.")
-            except AttributeError as e:
-                logging.error(str(e))
+    def showFindPoseStream(self):
+        try:
+            self.frame = self.c.getOutputImage(self.v.get())
+            image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(image)
+            image = ImageTk.PhotoImage(image)
+            self.main_label.configure(image=image)
+            self.main_label.image = image
 
-    def showFindPoseStream(self, frame):
-        logging.debug('Inside posestream')
-        if self.showPoseStream:
-            try:
-                if frame is not None:
-                    self.cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    self.img_video = Image.fromarray(self.cv2image)
-                    self.image_tk = ImageTk.PhotoImage(image=self.img_video)
-                    self.main_label.image_tk = self.image_tk
-                    self.main_label.configure(image=self.image_tk)
-                    # main_label.after(1, videoStream)
-            except AttributeError as e:
-                logging.error(str(e))
-        else:
-            # self.main_label.grid(row=None,column=None)
-            pass
+
+        except AttributeError as e:
+            logging.error(str(e))
+        except cv2.error as e:
+            logging.error(str(e))
+
 
     def showImage(self):
         '''
@@ -484,7 +442,7 @@ class GUIApplication(threading.Thread):
         # Start the main app
         self.poseEstimationIsRunning = True
         self.poseEstmationThread = threading.Thread(target=self.c.startApplication,
-                                                    args=[self.dispContiniusResults, self.doAbortApp], daemon=True)
+                                                    args=[self.dispContinuousResults, self.doAbortApp], daemon=True)
         self.poseEstmationThread.start()
         logging.info('Started application in a own thread.')
 
@@ -503,12 +461,12 @@ class GUIApplication(threading.Thread):
         self.doStopApp = True
         self.poseEstimationIsRunning = False
 
-    def dispContiniusResults(self, poseFrame):
+    def dispContinuousResults(self):
         '''
         Passed to, and called from Connector, while application runs.
         Delivers pose and the "poseframe".
         '''
-        self.showFindPoseStream(poseFrame)
+        self.showFindPoseStream()
 
     def fileClicked(self):
         '''

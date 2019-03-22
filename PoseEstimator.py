@@ -216,7 +216,6 @@ class PoseEstimator():
             out_frame = vision_entity.drawAxis()
             board = self._arucoBoards[0]
             poses = self.getEulerPoses()
-            evec, tvec = poses[0]
             print(poses)
             cv2.putText(out_frame, "Pose: " + str(poses[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
@@ -224,7 +223,10 @@ class PoseEstimator():
                         (0, 0, 255), 2)
             ret = True
         else:
-            out_frame = self.getVisionEntityList()[0].getFrame()
+            if vision_entity is None:
+                out_frame = self.getVEById(camID).getFrame()
+            else:
+                out_frame = vision_entity.getFrame()
         return out_frame
 
     def getRawPreviewImage(self, camID):
