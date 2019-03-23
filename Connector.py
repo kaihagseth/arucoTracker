@@ -16,33 +16,40 @@ class Connector():
     hello
     '''
 
-    def __init__(self):
+    def __init__(self, UI):
         self.logging_setup()
         self.PE = PoseEstimator()
-        self.UI = GUIApplication()
+        self.UI = UI
 
 
     def startApplication(self):
         '''
         Start the UI, and communicate continuous with the GUI while loop is running in separate threads.
         '''
-        self.PE.runPoseEstimator()  # Create all threads and start them
+        doAbort = False
+        runApp = False
         while not doAbort:
-            userInputs = self.UI.readUserInputs()
-            run_pose
-            if not stopApp:
+            camID, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
+            if startCommand:
+                logging.debug("startCommand received")
+                self.PE.createVisionEntities()
+                self.PE.runPoseEstimator()  # Create all threads and start them
+                runApp = True
+            if stopCommand:
+                runApp = False
+                self.PE.stopThreads()
+            if runApp:
                 self.PE.updateBoardPoses()
-                self.PE.getPosePreviewImg(userInputs['camId'])
+                logging.debug("Fetching frame from cam:" + str(camID))
+                self.PE.getPosePreviewImg(camID)
                 poses = self.PE.getEulerPoses()
                 frame = self.PE.getOutputFrame()
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
-                stopApp = userInputs['stopApp']
                 self.UI.updateFields(poses, frame)  # Write relevant information to UI-thread.
             else:
                 time.sleep(0.1)
-        self.PE.stopThreads()
         print('Ended')
 
     def initConnectedCams(self):

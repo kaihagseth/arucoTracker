@@ -70,3 +70,14 @@ def invertTransformationMatrix(RT):
     T1 = -(R1 * T0)  # Find opposite direction of translation vector
     RT1 = np.matrix(np.vstack((np.hstack((R1, T1)), [0, 0, 0, 1])))
     return RT1
+
+def stackChecker(list):
+    """
+    Pops and returns first item of list, or returns False if list is empty.
+    :return: First item of list, or "False" if list is empty
+    """
+    if list:
+        out = list.pop(0)
+    else:
+        out = False
+    return out
