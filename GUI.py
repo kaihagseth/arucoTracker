@@ -46,11 +46,11 @@ class GUIApplication(threading.Thread):
         self.root.style = ttkthemes.ThemedStyle()
         self.root.title('Boat Pose Estimator')
         self.root.geometry('850x750')
-        self.root.configure(background='black')
+        self.root.style.theme_use('black')
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
-        self.root.style.theme_use('black')
+
 
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
@@ -108,6 +108,7 @@ class GUIApplication(threading.Thread):
         self.camPaneTabMain.add(self.midSection_camPaneTabMain)
 
         self.top = PanedWindow(self.midSection_camPaneTabMain)
+        self.top.configure(bg='black')
         # self.top.config(height=60)
         self.midSection_camPaneTabMain.add(self.top, height=500)
         self.main_label = None

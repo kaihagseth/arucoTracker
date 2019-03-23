@@ -158,7 +158,9 @@ class GUILogin():
         :return: None
         '''
         global screen2
-        screen2 = Toplevel(main_window)
+        screen2 = Tk()
+        screen2.style = ttkthemes.ThemedStyle()
+        screen2.style.theme_use('black')
         screen2.title('Login')
         screen2.geometry('300x250')
         screen2.configure()
@@ -204,14 +206,13 @@ class GUILogin():
         main_window.style.theme_use('black')
         main_window.geometry('300x250')
         main_window.title('Boat Pose Estimator 1.0')
-        main_window.configure(background='black')
         main_window.bind('<Return>', self.enterPressed)
         Label(main_window, text='Boat Pose Estimator 1.0', bg='magenta', width='300', height='2', font=('Arial', 13)).pack()
-        Label(main_window, text='', background='black').pack()
+        Label(main_window, text='').pack()
         login_btn = Button(main_window, text='Login', height='2', width='25',relief='groove', command=self.login)
         #login_btn.configure(main_window.style.theme_use('black'))
         login_btn.pack()
-        Label(main_window,text='', background='black').pack()
+        Label(main_window,text='').pack()
         Button(main_window,text='Register', height='2', width='25',relief='groove', command=self.register).pack()
         login_btn.focus_set()
         # invoke the button on the return key
@@ -219,6 +220,7 @@ class GUILogin():
 
         # remove the default behavior of invoking the button with the space key
         main_window.unbind_class("Button", "<Key-space>")
+
         self.login()
         main_window.mainloop()
 
