@@ -361,8 +361,6 @@ class GUIApplication(threading.Thread):
         # Don't access new frames.
         self.show_video = False
         self.image_tk = ImageTk.PhotoImage(image=self.img_video)
-        #self.main_label.image_tk = self.image_tk
-        #self.main_label.configure(image='', text='Image hidden.')
 
     def showFindPoseStream(self):
         try:
@@ -499,11 +497,11 @@ class GUIApplication(threading.Thread):
         """
         camID = self.__displayedCameraIndex
         try:
-            newBoard = self.pushedBoards.pop()
+            newBoard = self.pushedBoards.pop(0)
         except IndexError:
             newBoard = False
         try:
-            resetExtrinsic = self.__resetBoardPosition.pop()
+            resetExtrinsic = self.__resetBoardPosition.pop(0)
         except IndexError:
             resetExtrinsic = False
 
