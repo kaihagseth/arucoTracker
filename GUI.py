@@ -383,7 +383,6 @@ class GUIApplication(threading.Thread):
 
     def showFindPoseStream(self):
         try:
-            self.frame = self.c.getOutputImage(self.cam_index_btn.get())
             image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)

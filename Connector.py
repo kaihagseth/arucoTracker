@@ -28,6 +28,8 @@ class Connector():
         '''
         doAbort = False
         runApp = False
+        time.sleep(5)
+        # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
             camID, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
             if startCommand:
@@ -43,11 +45,12 @@ class Connector():
                 logging.debug("Fetching frame from cam:" + str(camID))
                 self.PE.getPosePreviewImg(camID)
                 poses = self.PE.getEulerPoses()
-                frame = self.PE.getOutputFrame()
+                frame = self.PE.getPosePreviewImg(camID)
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
                 self.UI.updateFields(poses, frame)  # Write relevant information to UI-thread.
+                self.UI.showFindPoseStream()
             else:
                 time.sleep(0.1)
         print('Ended')
