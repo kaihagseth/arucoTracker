@@ -1,21 +1,21 @@
 import threading
 import tkinter as tk
+import logging
+import cv2
 from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
+from VisionEntityClasses.arucoBoard import arucoBoard
 
 from PIL import ImageTk, Image
 
 import GUIDataPlotting
-import copy
-from VisionEntityClasses.Camera import *
-from VisionEntityClasses.arucoBoard import arucoBoard
 
 
 class GUIApplication(threading.Thread):
     global length
 
-    def __init__(self, connector):
+    def __init__(self, cam_list):
         threading.Thread.__init__(self)
 
         msg = 'Thread: ', threading.current_thread().name
@@ -23,11 +23,19 @@ class GUIApplication(threading.Thread):
 
         # Camera variables
         self.counter = 0
-        self.c = connector
-        self.camlist = self.c.initConnectedCams()
-        self.camIDInUse = 1
+        self.cam_list = cam_list
         self.image_tk = None
-        self.frame = None
+
+        # Fields written to by external objects. Should only be read in this object.
+        self.frame = None           # Image frame to be shown in camera window.
+        self.modelPoses = None      # Poses of all currently tracked objects. (Only one at the time for now)
+        self.userBoard = None       # Arucoboard created by user in GUI.
+
+        # Private fields written to via GUI.
+        self.__displayedCameraIndex = tk.IntVar() # Radio buttons controlling which camera feed to show -1 means auto.
+        self.__displayedCameraIndex.set(-1)
+        self.__resetBoardPosition = []            # If this list contains an
+        self.__pushedBoards = []
 
         # GUI Handling flags
         self.doStopApp = False
@@ -150,6 +158,7 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
+        # TODO: Add a "preview" and an "add to tracking list" button?
         self.page_3_frame = Frame(self.page_3)
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
@@ -256,18 +265,12 @@ class GUIApplication(threading.Thread):
         self.calibrate_btn.grid_rowconfigure(1, weight=1)
         self.calibrate_btn.grid_columnconfigure(1, weight=1)
 
-        # Camera temp variables.
-        # cam_list = ['Cam 1', 'Cam 2', 'Cam 3']
-        self.var = IntVar()
-
-        self.v = tk.IntVar()
-        self.v.set(-1)  # initializing the choice, i.e. Python
-
-        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.v, value=-1).pack()
-        for vali, cam in enumerate(self.camlist):
-            tk.Radiobutton(self.left_camPaneTabMain,text=str(vali),
+        # Camera selection variable
+        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.__displayedCameraIndex, value=-1).pack()
+        for vali, cam in enumerate(self.cam_list):
+            tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
                            padx=20,
-                           variable=self.v,
+                           variable=self.__displayedCameraIndex,
                            value=vali).pack()  # grid(column=1,row=0+vali)
 
         # Setu the config tab
@@ -338,11 +341,10 @@ class GUIApplication(threading.Thread):
 
     def resetCamExtrinsic(self):
         '''
-        Reset the cam extrinsic matrixes to the current frame point.
+        Reset the cam extrinsic matrixes to the current frame point. # TODO: Use stack to indicate job done?
         :return:
         '''
-        if self.poseEstimationIsRunning:
-            logging.info()
+        self.resetBoardPosition.append(True)
 
     def stopRawCameraClicked(self):
         '''
@@ -352,14 +354,6 @@ class GUIApplication(threading.Thread):
         self.saveFrame()
         self.show_video = False
 
-        # self.main_label.configure(text='Stopping video stream')
-
-    #   if not show_video:
-    #      start_btn.grid(column=0, row=2)
-    #     stop_btn.grid(column=None, row=None)
-    # elif show_video:
-    #   stop_btn.grid(column=1, row=2)
-    #  start_btn.grid(column=None, row=None)
 
     def hideCamBtnClicked(self):
         # Hide the cam.
@@ -372,28 +366,15 @@ class GUIApplication(threading.Thread):
 
     def showFindPoseStream(self):
         try:
-            self.frame = self.c.getOutputImage(self.v.get())
             image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
             self.main_label.configure(image=image)
             self.main_label.image = image
-
-
         except AttributeError as e:
             logging.error(str(e))
         except cv2.error as e:
             logging.error(str(e))
-
-
-    def showImage(self):
-        '''
-        test to save single frame
-        :return: img
-        '''
-        self.img = ImageTk.PhotoImage(file='images/test_image.png')
-        self.img_label = Label(self.root, image=self.img)
-        self.img_label.grid(column=0, row=0)
 
     # function for saving a single frame
     def saveFrame(self):
@@ -401,7 +382,7 @@ class GUIApplication(threading.Thread):
         Save a single frame from video feed
         :return: jpg
         '''
-        cv2.imwrite('images/frame%d.jpg' % self.counter, self.rawVideoStream())
+        cv2.imwrite('images/frame%d.jpg' % self.counter, self.frame)
 
     def changeCameraID(self, camid):
         print("CHANGING CAMERA ID: Camid to shift to", camid)
@@ -411,24 +392,12 @@ class GUIApplication(threading.Thread):
     def placeGraph(self):
         GUIDataPlotting.plotGraph()
 
-    def startFindPoseApp(self):
-        '''
-        Start the poseestimator in application.
-        :return:
-        '''
-        # Start the main app
-        self.poseEstimationIsRunning = True
-        self.poseEstmationThread = threading.Thread(target=self.c.startApplication,
-                                                    args=[self.dispContinuousResults, self.doAbortApp], daemon=True)
-        self.poseEstmationThread.start()
-        logging.info('Started application in a own thread.')
-
     def doAbortApp(self):
         '''
         Stop the poseestimation running, but (for now), don't stop the application. .
         :return:
         '''
-        return self.doStopApp  # For now
+        return self.doStopApp
 
     def setFindPoseFalse(self):
         '''
@@ -455,7 +424,8 @@ class GUIApplication(threading.Thread):
     def savePDFParam(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator
-        TODO: aruco pose estimator should no longer be used. arucoboard should be used in stead
+        TODO: This function should create and display an image of an arucoboard. Another function should pass this
+        TODO: to an output-stack.
         :return:
         '''
         length_value = self.length_entry.get()
@@ -467,7 +437,7 @@ class GUIApplication(threading.Thread):
         gap_value = self.gap_entry.get()
         gap_value = int(gap_value)
 
-        self.board = arucoBoard(length_value, width_value, size_value, gap_value)
+        self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
         self.board.writeBoardToPDF()
 
     def validate(self, string):
@@ -512,3 +482,28 @@ class GUIApplication(threading.Thread):
             self.gap_entry.delete(0, 'end')  # delete all the text in the entry
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
+
+    def updateFields(self, poses, frame):
+        """
+        Update GUI-objects fields outputframe and six axis pose.
+        :param poses: The poses of all models tracked.
+        :param frame: The frame to display in camera view.
+        :return: None
+        """
+        self.modelPoses = poses
+        self.frame = frame
+
+    def readUserInputs(self):
+        """
+        :return: Variables edited by the user in the GUI relevant outside the GUI.
+        """
+        camID = self.__displayedCameraIndex
+        try:
+            newBoard = self.pushedBoards.pop()
+        except IndexError:
+            newBoard = False
+        try:
+            resetExtrinsic = self.__resetBoardPosition.pop()
+        except IndexError:
+            resetExtrinsic = False
+

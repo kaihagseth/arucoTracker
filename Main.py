@@ -2,7 +2,8 @@ from Connector import Connector
 from GUI import GUIApplication
 from GUILogin import GUILogin
 
-c = Connector()
-mainGUI = GUIApplication(connector=c)
+
+mainGUI = GUIApplication()
+c = Connector(mainGUI)
 guil = GUILogin(mainGUI=mainGUI)
 guil.startLogin()

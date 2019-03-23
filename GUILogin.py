@@ -11,7 +11,6 @@ class GUILogin():
     Login before accessing GUI.
     '''
     def __init__(self, mainGUI):
-
         self.mainGUI = mainGUI
 
     def startMainApplication(self):
