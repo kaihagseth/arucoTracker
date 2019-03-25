@@ -255,11 +255,35 @@ class PoseEstimator():
         else:
             return None, None, None
 
-    def getStereoPose(self):
+    def getStereoPose(self, positions, ids):
         """
         TODO: use positions of known points on model to determine euler angles by creating 2 or more directional vectors
         :return:
         """
+        m_0 = np.array([])
+        m_6 = np.array([])
+        m_8 = np.array([])
+        for i in range(np.size(ids)):
+            if ids[i] == 0:
+                m_0 = positions[:, i]
+            if ids[i] == 6:
+                m_6 = positions[:, i]
+            if ids[i] == 0:
+                m_8 = positions[:, i]
+        if m_0.size and m_6.size and m_8.size:
+            vec_x = np.subtract(m_8, m_6)
+            vec_y = np.subtract(m_0, m_6)
+            vec_z = np.cross(vec_x, vec_y)
+
+            r = np.vstack((vec_x, vec_y, vec_z))
+
+            euler = rotationMatrixToEulerAngles(r)
+
+            return euler
+        else:
+            return np.array([-1.0, -1.0, -1.0])
+
+
 
     def getEulerPoses(self):
         """
@@ -306,9 +330,11 @@ class PoseEstimator():
             e = self.getEulerPoses()
             cv2.putText(out_frame, str(e[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
-            p = self.getStereoVisionPosition()[2]
-            if p is not None:
-                cv2.putText(out_frame, str(p.astype(int)), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, .6,
+            positions, ids, origo = self.getStereoVisionPosition()
+            euler = self.getStereoPose(positions, ids)
+            pose = np.hstack((origo, euler))
+            if pose is not None:
+                cv2.putText(out_frame, str(pose.astype(int)), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, .6,
                             (0, 0, 255), 2)
             ret = True
         else:
