@@ -209,7 +209,6 @@ class GUILogin():
         Label(main_window, text='Boat Pose Estimator 1.0', bg='magenta', width='300', height='2', font=('Arial', 13)).pack()
         Label(main_window, text='').pack()
         login_btn = Button(main_window, text='Login', height='2', width='25',relief='groove', command=self.login)
-        #login_btn.configure(main_window.style.theme_use('black'))
         login_btn.pack()
         Label(main_window,text='').pack()
         Button(main_window,text='Register', height='2', width='25',relief='groove', command=self.register).pack()

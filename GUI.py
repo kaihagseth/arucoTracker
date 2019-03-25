@@ -257,7 +257,7 @@ class GUIApplication(threading.Thread):
                                 command=lambda: [self.sendStartSignal()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
         self.stop_btn = Button(self.camFrameSettingSection, text='Stop',
-                               command=lambda: [self.__stop_application.append(True)])
+                               command=lambda: [self.sendStopSignal()])
         self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked)
         self.camFrameSettingSection.pack()
         self.calibrate_btn = Button(self.page_2, text='Calibrate', command=None)
@@ -376,10 +376,7 @@ class GUIApplication(threading.Thread):
         self.show_video = False
 
     def hideCamBtnClicked(self):
-        # Hide the cam.
-        # Don't access new frames.
-        self.show_video = False
-        self.image_tk = ImageTk.PhotoImage(image=self.img_video)
+        self.frame = None
 
     def showFindPoseStream(self):
         try:
@@ -549,4 +546,8 @@ class GUIApplication(threading.Thread):
 
     def sendStartSignal(self):
         self.__start_application.append(True)
-        logging.debug("Start signal sent")
+        logging.debug("Start signal sent.")
+
+    def sendStopSignal(self):
+        self.__stop_application.append(True)
+        logging.debug("Stop signal sent.")
