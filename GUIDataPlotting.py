@@ -1,15 +1,9 @@
 import sys
 import tkinter as tk
-from mpl_toolkits.mplot3d import axes3d
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.figure import Figure
 import numpy as np
-import Connector
 import csv
-import logging
-
 
 class dataReading:
     def __init__(self, top=None):

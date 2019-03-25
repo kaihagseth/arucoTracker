@@ -5,51 +5,54 @@ from logging.config import dictConfig
 import time
 from PoseEstimator import PoseEstimator
 import threading
-from GUILogin import GUILogin
+from GUI import GUIApplication
 
 class Connector():
     '''
     Connect the UI with rest of the application.
     Start the GUI.
+    # TODO: Refactor connector and GUI classes.
+    #
     hello
     '''
 
-    def __init__(self):
+    def __init__(self, UI):
         self.logging_setup()
         self.PE = PoseEstimator()
+        self.UI = UI
 
 
-    def startApplication(self, dispResFx, stopAppFx):
+    def startApplication(self):
         '''
-        Start the application, and communicate continius with the GUI while loop is running in seperate threads.
-        #TODO: Would it be better to return pose and pass stop message in function call?
-        :param dispResFx: Function to display result with
-        :param doAbortFx: Function to abort the application
+        Start the UI, and communicate continuous with the GUI while loop is running in separate threads.
         '''
-        self.PE.runPoseEstimator() # Create all threads and start them
-        logging.info('Running startApplication()')
-        stopApp = False
         doAbort = False
-        msg = 'Thread: ', threading.current_thread().name
-        logging.info(msg)
+        runApp = False
+        time.sleep(5)
+        # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            if not stopApp:
-                # Get the pose(s) from all cams.
+            camID, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
+            if startCommand:
+                logging.debug("startCommand received")
+                self.PE.createVisionEntities()
+                self.PE.runPoseEstimator()  # Create all threads and start them
+                runApp = True
+            if stopCommand:
+                runApp = False
+                self.PE.stopThreads()
+            if runApp:
                 self.PE.updateBoardPoses()
+                logging.debug("Fetching frame from cam:" + str(camID))
+                self.PE.getPosePreviewImg(camID)
                 poses = self.PE.getEulerPoses()
-                for pose in poses:
-                    tvec, evec = pose # TODO: Get more poses
-                try:
-                    self.PE.writeCsvLog(tvec, evec)
-                except (AttributeError, TypeError):
-                    raise AssertionError("Raw pose was returned in an invalid format.")
-                # Display the pose(s).
-                dispResFx()
+                frame = self.PE.getPosePreviewImg(camID)
+                # Get the pose(s) from all cams.
+                self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
-                stopApp = stopAppFx()
+                self.UI.updateFields(poses, frame)  # Write relevant information to UI-thread.
+                self.UI.showFindPoseStream()
             else:
                 time.sleep(0.1)
-        self.PE.stopThreads()
         print('Ended')
 
     def initConnectedCams(self):
@@ -86,18 +89,6 @@ class Connector():
             i = VE.getCam().getSrc()
             camlist.append(i)
         return camlist
-
-    def getPose(self):
-        return self.PE.getEulerPoses()
-
-    def getOutputImage(self, camID=-1):
-        """
-        Return image with overlay from pose estimator. Select cam with camID, or set camID to -1 for automatic switching
-        between cameras.
-        :param camID:
-        :return:
-        """
-        return self.PE.getPosePreviewImg(camID)
 
 
 if __name__ == '__main__':

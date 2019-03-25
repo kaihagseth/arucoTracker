@@ -1,20 +1,20 @@
 import threading
 import tkinter as tk
+import logging
+import cv2
 import ttkthemes
 from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
 from PIL import ImageTk, Image
 import GUIDataPlotting
-import Connector
-from VisionEntityClasses.Camera import *
 from VisionEntityClasses.arucoBoard import arucoBoard
 
 
 class GUIApplication(threading.Thread):
     global length
 
-    def __init__(self, connector):
+    def __init__(self, cam_list):
         threading.Thread.__init__(self)
 
         msg = 'Thread: ', threading.current_thread().name
@@ -22,11 +22,20 @@ class GUIApplication(threading.Thread):
 
         # Camera variables
         self.counter = 0
-        self.c = connector
-        self.camlist = self.c.initConnectedCams()
-        self.camIDInUse = 1
+        self.cam_list = cam_list
         self.image_tk = None
-        self.frame = None
+
+        # Fields written to by external objects. Should only be read in this object.
+        self.frame = None           # Image frame to be shown in camera window.
+        self.modelPoses = None      # Poses of all currently tracked objects. (Only one at the time for now)
+        self.userBoard = None       # Arucoboard created by user in GUI.
+
+        # Private fields written to via GUI.
+        self.__displayedCameraIndex = None
+        self.__resetBoardPosition = []            # If this list contains an
+        self.__pushedBoards = []
+        self.__start_application = []
+        self.__stop_application = []
 
         # GUI Handling flags
         self.doStopApp = False
@@ -42,6 +51,7 @@ class GUIApplication(threading.Thread):
         self.camIDInUse = 0
 
         # Set up main window.
+
         self.root = Tk()
         self.root.style = ttkthemes.ThemedStyle()
         self.root.title('Boat Pose Estimator')
@@ -153,6 +163,7 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
+        # TODO: Add a "preview" and an "add to tracking list" button?
         self.page_3_frame = Frame(self.page_3)
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
@@ -242,9 +253,11 @@ class GUIApplication(threading.Thread):
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='gray80')  # , orient=HORIZONTAL)
 
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start', command=self.startFindPoseApp)
+        self.start_btn = Button(self.camFrameSettingSection, text='Start',
+                                command=lambda: [self.sendStartSignal()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', command=self.setFindPoseFalse)
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop',
+                               command=lambda: [self.sendStopSignal()])
         self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked)
         self.camFrameSettingSection.pack()
         self.calibrate_btn = Button(self.page_2, text='Calibrate', command=None)
@@ -258,17 +271,16 @@ class GUIApplication(threading.Thread):
         self.calibrate_btn.grid(column=1, row=1)
         self.calibrate_btn.grid_rowconfigure(1, weight=1)
         self.calibrate_btn.grid_columnconfigure(1, weight=1)
-
-        # Variable for camera index
-        self.cam_index_btn = tk.IntVar()
-        self.cam_index_btn.set(-1)  # initializing the choice, i.e. Python
-
-        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.cam_index_btn, value=-1).pack()
-        for vali, cam in enumerate(self.camlist):
+        self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show -1 means auto.
+        self.__displayedCameraIndex.set(-1)
+        # Camera selection variable
+        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.__displayedCameraIndex, value=-1).pack()
+        for vali, cam in enumerate(self.cam_list):
             tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
                            padx=20,
-                           variable=self.cam_index_btn,
-                           value=vali).pack()  # grid(column=1,row=0+vali)
+                           variable=self.__displayedCameraIndex, value=vali).pack()  #
+            # grid(column=1,row=0+vali)
+
 
         # invoke the button on the return key
         self.root.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
@@ -350,11 +362,10 @@ class GUIApplication(threading.Thread):
 
     def resetCamExtrinsic(self):
         '''
-        Reset the cam extrinsic matrixes to the current frame point.
+        Reset the cam extrinsic matrixes to the current frame point. # TODO: Use stack to indicate job done?
         :return:
         '''
-        if self.poseEstimationIsRunning:
-            logging.info()
+        self.resetBoardPosition.append(True)
 
     def stopRawCameraClicked(self):
         '''
@@ -365,16 +376,10 @@ class GUIApplication(threading.Thread):
         self.show_video = False
 
     def hideCamBtnClicked(self):
-        # Hide the cam.
-        # Don't access new frames.
-        self.show_video = False
-        self.image_tk = ImageTk.PhotoImage(image=self.frame)
-        #self.main_label.image_tk = self.image_tk
-        #self.main_label.configure(image='', text='Image hidden.')
+        self.frame = None
 
     def showFindPoseStream(self):
         try:
-            self.frame = self.c.getOutputImage(self.cam_index_btn.get())
             image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
@@ -400,7 +405,7 @@ class GUIApplication(threading.Thread):
         Save a single frame from video feed
         :return: jpg
         '''
-        cv2.imwrite('images/frame%d.jpg' % self.counter, self.rawVideoStream())
+        cv2.imwrite('images/frame%d.jpg' % self.counter, self.frame)
 
     def changeCameraID(self, camid):
         print("CHANGING CAMERA ID: Camid to shift to", camid)
@@ -410,24 +415,12 @@ class GUIApplication(threading.Thread):
     def placeGraph(self):
         GUIDataPlotting.plotGraph()
 
-    def startFindPoseApp(self):
-        '''
-        Start the poseestimator in application.
-        :return:
-        '''
-        # Start the main app
-        self.poseEstimationIsRunning = True
-        self.poseEstmationThread = threading.Thread(target=self.c.startApplication,
-                                                    args=[self.dispContinuousResults, self.doAbortApp], daemon=True)
-        self.poseEstmationThread.start()
-        logging.info('Started application in a own thread.')
-
     def doAbortApp(self):
         '''
         Stop the poseestimation running, but (for now), don't stop the application. .
         :return:
         '''
-        return self.doStopApp  # For now
+        return self.doStopApp
 
     def setFindPoseFalse(self):
         '''
@@ -454,7 +447,8 @@ class GUIApplication(threading.Thread):
     def savePDFParam(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator
-        TODO: aruco pose estimator should no longer be used. arucoboard should be used in stead
+        TODO: This function should create and display an image of an arucoboard. Another function should pass this
+        TODO: to an output-stack.
         :return:
         '''
         length_value = self.length_entry.get()
@@ -466,7 +460,7 @@ class GUIApplication(threading.Thread):
         gap_value = self.gap_entry.get()
         gap_value = int(gap_value)
 
-        self.board = arucoBoard(length_value, width_value, size_value, gap_value)
+        self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
         self.board.writeBoardToPDF()
 
     def validate(self, string):
@@ -492,9 +486,6 @@ class GUIApplication(threading.Thread):
         '''
         return self.validate(P)
 
-    def getPoses(self):
-        poses = self.c.PE.getEulerPoses()
-        return poses
 
     # This function needs improvement so that it only checks the entry that is clicked instead of all at the same time.
     def on_entry_click(self, event):
@@ -515,3 +506,48 @@ class GUIApplication(threading.Thread):
             self.gap_entry.delete(0, 'end')  # delete all the text in the entry
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
+
+    def updateFields(self, poses, frame):
+        """
+        Update GUI-objects fields outputframe and six axis pose.
+        :param poses: The poses of all models tracked.
+        :param frame: The frame to display in camera view.
+        :return: None
+        """
+        self.modelPoses = poses
+        self.frame = frame
+
+    def readUserInputs(self):
+        """
+        Exports all user commands relevant outside of the GUI
+        :return: camID: index of selected camera. -1 if auto. newBoard: arucoboard created and pushed from GUI
+        resetExtrinsic: Command to reset extrinsic matrices of cameras.
+        startCommand: Command to start PoseEstimator
+        stopCommand: Command to stop PoseEstimator
+        """
+        camID = self.__displayedCameraIndex.get()
+        newBoard = self.stackChecker(self.__pushedBoards)
+        resetExtrinsic = self.stackChecker(self.__resetBoardPosition)
+        startCommand = self.stackChecker(self.__start_application)
+        stopCommand = self.stackChecker(self.__stop_application)
+        return camID, newBoard, resetExtrinsic, startCommand, stopCommand
+
+    @staticmethod
+    def stackChecker(list):
+        """
+        Pops and returns first item of list, or returns False if list is empty.
+        :return: First item of list, or "False" if list is empty
+        """
+        if list:
+            out = list.pop(0)
+        else:
+            out = False
+        return out
+
+    def sendStartSignal(self):
+        self.__start_application.append(True)
+        logging.debug("Start signal sent.")
+
+    def sendStopSignal(self):
+        self.__stop_application.append(True)
+        logging.debug("Stop signal sent.")

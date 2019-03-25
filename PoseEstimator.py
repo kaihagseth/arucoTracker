@@ -53,7 +53,7 @@ class PoseEstimator():
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
         if wantedCams is None:
-            unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
+            unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
         else: # Wanted cams specified in GUI.
             pass
         logging.info('Inside findConnectedCams()')
@@ -94,13 +94,19 @@ class PoseEstimator():
         VE = self.getVEById(index)
         self.VisionEntityList.remove(VE)
 
-    def writeCsvLog(self, tvec, evec):
+    def writeCsvLog(self, poses):
         """
         Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
+        #TODO: rewrite to accommodate for more than one pose
         :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
         :return: None
         """
+        if poses:
+            for pose in poses:
+                evec, tvec = pose
+        else:
+            evec, tvec = None, None
         if tvec is None:
             tvec = ['-', '-', '-']
         if evec is None:
