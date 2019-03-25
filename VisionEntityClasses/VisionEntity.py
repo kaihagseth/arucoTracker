@@ -1,6 +1,7 @@
 import cv2
-
+import numpy as np
 import exceptions as exc
+from VisionEntityClasses.helperFunctions import invertTransformationMatrix
 from VisionEntityClasses.Camera import Camera
 
 
@@ -19,10 +20,8 @@ class VisionEntity:
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
-        self.__Mrvec = None  # Camera - Model rvec - Should only be written to from thread!!
-        self.__Mtvec = None  # Camera - Model tvec - Should only be written to from thread!!
-        self._Crvec = None  # World - Camera rvec
-        self._Ctvec = None  # World - Camera tvec
+        self._ModelWrtCam = None  # Transformation model --> camera
+        self._CamWrtWorld = None  # Transformation camera --> world
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -77,13 +76,6 @@ class VisionEntity:
         self._camera.setDistortionCoefficients(distortion_coefficients)
 
 
-    def getCameraStream(self):
-        """
-        returns Video stream from Camera
-        :return: Video stream from camera.
-        """
-        return self._camera.getStream()
-
     def getUndistortedFrame(self):
         """
         Returns an undistorted frame from the camera based on the calibration. This function seems redundant for the
@@ -128,8 +120,7 @@ class VisionEntity:
         Set model pose to None.
         :return:
         """
-        self.__Mtvec = None
-        self.__Mrvec = None
+        self._ModelWrtCam = None
 
     def setCameraPosition(self, board):
         """
@@ -138,7 +129,7 @@ class VisionEntity:
         :param cam: Camera to be calibrated.
         :return:
         """
-        self._Crvec, self._Ctvec = cv2.composeRT(-board.getRvec(), board.getTvec(), -self.__Mrvec, -self.__Mtvec, )[0:2]
+        self._CamWrtWorld = board.getModelWrtWorld()*invertTransformationMatrix(self._ModelWrtCam)
 
     def detectMarkers(self, dictionary):
         """
@@ -172,29 +163,56 @@ class VisionEntity:
         :param board: Board yo estomate
         :return: None
         """
-        _, self.__Mrvec, self.__Mtvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
+        _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                                     self.intrinsic_matrix, self.getDistortionCoefficients())
+        if rvec is not None:
+            R = np.matrix(cv2.Rodrigues(rvec)[0])
+            P = np.reshape(np.matrix(tvec), (3, 1))
+            T = np.matrix(np.eye(4, 4))
+            T[0:3, 0:3] = R
+            T[0:3, 3] = P
+            self._ModelWrtCam = T
 
-    def drawAxis(self, frame):
+
+    def drawAxis(self):
         """
         Draws axis cross on image frame
         :param frame: Image frame to be drawn on
         :param vision_entity: Vision entity the frame came from.
         :return:
         """
-        return cv2.aruco.drawAxis(frame, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                  self.__Mrvec, self.__Mtvec, 100)
+        R = cv2.Rodrigues(self._ModelWrtCam[0:3, 0:3])[0]
+        P = self._ModelWrtCam[0:3, 3].T
+        image = self.getFrame()
+        image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
+        image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
+                                  R, P, 100)
 
-    def getPoses(self):
+        return image
+    def getModelWrtCam(self):
         """
         Returns pose from private fields.
         :return: rotation and translation vectors from camera to boards.
         """
-        return self.__Mrvec, self.__Mtvec
+        return self._ModelWrtCam
 
-    def getCameraPose(self):
+    def getCamWrtWorld(self):
         """
         Returns camera pose
         :return: Rotation and translation vectors for cameras pose.
         """
-        return self._Crvec, self._Ctvec
+        return self._CamWrtWorld
+
+    def getCorners(self):
+        """
+        Returns corners
+        :return: corners of aruco markers in image coordinates
+        """
+        return self.__corners
+
+    def getIds(self):
+        """
+        returns aruco ids
+        :return:
+        """
+        return self.__ids

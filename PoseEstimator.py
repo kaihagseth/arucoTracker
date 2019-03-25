@@ -6,7 +6,7 @@ import time
 import cv2
 import numpy as np
 from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
-from VisionEntityClasses.helperFunctions import toMatrix
+from VisionEntityClasses.helperFunctions import invertTransformationMatrix
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
 
@@ -78,6 +78,7 @@ class PoseEstimator():
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
             print('VE start')
+            VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             logging.debug('Passing thread creation.')
             print()
@@ -147,14 +148,14 @@ class PoseEstimator():
                 ve.grabFrame()
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera.
-                if board.getRvec() is None and ve.Mrvec is not None:
+                if board.getModelWrtWorld() is None and ve.getModelWrtCam() is not None:
                     print("Setting first position")
                     board.setFirstBoardPosition(ve)
                     board.isVisible = True
                     self._master_entity = ve
 
             # If the master cam failed to calculate a pose, another camera is set as master.
-            if self._master_entity is None or self._master_entity.Mrvec is None:
+            if self._master_entity is None or self._master_entity.getModelWrtCam() is None:
                 self._master_entity = self.findNewMasterCam()
                 continue
             else:
@@ -166,16 +167,99 @@ class PoseEstimator():
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                if ve.Crvec is None and ve.Mrvec is not None and self._master_entity.Mrvec is not None and ve is not \
+                if ve.getCamWrtWorld() is None and ve.getModelWrtCam() is not None and self._master_entity.getModelWrtCam() is not None and ve is not \
                         self._master_entity:
                     ve.setCameraPosition(board)
 
             # If the master camera cannot see the board, but another calibrated camera can, the calibrated camera becomes
             # the new master camera
             for ve in self.getVisionEntityList():
-                if ve.Mrvec is not None and ve.Crvec is not None and self._master_entity.Mrvec is None:
+                if ve.getModelWrtCam() is not None and ve.getCamWrtWorld() is not None and self._master_entity.getModelWrtCam() is None:
                     self._master_entity = ve
                     break
+
+    def getStereoVisionPosition(self):
+        """
+        Generates 3D positions with regard to world origin for multiple aruco markers by using images from 2
+        cameras
+        :return: positions of markers 3xN numpy array and aruco marker ids 1xN numpy array
+        """
+
+        imagepoints1 = np.array([])# Image points camera 1
+        imagepoints2 = np.array([])# Image points camera 2
+        idlist = np.array([])
+        ve = self.getVisionEntityList()
+        if ve[0].getIds() is not None and ve[1].getIds() is not None:
+            for i in range(len(ve[0].getIds())):
+                for j in range(len(ve[1].getIds())):
+                    if ve[0].getIds()[i] == ve[1].getIds()[j]:
+                        imagepoints1 = np.hstack((imagepoints1, ve[0].getCorners()[i][0, 3, 0:2].reshape(-1, 1))) \
+                            if imagepoints1.size else ve[0].getCorners()[i][0, 3, 0:2].reshape(-1, 1)
+                        imagepoints2 = np.hstack((imagepoints2, ve[1].getCorners()[j][0, 3, 0:2].reshape(-1, 1))) \
+                            if imagepoints2.size else ve[1].getCorners()[j][0, 3, 0:2].reshape(-1, 1)
+                        idlist = np.hstack((idlist, ve[0].getIds()[i])) if idlist.size else \
+                            ve[0].getIds()[i]
+
+        intrinsic1 = ve[0].intrinsic_matrix
+        intrinsic2 = ve[1].intrinsic_matrix
+
+        # Calculate projection matrix for camera 1
+        if ve[0].getCamWrtWorld() is not None:
+            extrinsic1 = invertTransformationMatrix(ve[0].getCamWrtWorld())
+            extrinsic1 = extrinsic1[0:3, :]
+            projection1 = intrinsic1 * extrinsic1  # Projection matrix camera 1
+        else:
+            projection1 = None
+
+        # Calculate projection matrix for camera 2
+        if ve[0].getCamWrtWorld() is not None:
+            extrinsic2 = invertTransformationMatrix(ve[1].getCamWrtWorld())
+            extrinsic2 = extrinsic2[0:3, :]
+            projection2 = intrinsic2 * extrinsic2  # Projection matrix camera 2
+        else:
+            projection2 = None
+
+        if imagepoints1.size and projection1 is not None and projection2 is not None:
+            positions_wrt_cam = cv2.triangulatePoints(projection1, projection2, imagepoints1, imagepoints2)
+
+            # Remove scaling
+            positions_wrt_cam[0, :] = np.divide(positions_wrt_cam[0, :], positions_wrt_cam[3, :])
+            positions_wrt_cam[1, :] = np.divide(positions_wrt_cam[1, :], positions_wrt_cam[3, :])
+            positions_wrt_cam[2, :] = np.divide(positions_wrt_cam[2, :], positions_wrt_cam[3, :])
+            positions_wrt_cam[3, :] = np.divide(positions_wrt_cam[3, :], positions_wrt_cam[3, :])
+
+
+            # Transformation from camera coordinates to world coordinates
+            #cam1_wrt_world = ve[0].getCamWrtWorld()
+            #hom_positions = np.zeros((4, np.size(positions_wrt_cam, 1)), dtype=float)
+            #for i in range(np.size(positions_wrt_cam, 1)):
+            #    hom_positions[:, i] = np.matmul(cam1_wrt_world, positions_wrt_cam[:, i])
+            #
+            #positions = hom_positions[0:3, :]
+
+            # non-homogeneous coordinates
+            positions = positions_wrt_cam[0:3, :]
+
+            # TODO: This is just for testing with display, remove when no longer needed
+            for i in range(np.size(idlist)):
+                # Find 3DoF coord of bottom right corner of marker N
+                if idlist[i] == 6: # N = 6
+                    test_marker = positions[:, i]
+                    break
+                else:
+                    test_marker = None
+
+            # Return 3DoF positions and corresponding marker ids
+            return positions, idlist, test_marker
+
+        else:
+            return None, None, None
+
+    def getStereoPose(self):
+        """
+        TODO: use positions of known points on model to determine euler angles by creating 2 or more directional vectors
+        :return:
+        """
 
     def getEulerPoses(self):
         """
@@ -185,8 +269,11 @@ class PoseEstimator():
         poses = []
         for board in self._arucoBoards:
             try:
-                tvec = np.array(board.getTvec(), dtype=int)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getRvec()))).astype(int)
+                #tvec = np.array(board.getTvec(), dtype=int)
+                #evec = np.rad2deg(rotationMatrixToEulerAngles(toMatrix(board.getRvec()))).astype(int)
+                T = board.getModelWrtWorld()
+                tvec = np.asarray(T[0:3,3]).reshape(-1).astype(int)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(T[0:3, 0:3])).reshape(-1).astype(int)
             except TypeError:
                 tvec = None
                 evec = None
@@ -202,23 +289,34 @@ class PoseEstimator():
         :return: master cam
         """
         for ve in self.getVisionEntityList():
-            if ve.Mrvec is not None and ve.Crvec is not None:
+            if ve.getModelWrtCam is not None and ve.getCamWrtWorld is not None:
                 return ve
         return None
 
     def getPosePreviewImg(self):
         """
-        Returns a pose preview image from master camera.
+        Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
+        index 0.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        if self._master_entity is not None and self._master_entity.corners is not None and\
-                self._master_entity.Mrvec is not None:
-            ret, out_frame = self._master_entity.retrieveFrame()
-            out_frame = cv2.aruco.drawDetectedMarkers(out_frame, self._master_entity.corners, self._master_entity.ids)
-            out_frame = self._master_entity.drawAxis(out_frame)
+
+        if self._master_entity is not None and self._master_entity.getCorners() is not None and\
+                self._master_entity.getModelWrtCam() is not None:
+            out_frame = self._master_entity.drawAxis()
+            e = self.getEulerPoses()
+            cv2.putText(out_frame, str(e[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                        (0, 0, 255), 2)
+            p = self.getStereoVisionPosition()[2]
+            if p is not None:
+                cv2.putText(out_frame, str(p.astype(int)), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, .6,
+                            (0, 0, 255), 2)
+            ret = True
         else:
             out_frame = self.getVisionEntityList()[0].getFrame()
             ret = True
+
+        cv2.imshow('demo', out_frame)
+        cv2.waitKey(1)
         return ret, out_frame
 
     def stopThreads(self):
@@ -228,3 +326,4 @@ class PoseEstimator():
         """
         for VE in self.getVisionEntityList():
             VE.runThread = False
+
