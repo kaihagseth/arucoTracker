@@ -10,7 +10,7 @@ class dataReading:
         '''This class configures and populates the data window.
                     top is the toplevel containing window.'''
 
-        _bgcolor = '#d9d9d9'  # X11 color: 'gray85'
+        _bgcolor = '#424242'  # X11 color: 'gray85'
         _fgcolor = '#d9d9d9'  # X11 color: 'red'
         _compcolor = '#d9d9d9'  # X11 color: 'gray85'
         _ana1color = '#d9d9d9'  # X11 color: 'gray85'
@@ -26,7 +26,7 @@ class dataReading:
         self.frame_1.configure(relief='groove')
         self.frame_1.configure(borderwidth='2')
         self.frame_1.configure(relief='groove')
-        self.frame_1.configure(background='#000000')
+        self.frame_1.configure(background='#424242')
         self.frame_1.configure(width=565)
 
         self.entry_x = tk.Text(self.frame_1)

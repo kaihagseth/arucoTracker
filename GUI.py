@@ -107,40 +107,43 @@ class GUIApplication(threading.Thread):
         self.root.config(menu=self.menu)
 
         # Camera Page: Configure PanedWindows
-        self.camPaneTabMain = PanedWindow(self.page_1, bg='gray40')
+        self.camPaneTabMain = PanedWindow(self.page_1)
+        self.camPaneTabMain.configure(bg='#424242')
         self.camPaneTabMain.pack(fill=BOTH,
                                  expand=True)  # camPaneTabMain.pack(page_1)#(row=0, column=0,columnspan=1,rowspan=1,sticky='NESW')
 
         self.left_camPaneTabMain = Label(self.camPaneTabMain)  # , text="left pane")
+        self.left_camPaneTabMain.configure(bg='#424242')
         self.camPaneTabMain.add(self.left_camPaneTabMain)
 
         self.midSection_camPaneTabMain = PanedWindow(self.camPaneTabMain, orient=VERTICAL, bg='gray80')
         self.camPaneTabMain.add(self.midSection_camPaneTabMain)
 
         self.top = PanedWindow(self.midSection_camPaneTabMain)
-        self.top.configure(bg='black')
+        self.top.configure(bg='#424242')
         # self.top.config(height=60)
         self.midSection_camPaneTabMain.add(self.top, height=500)
         self.main_label = None
         self.main_label = Label(self.top, text='Camera Views')
-        self.main_label.config(height=480)
+        self.main_label.config(height=480, bg='#424242')
         self.main_label.grid(column=0, row=0)
 
         self.bottom = PanedWindow(self.midSection_camPaneTabMain)
-        self.bottom.config(height=20)
+        self.bottom.configure(height=20, bg='#424242')
         self.midSection_camPaneTabMain.add(self.bottom, height=50)
 
         self.poseFontType = "Courier"
         self.poseFontSize = 32
-        self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Pose:",
+        self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Pose:", bg='#424242', fg='white',
                                                   font=(self.poseFontType, self.poseFontSize))
         self.shipPoseLabel_camPaneTabMain.grid(column=0, row=0)
 
         self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)  # , orient=HORIZONTAL)
+        self.dispPoseBunker_camPaneTabMain.configure(bg='#424242')
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1, columnspan=6)
 
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
-        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='x',
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable='x', bg='orange',
                                           font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispX_camPaneTabMain.grid(column=0, row=0)
         self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='y',bg='red',fg='white',
@@ -159,7 +162,7 @@ class GUIApplication(threading.Thread):
                                             font=(self.poseFontType, self.poseFontSize), padx=25)
         self.dispYaw_camPaneTabMain.grid(column=2, row=1)
 
-        self.second_label = Label(self.page_2, text='Camera Calibration')
+        self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
@@ -230,19 +233,17 @@ class GUIApplication(threading.Thread):
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
         self.btn_frame = Frame(self.page_3)
+        self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
                               command=lambda: [self.savePDFParam()])
+        self.pdf_btn.configure(bg='#424242', fg='white')
         self.pdf_btn.pack(side=BOTTOM)
 
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
         self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
-        self.page_4_frame.configure(relief='groove')
-        self.page_4_frame.configure(borderwidth='2')
-        self.page_4_frame.configure(relief='groove')
-        self.page_4_frame.configure(background='#000000')
-        self.page_4_frame.configure(width=565)
+        self.page_4_frame.configure(relief='groove', borderwidth='2', background='#424242', width=565)
 
         # TODO:Improve so that we dont have to catch error for wrong index.
         try:
@@ -250,22 +251,25 @@ class GUIApplication(threading.Thread):
         except IndexError:
             logging.info('Sketchy, but OK.')
 
-        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='gray80')  # , orient=HORIZONTAL)
+        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242')  # , orient=HORIZONTAL)
+        #self.camFrameSettingSection.configure(bg='#424242')
 
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start',
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='#424242', fg='white',
                                 command=lambda: [self.sendStartSignal()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop',
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='#424242', fg='white',
                                command=lambda: [self.sendStopSignal()])
-        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked)
+        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,
+                                  bg='#424242', fg='white',)
         self.camFrameSettingSection.pack()
-        self.calibrate_btn = Button(self.page_2, text='Calibrate', command=None)
+        self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
 
         self.start_btn.grid(column=0, row=0)
         self.stop_btn.grid(column=1, row=0)
         self.hidecam_btn.grid(column=2, row=0)
         self.availCamsLabel = Label(self.left_camPaneTabMain, text='Available cameras: ')
+        self.availCamsLabel.configure(bg='#424242',fg='white')
         self.availCamsLabel.pack()
 
         self.calibrate_btn.grid(column=1, row=1)
@@ -274,10 +278,11 @@ class GUIApplication(threading.Thread):
         self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show -1 means auto.
         self.__displayedCameraIndex.set(-1)
         # Camera selection variable
-        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=20, variable=self.__displayedCameraIndex, value=-1).pack()
+        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
+                       bg='#424242', fg='white').pack()
         for vali, cam in enumerate(self.cam_list):
             tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
-                           padx=20,
+                           padx=20,bg='#424242', fg='white',
                            variable=self.__displayedCameraIndex, value=vali).pack()  #
             # grid(column=1,row=0+vali)
 
@@ -300,7 +305,7 @@ class GUIApplication(threading.Thread):
         # Configuration setup
 
     def setupConfigTab(self):
-        self.configPaneTabMain = PanedWindow(self.page_5, bg='gray40')
+        self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
 
         # Create paned windows
