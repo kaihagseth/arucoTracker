@@ -276,7 +276,7 @@ class PoseEstimator():
             vec_y = normalize(np.subtract(m_0, m_6), axis=0)
             vec_z = normalize(np.cross(vec_x.reshape(1, -1), vec_y.reshape(1, -1)).reshape(-1, 1), axis=0)
 
-            model_wrt_world = self._arucoBoards[0].getModelWrtWorld()[0:3, 0:3]
+            #model_wrt_world = self._arucoBoards[0].getModelWrtWorld()[0:3, 0:3]
             rot = np.matrix(np.zeros((3, 3)))
             rot[:, 0] = np.asmatrix(vec_x)
             rot[:, 1] = np.asmatrix(vec_y)
