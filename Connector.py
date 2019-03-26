@@ -6,6 +6,7 @@ import time
 from PoseEstimator import PoseEstimator
 import threading
 from GUI import GUIApplication
+from GUILogin import GUILogin
 
 class Connector():
     '''
@@ -16,10 +17,14 @@ class Connector():
     hello
     '''
 
-    def __init__(self, UI):
+    def __init__(self, ui_string):
         self.logging_setup()
         self.PE = PoseEstimator()
-        self.UI = UI
+        if ui_string == "GUI":
+            cam_list = self.PE.getVisionEntityList()
+            self.UI = GUIApplication(cam_list)
+            guil = GUILogin(mainGUI=self.UI)
+            guil.startLogin()
 
 
     def startApplication(self):
@@ -38,11 +43,11 @@ class Connector():
                 self.PE.runPoseEstimator()  # Create all threads and start them
                 runApp = True
             if stopCommand:
+                logging.debug("stop command received")
                 runApp = False
                 self.PE.stopThreads()
             if runApp:
                 self.PE.updateBoardPoses()
-                logging.debug("Fetching frame from cam:" + str(camID))
                 self.PE.getPosePreviewImg(camID)
                 poses = self.PE.getEulerPoses()
                 frame = self.PE.getPosePreviewImg(camID)

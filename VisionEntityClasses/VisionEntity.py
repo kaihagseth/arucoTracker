@@ -123,21 +123,25 @@ class VisionEntity:
         """
         self._cameraPoseMatrix = None
 
-    def setCameraPose(self, board):
+    def setCameraPose(self, board, threshold):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
         :param cam: Camera to be calibrated.
+        :param threshold: threshold to be above
         :return:
         """
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrix)
+        assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
+        assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
+
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
-        self.setCameraPoseQuality(board)
+        self.setCameraPoseQuality(board, threshold)
 
-    def setCameraPoseQuality(self, board):
+    def setCameraPoseQuality(self, board, threshold):
         """
         Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
         camera to be calibrated and the master camera.
@@ -147,7 +151,13 @@ class VisionEntity:
         w, h = board.getGridBoardSize()
         detectionQuality = self.getDetectionQuality()
         boardPoseQuality = board.getPoseQuality()
-        self._cameraPoseQuality = min(detectionQuality, boardPoseQuality)
+        assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
+        assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
+        cameraPoseQuality = min(detectionQuality, boardPoseQuality)
+        if cameraPoseQuality >= threshold:
+            self._cameraPoseQuality = cameraPoseQuality
+            return True
+        return False
 
     def getCameraPoseQuality(self):
         """
@@ -213,9 +223,14 @@ class VisionEntity:
         :return: None
         """
         w, h = board.getGridBoardSize()
-        total_marker_count = w * h
+        detectedBoardIds = None
+        boardIds = set(board.getIds())
         if self.__ids is not None:
-            visible_marker_count = len(self.__ids)
+            detectedIds = set(np.reshape(self.__ids, -1))
+            detectedBoardIds = boardIds.intersection(detectedIds)
+        total_marker_count = w * h
+        if detectedBoardIds is not None:
+            visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
         self._detection_quality = visible_marker_count / total_marker_count
@@ -249,5 +264,9 @@ class VisionEntity:
         return self._cameraPoseMatrix
 
     def getCornerDetectionAttributes(self):
+        """
+
+        :return:
+        """
         return self.__corners, self.__ids, self.__rejected
 

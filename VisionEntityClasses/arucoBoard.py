@@ -54,16 +54,20 @@ class arucoBoard():
         self._transformationMatrix = world_to_model_transformation
         self.setPoseQuality(master_entity)
 
-    def setFirstBoardPosition(self, ve):
+    def setFirstBoardPosition(self, ve, q_threshold):
         """
         Sets the board pose to origen and calibrates VE.
         :param ve: Vision entity to calibrate
-        :return:
+        :param q_threshold: Minimum accepted quality.
+        :return: ret
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
         self._poseQuality = 1
-        ve.setCameraPose(self)
-
+        if not ve.setCameraPose(self, q_threshold):
+            self._transformationMatrix = None
+            self._poseQuality = 0
+            return False
+        return True
 
     def setPoseQuality(self, master_entity):
         """
@@ -71,6 +75,8 @@ class arucoBoard():
         :param master_entity:
         :return:
         """
+        assert master_entity.getCameraPoseQuality() <= 1, "master camera camera pose quality is above 1"
+        assert master_entity.getDetectionQuality() <= 1, "master camera detection quality is above 1"
         self._poseQuality = master_entity.getDetectionQuality() * master_entity.getCameraPoseQuality()
 
     def getPoseQuality(self):
@@ -98,3 +104,10 @@ class arucoBoard():
         pdf.image("arucoBoard.png", w=width, h=height)
         pdf.image("images/arrow.png", x=20, y=height+20, w=30)
         pdf.output("arucoBoard.pdf")
+
+    def getIds(self):
+        """
+        Retrieves the Ids of this boards markers.
+        :return: Ids of this boards markers.
+        """
+        return np.reshape(self._board.ids, -1)
