@@ -2,6 +2,7 @@ import csv
 import logging
 import threading
 import time
+import copy
 
 import cv2
 import numpy as np
@@ -15,6 +16,7 @@ class PoseEstimator():
     Collect pose and info from all cameras, and find the best estimated pose possible.
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera
     def __init__(self):
         self.VisionEntityList = []  # List for holding VEs
         self.threadInfoList = []  # List for reading results from VEs.
@@ -53,7 +55,7 @@ class PoseEstimator():
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
         if wantedCams is None:
-            unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
+            unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
         else: # Wanted cams specified in GUI.
             pass
         logging.info('Inside findConnectedCams()')
@@ -155,14 +157,13 @@ class PoseEstimator():
                     self._master_entity = ve
 
             self._master_entity = self.chooseMasterCam()
-            if self._master_entity is not None:
+            if self._master_entity is not None and self._master_entity.getPoses() is not None:
                 board.updateBoardPose(self._master_entity)
 
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                #FIXME: setCameraPose is sometimes called while ve has no model pose estimate.
                 if ve.getPoses() is not None and self._master_entity.getPoses() is not None:
                     currentCameraPoseQuality = ve.getCameraPoseQuality()
                     potentialCameraPoseQuality = ve.getDetectionQuality() * board.getPoseQuality()
@@ -211,12 +212,11 @@ class PoseEstimator():
         """
         if camID == -1:
             if self._master_entity is None:
-                vision_entity = self.getVEById(0)
+                vision_entity = copy.copy(self.getVEById(0))
             else:
-                vision_entity = self._master_entity
+                vision_entity = copy.copy(self._master_entity)
         else:
             vision_entity = self.getVEById(camID)
-
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
                 vision_entity.getPoses() is not None:
             out_frame = vision_entity.drawAxis()

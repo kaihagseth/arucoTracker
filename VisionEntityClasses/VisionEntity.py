@@ -150,8 +150,8 @@ class VisionEntity:
         w, h = board.getGridBoardSize()
         detectionQuality = self.getDetectionQuality()
         boardPoseQuality = board.getPoseQuality()
-        assert boardPoseQuality < 1, "Board pose is above 1"
-        assert detectionQuality < 1, "Detection quality is above 1"
+        assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
+        assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
         self._cameraPoseQuality = min(detectionQuality, boardPoseQuality)
 
     def getCameraPoseQuality(self):
@@ -218,9 +218,14 @@ class VisionEntity:
         :return: None
         """
         w, h = board.getGridBoardSize()
-        total_marker_count = w * h
+        detectedBoardIds = None
+        boardIds = set(board.getIds())
         if self.__ids is not None:
-            visible_marker_count = len(self.__ids)
+            detectedIds = set(np.reshape(self.__ids, -1))
+            detectedBoardIds = boardIds.intersection(detectedIds)
+        total_marker_count = w * h
+        if detectedBoardIds is not None:
+            visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
         self._detection_quality = visible_marker_count / total_marker_count
@@ -254,5 +259,9 @@ class VisionEntity:
         return self._cameraPoseMatrix
 
     def getCornerDetectionAttributes(self):
+        """
+
+        :return:
+        """
         return self.__corners, self.__ids, self.__rejected
 

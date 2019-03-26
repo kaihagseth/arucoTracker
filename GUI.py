@@ -9,6 +9,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 import GUIDataPlotting
 from VisionEntityClasses.arucoBoard import arucoBoard
+from VisionEntityClasses.helperFunctions import stackChecker
 
 
 class GUIApplication(threading.Thread):
@@ -526,28 +527,24 @@ class GUIApplication(threading.Thread):
         stopCommand: Command to stop PoseEstimator
         """
         camID = self.__displayedCameraIndex.get()
-        newBoard = self.stackChecker(self.__pushedBoards)
-        resetExtrinsic = self.stackChecker(self.__resetBoardPosition)
-        startCommand = self.stackChecker(self.__start_application)
-        stopCommand = self.stackChecker(self.__stop_application)
+        newBoard = stackChecker(self.__pushedBoards)
+        resetExtrinsic = stackChecker(self.__resetBoardPosition)
+        startCommand = stackChecker(self.__start_application)
+        stopCommand = stackChecker(self.__stop_application)
         return camID, newBoard, resetExtrinsic, startCommand, stopCommand
 
-    @staticmethod
-    def stackChecker(list):
-        """
-        Pops and returns first item of list, or returns False if list is empty.
-        :return: First item of list, or "False" if list is empty
-        """
-        if list:
-            out = list.pop(0)
-        else:
-            out = False
-        return out
-
     def sendStartSignal(self):
+        """
+        Adds a start signal to the stop signal stack. The signal is consumed when read.
+        :return: None
+        """
         self.__start_application.append(True)
         logging.debug("Start signal sent.")
 
     def sendStopSignal(self):
+        """
+        Adds a start signal to the stop signal stack. The signal is consumed when read.
+        :return: None
+        """
         self.__stop_application.append(True)
         logging.debug("Stop signal sent.")

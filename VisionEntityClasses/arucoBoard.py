@@ -71,6 +71,8 @@ class arucoBoard():
         :param master_entity:
         :return:
         """
+        assert master_entity.getCameraPoseQuality() <= 1, "master camera camera pose quality is above 1"
+        assert master_entity.getDetectionQuality() <= 1, "master camera detection quality is above 1"
         self._poseQuality = master_entity.getDetectionQuality() * master_entity.getCameraPoseQuality()
 
     def getPoseQuality(self):
@@ -98,3 +100,10 @@ class arucoBoard():
         pdf.image("arucoBoard.png", w=width, h=height)
         pdf.image("images/arrow.png", x=20, y=height+20, w=30)
         pdf.output("arucoBoard.pdf")
+
+    def getIds(self):
+        """
+        Retrieves the Ids of this boards markers.
+        :return: Ids of this boards markers.
+        """
+        return np.reshape(self._board.ids, -1)
