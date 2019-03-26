@@ -9,6 +9,7 @@ from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
 from VisionEntityClasses.helperFunctions import invertTransformationMatrix
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
+from sklearn.preprocessing import normalize
 
 class PoseEstimator():
     """
@@ -244,16 +245,16 @@ class PoseEstimator():
             for i in range(np.size(idlist)):
                 # Find 3DoF coord of bottom right corner of marker N
                 if idlist[i] == 6: # N = 6
-                    test_marker = positions[:, i]
+                    origin = positions[:, i]
                     break
                 else:
-                    test_marker = None
+                    origin = np.array([])
 
             # Return 3DoF positions and corresponding marker ids
-            return positions, idlist, test_marker
+            return positions, idlist, origin
 
         else:
-            return None, None, None
+            return np.array([]), np.array([]), np.array([])
 
     def getStereoPose(self, positions, ids):
         """
@@ -265,23 +266,27 @@ class PoseEstimator():
         m_8 = np.array([])
         for i in range(np.size(ids)):
             if ids[i] == 0:
-                m_0 = positions[:, i]
+                m_0 = positions[:, i].reshape(-1, 1)
             if ids[i] == 6:
-                m_6 = positions[:, i]
+                m_6 = positions[:, i].reshape(-1, 1)
             if ids[i] == 0:
-                m_8 = positions[:, i]
+                m_8 = positions[:, i].reshape(-1, 1)
         if m_0.size and m_6.size and m_8.size:
-            vec_x = np.subtract(m_8, m_6)
-            vec_y = np.subtract(m_0, m_6)
-            vec_z = np.cross(vec_x, vec_y)
+            vec_x = normalize(np.subtract(m_8, m_6), axis=0)
+            vec_y = normalize(np.subtract(m_0, m_6), axis=0)
+            vec_z = normalize(np.cross(vec_x.reshape(1, -1), vec_y.reshape(1, -1)).reshape(-1, 1), axis=0)
 
-            r = np.vstack((vec_x, vec_y, vec_z))
+            model_wrt_world = self._arucoBoards[0].getModelWrtWorld()[0:3, 0:3]
+            rot = np.matrix(np.zeros((3, 3)))
+            rot[:, 0] = np.asmatrix(vec_x)
+            rot[:, 1] = np.asmatrix(vec_y)
+            rot[:, 2] = np.asmatrix(vec_z)
 
-            euler = rotationMatrixToEulerAngles(r)
+            euler = np.rad2deg(rotationMatrixToEulerAngles(rot))
 
             return euler
         else:
-            return np.array([-1.0, -1.0, -1.0])
+            return np.array([])
 
 
 
