@@ -123,11 +123,12 @@ class VisionEntity:
         """
         self._cameraPoseMatrix = None
 
-    def setCameraPose(self, board):
+    def setCameraPose(self, board, threshold):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
         :param cam: Camera to be calibrated.
+        :param threshold: threshold to be above
         :return:
         """
         origin_to_model = board.getTransformationMatrix()
@@ -138,9 +139,9 @@ class VisionEntity:
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
-        self.setCameraPoseQuality(board)
+        self.setCameraPoseQuality(board, threshold)
 
-    def setCameraPoseQuality(self, board):
+    def setCameraPoseQuality(self, board, threshold):
         """
         Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
         camera to be calibrated and the master camera.
@@ -152,7 +153,11 @@ class VisionEntity:
         boardPoseQuality = board.getPoseQuality()
         assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
         assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
-        self._cameraPoseQuality = min(detectionQuality, boardPoseQuality)
+        cameraPoseQuality = min(detectionQuality, boardPoseQuality)
+        if cameraPoseQuality >= threshold:
+            self._cameraPoseQuality = cameraPoseQuality
+            return True
+        return False
 
     def getCameraPoseQuality(self):
         """

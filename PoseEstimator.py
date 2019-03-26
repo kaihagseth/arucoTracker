@@ -153,7 +153,7 @@ class PoseEstimator():
                 # Collecting frame and detecting markers for each camera
                 model_pose = ve.getPoses()
                 if board.getTransformationMatrix() is None and model_pose is not None:
-                    board.setFirstBoardPosition(ve)
+                    board.setFirstBoardPosition(ve, self.QTHRESHOLD)
                     self._master_entity = ve
 
             self._master_entity = self.chooseMasterCam()
@@ -168,7 +168,7 @@ class PoseEstimator():
                     currentCameraPoseQuality = ve.getCameraPoseQuality()
                     potentialCameraPoseQuality = ve.getDetectionQuality() * board.getPoseQuality()
                     if potentialCameraPoseQuality > currentCameraPoseQuality:
-                        ve.setCameraPose(board)
+                        ve.setCameraPose(board, 0)
 
     def getEulerPoses(self):
         """

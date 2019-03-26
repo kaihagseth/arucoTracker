@@ -54,16 +54,20 @@ class arucoBoard():
         self._transformationMatrix = world_to_model_transformation
         self.setPoseQuality(master_entity)
 
-    def setFirstBoardPosition(self, ve):
+    def setFirstBoardPosition(self, ve, q_threshold):
         """
         Sets the board pose to origen and calibrates VE.
         :param ve: Vision entity to calibrate
-        :return:
+        :param q_threshold: Minimum accepted quality.
+        :return: ret
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
         self._poseQuality = 1
-        ve.setCameraPose(self)
-
+        if not ve.setCameraPose(self, q_threshold):
+            self._transformationMatrix = None
+            self._poseQuality = 0
+            return False
+        return True
 
     def setPoseQuality(self, master_entity):
         """
