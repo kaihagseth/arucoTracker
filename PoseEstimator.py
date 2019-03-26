@@ -54,7 +54,7 @@ class PoseEstimator():
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
         if wantedCams is None:
-            unwantedCams = [1,3,4]  # Index of the webcam we dont want to use, if any.
+            unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
         else: # Wanted cams specified in GUI.
             pass
         logging.info('Inside findConnectedCams()')
@@ -188,7 +188,7 @@ class PoseEstimator():
 
         imagepoints1 = np.array([])# Image points camera 1
         imagepoints2 = np.array([])# Image points camera 2
-        idlist = np.array([])
+        idlist = np.array([])# marker ids corresponding to the marker imagepoints
         ve = self.getVisionEntityList()
         if ve[0].getIds() is not None and ve[1].getIds() is not None:
             for i in range(len(ve[0].getIds())):
@@ -201,6 +201,7 @@ class PoseEstimator():
                         idlist = np.hstack((idlist, ve[0].getIds()[i])) if idlist.size else \
                             ve[0].getIds()[i]
 
+        # Camera intrinsic matrices
         intrinsic1 = ve[0].intrinsic_matrix
         intrinsic2 = ve[1].intrinsic_matrix
 
@@ -221,6 +222,7 @@ class PoseEstimator():
             projection2 = None
 
         if imagepoints1.size and projection1 is not None and projection2 is not None:
+            # Triangulate 3DOF position of markers
             positions_wrt_cam = cv2.triangulatePoints(projection1, projection2, imagepoints1, imagepoints2)
 
             # Remove scaling
@@ -230,20 +232,12 @@ class PoseEstimator():
             positions_wrt_cam[3, :] = np.divide(positions_wrt_cam[3, :], positions_wrt_cam[3, :])
 
 
-            # Transformation from camera coordinates to world coordinates
-            #cam1_wrt_world = ve[0].getCamWrtWorld()
-            #hom_positions = np.zeros((4, np.size(positions_wrt_cam, 1)), dtype=float)
-            #for i in range(np.size(positions_wrt_cam, 1)):
-            #    hom_positions[:, i] = np.matmul(cam1_wrt_world, positions_wrt_cam[:, i])
-            #
-            #positions = hom_positions[0:3, :]
-
             # non-homogeneous coordinates
             positions = positions_wrt_cam[0:3, :]
 
             # TODO: This is just for testing with display, remove when no longer needed
             for i in range(np.size(idlist)):
-                # Find 3DoF coord of bottom right corner of marker N
+                # Find 3DoF coord of bottom right corner of marker N (origin)
                 if idlist[i] == 6: # N = 6
                     origin = positions[:, i]
                     break
@@ -258,30 +252,32 @@ class PoseEstimator():
 
     def getStereoPose(self, positions, ids):
         """
-        TODO: use positions of known points on model to determine euler angles by creating 2 or more directional vectors
-        :return:
+        Using 3 markers in known position relative to model orientation compute the euler angles of the model pose
+        :return: Model pose in euler angles
         """
         m_0 = np.array([])
         m_6 = np.array([])
         m_8 = np.array([])
         for i in range(np.size(ids)):
             if ids[i] == 0:
-                m_0 = positions[:, i].reshape(-1, 1)
+                m_0 = positions[:, i].reshape(-1, 1) # position of marker 0
             if ids[i] == 6:
-                m_6 = positions[:, i].reshape(-1, 1)
+                m_6 = positions[:, i].reshape(-1, 1) # position of marker 6
             if ids[i] == 8:
-                m_8 = positions[:, i].reshape(-1, 1)
+                m_8 = positions[:, i].reshape(-1, 1) # position of marker 8
         if m_0.size and m_6.size and m_8.size:
-            vec_x = normalize(np.subtract(m_8, m_6), axis=0)
-            vec_y = normalize(np.subtract(m_0, m_6), axis=0)
+            vec_x = normalize(np.subtract(m_8, m_6), axis=0) # find normalized (unit) x axis vector
+            vec_y = normalize(np.subtract(m_0, m_6), axis=0) # find normalized (unit) y axis vector
+            # Using the cross product of the x and y unit vector find unit vector for z axis
             vec_z = normalize(np.cross(vec_x.reshape(1, -1), vec_y.reshape(1, -1)).reshape(-1, 1), axis=0)
 
-            #model_wrt_world = self._arucoBoards[0].getModelWrtWorld()[0:3, 0:3]
+            # Generate rotation matrix from unit vectors
             rot = np.matrix(np.zeros((3, 3)))
             rot[:, 0] = np.asmatrix(vec_x)
             rot[:, 1] = np.asmatrix(vec_y)
             rot[:, 2] = np.asmatrix(vec_z)
 
+            # Calculate euler angles from rotation matrix
             euler = np.rad2deg(rotationMatrixToEulerAngles(rot))
 
             return euler
@@ -335,9 +331,9 @@ class PoseEstimator():
             e = self.getEulerPoses()
             cv2.putText(out_frame, str(e[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
-            positions, ids, origo = self.getStereoVisionPosition()
+            positions, ids, origin = self.getStereoVisionPosition()
             euler = self.getStereoPose(positions, ids)
-            pose = np.hstack((origo, euler))
+            pose = np.hstack((origin, euler))
             if pose is not None:
                 cv2.putText(out_frame, str(pose.astype(int)), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, .6,
                             (0, 0, 255), 2)
