@@ -132,6 +132,9 @@ class VisionEntity:
         """
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrix)
+        assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
+        assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
+
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
@@ -147,6 +150,8 @@ class VisionEntity:
         w, h = board.getGridBoardSize()
         detectionQuality = self.getDetectionQuality()
         boardPoseQuality = board.getPoseQuality()
+        assert boardPoseQuality < 1, "Board pose is above 1"
+        assert detectionQuality < 1, "Detection quality is above 1"
         self._cameraPoseQuality = min(detectionQuality, boardPoseQuality)
 
     def getCameraPoseQuality(self):

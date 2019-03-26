@@ -162,7 +162,7 @@ class PoseEstimator():
             for ve in self.getVisionEntityList():
                 if self._master_entity is None:
                     break
-                 # TODO: Should set new camera pose if it would have higher quality than current pose
+                #FIXME: setCameraPose is sometimes called while ve has no model pose estimate.
                 if ve.getPoses() is not None and self._master_entity.getPoses() is not None:
                     currentCameraPoseQuality = ve.getCameraPoseQuality()
                     potentialCameraPoseQuality = ve.getDetectionQuality() * board.getPoseQuality()

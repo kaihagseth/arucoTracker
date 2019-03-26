@@ -461,7 +461,7 @@ class GUIApplication(threading.Thread):
         gap_value = int(gap_value)
 
         self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
-        self.board.writeBoardToPDF()
+        self.userBoard.writeBoardToPDF()
 
     def validate(self, string):
         '''
