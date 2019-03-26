@@ -54,7 +54,7 @@ class PoseEstimator():
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
         if wantedCams is None:
-            unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
+            unwantedCams = [1,3,4]  # Index of the webcam we dont want to use, if any.
         else: # Wanted cams specified in GUI.
             pass
         logging.info('Inside findConnectedCams()')
@@ -269,7 +269,7 @@ class PoseEstimator():
                 m_0 = positions[:, i].reshape(-1, 1)
             if ids[i] == 6:
                 m_6 = positions[:, i].reshape(-1, 1)
-            if ids[i] == 0:
+            if ids[i] == 8:
                 m_8 = positions[:, i].reshape(-1, 1)
         if m_0.size and m_6.size and m_8.size:
             vec_x = normalize(np.subtract(m_8, m_6), axis=0)
