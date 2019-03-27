@@ -150,6 +150,7 @@ class GUIApplication(threading.Thread):
         self.roll_value = DoubleVar()
         self.pitch_value = DoubleVar()
         self.yaw_value = DoubleVar()
+        self.boardPose_quality = DoubleVar()
 
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
         self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='orange',
@@ -188,6 +189,13 @@ class GUIApplication(threading.Thread):
         self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='green',
                                             font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispYaw_camPaneTabMain.grid(column=5, row=1)
+        # Display the quality of board estimation
+        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality, bg='blue',
+                                          font=(self.poseFontType, self.poseFontSize), padx=15)
+        self.boardPoseQuality_label.grid(column=7, row=0)
+        self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg='blue',
+                                            font=(self.poseFontType, self.poseFontSize), padx=15)
+        self.dispBoardPoseQual_camPaneTabMain.grid(column=6, row=0)
 
         self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
@@ -539,7 +547,7 @@ class GUIApplication(threading.Thread):
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
 
-    def updateFields(self, poses, frame):
+    def updateFields(self, poses, frame, boardPose_quality):
         """
         Update GUI-objects fields outputframe and six axis pose.
         :param poses: The poses of all models tracked.
@@ -548,6 +556,11 @@ class GUIApplication(threading.Thread):
         """
         self.modelPoses = poses
         self.frame = frame
+        if boardPose_quality is not None:
+            self.boardPose_quality.set(round(boardPose_quality, 2))
+        else:
+            self.boardPose_quality.set(0.0)
+
         if poses:
             evec,tvec = poses[0]
             if evec is not None:
