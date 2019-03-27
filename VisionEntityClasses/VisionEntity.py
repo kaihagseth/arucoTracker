@@ -3,7 +3,7 @@ import numpy as np
 import exceptions as exc
 from VisionEntityClasses.Camera import Camera
 from VisionEntityClasses.helperFunctions import *
-
+import logging
 
 
 class VisionEntity:
@@ -240,6 +240,22 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
+        self._detection_quality = visible_marker_count / total_marker_count
+        #return None
+        #7print(self.__cameraToModelMatrix)
+        #print("Cam index: ", self._camera.getSrc())
+        if self.__cameraToModelMatrix is not None:
+            z1 = np.asarray(self.__cameraToModelMatrix[0:3, 2]).flatten() # Get the z-row
+            z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
+            print("Z1: ", z1)
+            print("Z2: ", z2)
+            msg1 = self.__cameraToModelMatrix
+            logging.debug(msg1)
+            q = np.linalg.norm(np.dot(z1,z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
+            msg = "Q: ", q
+            logging.debug(msg)
+        else:
+            logging.error("__cameraToModelMatrix not set.")
         self._detection_quality[boardIndex] = visible_marker_count / total_marker_count
 
     def drawAxis(self):

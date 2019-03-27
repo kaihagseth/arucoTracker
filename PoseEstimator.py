@@ -54,7 +54,7 @@ class PoseEstimator():
         '''  # TODO: Find new algorithm, this thing is sloooow.
         #return [1] #A hack
         if wantedCams is None:
-            unwantedCams = [2,3,4]  # Index of the webcam we dont want to use, if any.
+            unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
         else: # Wanted cams specified in GUI.
             pass
         logging.info('Inside findConnectedCams()')
@@ -210,6 +210,7 @@ class PoseEstimator():
         :return: Frame drawn with axis cross, corners, and poses
         """
         if camID == -1:
+            #If no master camera is present, select first index.
             if self._master_entity is None:
                 vision_entity = copy.copy(self.getVEById(0))
             else:
@@ -219,6 +220,7 @@ class PoseEstimator():
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
                 vision_entity.getPoses() is not None:
             out_frame = vision_entity.drawAxis()
+            poses = self.getEulerPoses()
             board = self._arucoBoards[0]
             bp_string = "{0:.2f}".format(board.getPoseQuality())
             cv2.putText(out_frame, "Quality: " + bp_string, (15, 15), cv2.FONT_HERSHEY_SIMPLEX, .6,
@@ -229,6 +231,53 @@ class PoseEstimator():
             else:
                 out_frame = vision_entity.getFrame()
         return out_frame
+
+    def getCameraPositionQuality(self, camID=-1):
+        '''
+        Get the quality/reliability , of the pose of a cam from world origo.
+        :param camID: Cam to select
+        :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
+        '''
+        if camID == -1:
+            #If no master camera is present, select first index.
+            if self._master_entity is None:
+                vision_entity = copy.copy(self.getVEById(0))
+            else:
+                vision_entity = copy.copy(self._master_entity)
+        else:
+            vision_entity = self.getVEById(camID)
+        quality = vision_entity.getCameraPoseQuality()
+        return quality
+
+    def getBoardPositionQuality(self, boardIndex=0):
+        '''
+        Get the quality/reliability, of the pose estimation of given board.
+        :param boardIndex: Board to select
+        :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
+        '''
+        board = self._arucoBoards[boardIndex]
+        quality = board.getPoseQuality()
+        return quality
+
+    def getBoardPositionQualityWrtCam(self, boardIndex=0, camID=-1):
+        ''' TEST FUNCTION YET
+        Get the quality/reliability, of the pose estimation of given board, from a desired camera.
+        :param boardIndex: Board to select
+        :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
+        '''
+        #Find cam
+        if camID == -1:
+            #If no master camera is present, select first index.
+            if self._master_entity is None:
+                vision_entity = copy.copy(self.getVEById(0))
+            else:
+                vision_entity = copy.copy(self._master_entity)
+        else:
+            vision_entity = self.getVEById(camID)
+        board = self._arucoBoards[boardIndex]
+        quality = board.getPoseQuality()
+
+        return quality
 
     def getRawPreviewImage(self, camID):
         '''

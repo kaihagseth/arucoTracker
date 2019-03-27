@@ -50,13 +50,13 @@ class Connector():
                 self.PE.addBoard()
             if runApp:
                 self.PE.updateBoardPoses()
-                self.PE.getPosePreviewImg(camID)
                 poses = self.PE.getEulerPoses()
                 frame = self.PE.getPosePreviewImg(camID)
+                boardPose_quality = self.PE.getBoardPositionQuality()
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
-                self.UI.updateFields(poses, frame)  # Write relevant information to UI-thread.
+                self.UI.updateFields(poses, frame, boardPose_quality)  # Write relevant information to UI-thread.
                 self.UI.showFindPoseStream()
             else:
                 time.sleep(0.1)
