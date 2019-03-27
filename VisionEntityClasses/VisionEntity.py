@@ -20,10 +20,11 @@ class VisionEntity:
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
-        self.__cameraToModelMatrix = None  # Camera -> Model transformation - Should only be written to from thread!!
+        # cameraToModelToMatrix should be a list containing all boards
+        self.__cameraToModelMatrices = []  # Camera -> Model transformation - Should only be written to from thread!!
         self._cameraPoseMatrix = None
         self._cameraPoseQuality = 0
-        self._detection_quality = 0
+        self._detection_quality = []
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -124,7 +125,7 @@ class VisionEntity:
         """
         self._cameraPoseMatrix = None
 
-    def setCameraPose(self, board, threshold):
+    def setCameraPose(self, board, boardID, threshold):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
@@ -133,7 +134,7 @@ class VisionEntity:
         :return:
         """
         origin_to_model = board.getTransformationMatrix()
-        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrix)
+        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[boardID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
         assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
 
@@ -169,7 +170,7 @@ class VisionEntity:
 
     def getDetectionQuality(self):
         """
-        returns model pose quality
+        Returns model pose quality
         :return: Model pose quality
         """
         return self._detection_quality
@@ -207,22 +208,27 @@ class VisionEntity:
         return cam.retrieveFrame()
 
 
-    def estimatePose(self, board):
+    def estimatePose(self, board, boardID):
         """
         Estimates pose and saves pose to object field
-        :param board: Board yo estomate
+        :param board: Board yo estimate
         :return: None
         """
+        extendListToIndex(self._detection_quality, boardID, None)
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                       self.intrinsic_matrix, self.getDistortionCoefficients())
         self.setModelPoseQuality(board)
-        self.__cameraToModelMatrix = rvecTvecToTransMatrix(rvec, tvec)
+        self.__cameraToModelMatrices[boardID] = rvecTvecToTransMatrix(rvec, tvec)
 
-    def setModelPoseQuality(self, board):
+    def setModelPoseQuality(self, board, boardIndex):
         """
         Calculates the quality of the current pose estimation between the camera and the model
+        # TODO: Test if recursive call is working as intended.
         :return: None
         """
+
+        # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
+        extendListToIndex(self._detection_quality, boardIndex, 0)
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = set(board.getIds())
@@ -234,10 +240,11 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
-        self._detection_quality = visible_marker_count / total_marker_count
+        self._detection_quality[boardIndex] = visible_marker_count / total_marker_count
 
     def drawAxis(self):
         """
+        TODO: Multi object support.
         Draws axis cross on image frame
         :param frame: Image frame to be drawn on
         :param vision_entity: Vision entity the frame came from.
@@ -245,9 +252,10 @@ class VisionEntity:
         """
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
-        rvec, tvec = transMatrixToRvecTvec(self.__cameraToModelMatrix)
-        image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                   rvec, tvec, 100)
+        for matrix in self.__cameraToModelMatrices:
+            rvec, tvec = transMatrixToRvecTvec(matrix)
+            image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
+                                    rvec, tvec, 100)
         return image
 
     def getPoses(self):
@@ -255,7 +263,7 @@ class VisionEntity:
         Returns pose from private fields.
         :return: Transformation matrix from camera to model
         """
-        return self.__cameraToModelMatrix
+        return self.__cameraToModelMatrices
 
     def getCameraPose(self):
         """

@@ -81,3 +81,14 @@ def stackChecker(list):
     else:
         out = False
     return out
+
+def extendListToIndex(list, index, fillObject=None):
+    """
+    :param list: List to extend
+    :param index: Index to extend to
+    :param fillObject: Object to pad list with
+    :return: None
+    """
+    indexListLengthDifference = (index + 1) - len(list)
+    if indexListLengthDifference > 0:
+        list.extend([fillObject] * indexListLengthDifference)
