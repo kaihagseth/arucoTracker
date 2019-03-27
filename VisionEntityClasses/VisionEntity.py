@@ -46,6 +46,7 @@ class VisionEntity:
             self.detectMarkers(dictionary)
             for board in boards:
                 self.estimatePose(board)
+        self.terminate()
 
     def calibrateCameraWithTool(self):
         """
@@ -269,4 +270,11 @@ class VisionEntity:
         :return:
         """
         return self.__corners, self.__ids, self.__rejected
+
+    def terminate(self):
+        """
+        Readies Vision Entity for termination
+        :return:
+        """
+        self._camera.terminate()
 

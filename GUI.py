@@ -193,7 +193,7 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
-        # TODO: Add a "preview" and an "add to tracking list" button?
+        # FIXME:Numbers in field disappears when clicking mouse.
         self.page_3_frame = Frame(self.page_3)
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
@@ -262,10 +262,18 @@ class GUIApplication(threading.Thread):
         self.btn_frame = Frame(self.page_3)
         self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
-        self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
-                              command=lambda: [self.savePDFParam()])
+        self.pdf_btn = Button(self.btn_frame, text='Generate board',
+                              command=lambda: [self.createArucoBoard()])
         self.pdf_btn.configure(bg='#424242', fg='white')
-        self.pdf_btn.pack(side=BOTTOM)
+        self.pdf_btn.pack(side=LEFT)
+        self.pdf_btn = Button(self.btn_frame, text='Add to tracking list',
+                              command=lambda: [self.exportArucoBoard()])
+        self.pdf_btn.configure(bg='#424242', fg='white')
+        self.pdf_btn.pack(side=LEFT)
+        self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
+                              command=lambda: [self.saveArucoPDF()])
+        self.pdf_btn.configure(bg='#424242', fg='white')
+        self.pdf_btn.pack(side=LEFT)
 
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
@@ -476,13 +484,11 @@ class GUIApplication(threading.Thread):
         '''
         print('File clicked')
 
-    def savePDFParam(self):
-        '''
-        Return values from entry and send it to the arucoPoseEstimator
-        TODO: This function should create and display an image of an arucoboard. Another function should pass this
-        TODO: to an output-stack.
+    def createArucoBoard(self):
+        """
+        Generates and stores an aruco board internally in the GUI. Displays board preview in pdf-tab.
         :return:
-        '''
+        """
         length_value = self.length_entry.get()
         length_value = int(length_value)
         width_value = self.width_entry.get()
@@ -491,8 +497,26 @@ class GUIApplication(threading.Thread):
         size_value = int(size_value)
         gap_value = self.gap_entry.get()
         gap_value = int(gap_value)
-
         self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
+        self.ph = self.userBoard.getBoardImage((300, 300))
+        self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
+        self.ph = Image.fromarray(self.ph)
+        self.ph = ImageTk.PhotoImage(self.ph)
+        self.btn_img.configure(image=self.ph)
+
+    def exportArucoBoard(self):
+        """
+        Adds an aruco board to the pushed boards list, to make it accessible to external objects.
+        :return: None
+        """
+        self.__pushedBoards.append(self.userBoard)
+
+    def saveArucoPDF(self):
+        '''
+        Return values from entry and send it to the arucoPoseEstimator
+        :return:None
+        '''
+
         self.userBoard.writeBoardToPDF()
 
     def validate(self, string):
@@ -568,10 +592,6 @@ class GUIApplication(threading.Thread):
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
-
-
-
-
 
     def readUserInputs(self):
         """

@@ -6,8 +6,8 @@ from fpdf import FPDF
 from VisionEntityClasses.helperFunctions import *
 
 
-class arucoBoard():
-    # TODO: Maybe loosen up coupling by removing links to vision entity.
+class arucoBoard:
+    # FIXME: first_marker is not working as intended.
     first_marker = 0
 
     def __init__(self, board_width, board_height, marker_size, marker_gap,
@@ -33,7 +33,6 @@ class arucoBoard():
         :return: rvec, tvec
         """
         return transMatrixToRvecTvec(self._transformationMatrix)
-
 
     def getTransformationMatrix(self):
         """
@@ -111,3 +110,10 @@ class arucoBoard():
         :return: Ids of this boards markers.
         """
         return np.reshape(self._board.ids, -1)
+
+    def getBoardImage(self, size):
+        """
+        :param size: Size of drawn image in pixels
+        :return: cv2 image array of board.
+        """
+        return self._board.draw(size)

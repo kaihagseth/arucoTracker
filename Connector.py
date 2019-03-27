@@ -46,6 +46,8 @@ class Connector():
                 logging.debug("stop command received")
                 runApp = False
                 self.PE.stopThreads()
+            if newBoard:
+                self.PE.addBoard()
             if runApp:
                 self.PE.updateBoardPoses()
                 self.PE.getPosePreviewImg(camID)

@@ -183,7 +183,7 @@ class PoseEstimator():
             except TypeError:
                 tvec = None
                 evec = None
-            pose = tvec, evec
+            pose = evec, tvec
             poses.append(pose)
         return poses
 
@@ -246,3 +246,11 @@ class PoseEstimator():
         """
         for VE in self.getVisionEntityList():
             VE.runThread = False
+
+    def addBoard(self, board):
+        """
+        Adds a board to the tracking list.
+        :param board: arucoboard to track
+        :return: None
+        """
+        self._arucoBoards.append(board)
