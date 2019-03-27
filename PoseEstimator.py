@@ -24,6 +24,7 @@ class PoseEstimator():
         self._arucoBoards = []  # List of aruco boards to track.
         self.createArucoBoard(3, 3, 40, 5)
         self._master_entity = None
+        self.worldCoordinatesIsSet = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
         """
@@ -46,6 +47,7 @@ class PoseEstimator():
         for cam_index in cam_list:
             VE = VisionEntity(cam_index)
             self.VisionEntityList.append(VE)
+            VE.addBoards(self.getBoards())
         return cam_list
 
     def findConnectedCamIndexes(self, wantedCams=None):
@@ -151,10 +153,10 @@ class PoseEstimator():
         for board in self._arucoBoards:
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
-                model_pose = ve.getPoses()
-                #FIXME:
-                if board.getTransformationMatrix() is None and model_pose is not None:
-                    board.setFirstBoardPosition(ve, self.QTHRESHOLD)
+                model_pose = ve.getPoses()[board.ID]
+                # Idea: Set a flag in pose estimator when the first board is detected.
+                if not self.worldCoordinatesIsSet and model_pose is not None:
+                    self.worldCoordinatesIsSet = board.setFirstBoardPosition(ve, self.QTHRESHOLD)
                     self._master_entity = ve
 
             self._master_entity = self.chooseMasterCam()
@@ -193,7 +195,10 @@ class PoseEstimator():
     def chooseMasterCam(self):
         """
         Chooses a master vision entity based on the potential board positional quality they can deliver
-        :param cams:
+        # FIXME: Need a smart fix selecting master cam when multiple boards are tracked.
+        # ideas: One master camera per board? master cam is calculated from the sum of both boards?
+        # The problems arise because the master camera is giving each boards it's position, and is serving a frame to
+        # the GUI at the same time. Might need to think new regarding the master camera variable.
         :return: master cam
         """
         highest_potential_board_quality = 0
@@ -255,6 +260,17 @@ class PoseEstimator():
         :param board: arucoboard to track
         :return: None
         """
+        logging.debug("attempting to add board to vision entities")
         index = len(self._arucoBoards)
         board.ID = index
         self._arucoBoards.append(board)
+        for ve in self.getVisionEntityList():
+            ve.addBoards(board)
+            logging.debug("board added to vision entity")
+
+    def getBoards(self):
+        """
+        returns list of aruco boards
+        :return: list of arucoboards
+        """
+        return self._arucoBoards

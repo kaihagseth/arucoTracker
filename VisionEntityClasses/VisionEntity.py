@@ -133,8 +133,6 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
-        extendListToIndex(self.__cameraToModelMatrices, board.ID, None)
-        print(self.__cameraToModelMatrices)
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
@@ -148,11 +146,12 @@ class VisionEntity:
         """
         Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
         camera to be calibrated and the master camera.
-        :param board:
+        :param board: The board to calculate camera pose quality from
+        :param threshold: The threshold to overcome in order to set the camera pose quality
         :return:
         """
         w, h = board.getGridBoardSize()
-        detectionQuality = self.getDetectionQuality()
+        detectionQuality = self.getDetectionQuality()[board.ID]
         boardPoseQuality = board.getPoseQuality()
         assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
         assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
@@ -215,9 +214,8 @@ class VisionEntity:
         :param board: Board yo estimate
         :return: None
         """
-        extendListToIndex(self.__cameraToModelMatrices, board.ID, None)
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
-                                                      self.intrinsic_matrix, self.getDistortionCoefficients())
+                                                    self.intrinsic_matrix, self.getDistortionCoefficients())
         self.setModelPoseQuality(board)
         self.__cameraToModelMatrices[board.ID] = rvecTvecToTransMatrix(rvec, tvec)
 
@@ -227,7 +225,6 @@ class VisionEntity:
         :return: None
         """
         # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
-        extendListToIndex(self._detection_quality, board.ID, 0)
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = set(board.getIds())
@@ -239,11 +236,12 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
+        print(board.ID)
+        print(self._detection_quality)
         self._detection_quality[board.ID] = visible_marker_count / total_marker_count
 
     def drawAxis(self):
         """
-        TODO: Multi object support.
         Draws axis cross on image frame
         :param frame: Image frame to be drawn on
         :param vision_entity: Vision entity the frame came from.
@@ -274,7 +272,7 @@ class VisionEntity:
     def getCornerDetectionAttributes(self):
         """
         Returns saved values from co
-        :return:
+        :return: None
         """
         return self.__corners, self.__ids, self.__rejected
 
@@ -285,3 +283,15 @@ class VisionEntity:
         """
         self._camera.terminate()
 
+    def addBoards(self, boards):
+        """
+        Extends cameraToModelMatrices list to accommodate for tracking of more boards.
+        :return: None
+        """
+        if boards is list or boards is tuple:
+            for board in boards:
+                self.__cameraToModelMatrices.append(None)
+                self._detection_quality.append(0)
+        else:
+            self.__cameraToModelMatrices.append(None)
+            self._detection_quality.append(0)
