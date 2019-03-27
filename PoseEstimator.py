@@ -152,6 +152,7 @@ class PoseEstimator():
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
                 model_pose = ve.getPoses()
+                #FIXME:
                 if board.getTransformationMatrix() is None and model_pose is not None:
                     board.setFirstBoardPosition(ve, self.QTHRESHOLD)
                     self._master_entity = ve
