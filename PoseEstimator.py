@@ -7,7 +7,6 @@ import copy
 import cv2
 import numpy as np
 from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
-from VisionEntityClasses.helperFunctions import toMatrix
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
 
@@ -221,13 +220,9 @@ class PoseEstimator():
                 vision_entity.getPoses() is not None:
             out_frame = vision_entity.drawAxis()
             board = self._arucoBoards[0]
-            poses = self.getEulerPoses()
-            print(poses)
-            cv2.putText(out_frame, "Pose: " + str(poses[0]), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, .6,
+            bp_string = "{0:.2f}".format(board.getPoseQuality())
+            cv2.putText(out_frame, "Quality: " + bp_string, (15, 15), cv2.FONT_HERSHEY_SIMPLEX, .6,
                         (0, 0, 255), 2)
-            cv2.putText(out_frame, "Quality: " + str(board.getPoseQuality()), (10, 130), cv2.FONT_HERSHEY_SIMPLEX, .6,
-                        (0, 0, 255), 2)
-            ret = True
         else:
             if vision_entity is None:
                 out_frame = self.getVEById(camID).getFrame()
