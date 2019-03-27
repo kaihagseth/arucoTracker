@@ -125,7 +125,7 @@ class VisionEntity:
         """
         self._cameraPoseMatrix = None
 
-    def setCameraPose(self, board, boardID, threshold):
+    def setCameraPose(self, board, threshold):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
@@ -133,11 +133,12 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
+        extendListToIndex(self.__cameraToModelMatrices, board.ID, None)
+        print(self.__cameraToModelMatrices)
         origin_to_model = board.getTransformationMatrix()
-        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[boardID])
+        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
         assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
-
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
@@ -208,27 +209,25 @@ class VisionEntity:
         return cam.retrieveFrame()
 
 
-    def estimatePose(self, board, boardID):
+    def estimatePose(self, board):
         """
         Estimates pose and saves pose to object field
         :param board: Board yo estimate
         :return: None
         """
-        extendListToIndex(self._detection_quality, boardID, None)
+        extendListToIndex(self.__cameraToModelMatrices, board.ID, None)
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                       self.intrinsic_matrix, self.getDistortionCoefficients())
         self.setModelPoseQuality(board)
-        self.__cameraToModelMatrices[boardID] = rvecTvecToTransMatrix(rvec, tvec)
+        self.__cameraToModelMatrices[board.ID] = rvecTvecToTransMatrix(rvec, tvec)
 
-    def setModelPoseQuality(self, board, boardIndex):
+    def setModelPoseQuality(self, board):
         """
         Calculates the quality of the current pose estimation between the camera and the model
-        # TODO: Test if recursive call is working as intended.
         :return: None
         """
-
         # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
-        extendListToIndex(self._detection_quality, boardIndex, 0)
+        extendListToIndex(self._detection_quality, board.ID, 0)
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = set(board.getIds())
@@ -240,7 +239,7 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
-        self._detection_quality[boardIndex] = visible_marker_count / total_marker_count
+        self._detection_quality[board.ID] = visible_marker_count / total_marker_count
 
     def drawAxis(self):
         """
@@ -274,7 +273,7 @@ class VisionEntity:
 
     def getCornerDetectionAttributes(self):
         """
-
+        Returns saved values from co
         :return:
         """
         return self.__corners, self.__ids, self.__rejected
@@ -282,7 +281,7 @@ class VisionEntity:
     def terminate(self):
         """
         Readies Vision Entity for termination
-        :return:
+        :return: None
         """
         self._camera.terminate()
 

@@ -84,6 +84,7 @@ def stackChecker(list):
 
 def extendListToIndex(list, index, fillObject=None):
     """
+    Pads a list to the point where its last index is the same as the input index if the list is shorter than the
     :param list: List to extend
     :param index: Index to extend to
     :param fillObject: Object to pad list with

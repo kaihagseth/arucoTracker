@@ -12,6 +12,7 @@ class arucoBoard:
 
     def __init__(self, board_width, board_height, marker_size, marker_gap,
                  dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)):
+        self.ID = None
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)

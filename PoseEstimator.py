@@ -34,7 +34,8 @@ class PoseEstimator():
         :param marker_gap: Gap between each marker in mm
         :return:
         """
-        self._arucoBoards.append(arucoBoard(board_width, board_height, marker_size, marker_gap))
+        board = arucoBoard(board_width, board_height, marker_size, marker_gap)
+        self.addBoard(board)
 
     def createVisionEntities(self):
         """
@@ -253,4 +254,6 @@ class PoseEstimator():
         :param board: arucoboard to track
         :return: None
         """
+        index = len(self._arucoBoards)
+        board.ID = index
         self._arucoBoards.append(board)
