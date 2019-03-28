@@ -365,41 +365,94 @@ class GUIApplication(threading.Thread):
         self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
         self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
 
-        self.midtopSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="top pane")
+        self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
 
-        self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
-        self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
-        self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
+        #self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
+        #self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
 
         self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
         self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
-        opt = []
 
-        def chkbox_checked():
-            for ix, item in enumerate(cb):
-                opt[ix] = (cb_v[ix].get())
-            print(opt)
+        class VEConfigUnit():
+            '''
+            Class for holding choices regarding cam and VE in config tab GUI.
+            '''
+            def __init__(self, camID, parent):
+                self._frame = Frame(parent) # Container for all widgets
+                self._id = camID # Camera index
+                self._currState = 0
+                self._cb_v = StringVar() # Variable to hold state of
+                self._state = IntVar()
+                self._state = 'Disconnected'
+                self._connectionStatusLabel = "Disconnected" # Statustext of connection with cam
+                self._cb = tk.Checkbutton(self._frame, text=str(self._id), onvalue=self._id, offvalue=-1,
+                                     variable=self._cb_v, command=self.chkbox_checked)  # Checkbutton
+                self.cb_string_v = []  # List for telling the status of the cam on given index
+                #self.cb_string = []  # Status for each index/camera on index
+                self.conStatusLabel = Label(self._frame, textvariable=self.cb_string_v[ix],
+                                            text="Disconnected", fg="red")
+                self.connectBtn = Checkbutton(self._frame, text="Connect", command=self.setConnectionStatus, variable=self._state, onvalue=1, offvalue=0)
+                self.previewBtn = Checkbutton(self._frame, text="Preview", command=self.setConnectionStatus, variable = self._state, onvalue=3, offvalue=2)
 
+                # Pack everything in container
+                self._cb.grid(row=0,column=0,sticky='w')
+                deadspace3 = Frame(self._frame, width = 20).grid(row=0,column=1)
+                self.connectBtn.grid(row=0,column=2)
+                self.previewBtn.grid(row=0, column=3,state=DISABLED)
+                return self._frame
+            def chkbox_checked(self):
+                pass
+            def setConnectionStatus(self):
+                #self._state
+                state = self._state.get()
+                msg = state,""
+                logging.debug(msg)
+            def setButtonStates(self, state):
+                if state is 2 and self._currState is not 2: # Show previewbutton
+                    pass
+            def doConnect(self):
+                pass
+            def getFrame(self):
+                return self._frame
         mylist = [
-            1, 2, 3, 4, 5
+            0, 1, 2, 3, 4
         ]
-        cb = []
-        cb_v = []
-        for ix, text in enumerate(mylist):
-            cb_v.append(tk.StringVar())
-            off_value = -1  # whatever you want it to be when the checkbutton is off
-            cb.append(tk.Checkbutton(self.selectCamIndexesFrame, text=text, onvalue=text, offvalue=off_value,
-                                     variable=cb_v[ix],
-                                     command=chkbox_checked))
-            cb[ix].grid(row=ix, column=0, sticky='w')
-            opt.append(off_value)
-            cb[-1].deselect()  # uncheck the boxes initially.
-        label = tk.Label(self.selectCamIndexesFrame, width=20)
-        label.grid(row=5 + 1, column=0, sticky='w')
+        VEConfigUnits = []
+        for i in mylist:
+            VECU = VEConfigUnit(i,self.selectCamIndexesFrame)
+            VECU.getFrame.grid(row=i,column=0)
+
+
+        # Create list to select which cams to use in the Pose Estimator. Need to be applied by the Apply-button.
+        #self.opt = []
+        #def chkbox_checked():
+        #    for ix, item in enumerate(cb):
+        #        self.opt[ix] = (cb_v[ix].get())
+        #    print(self.opt)
+        #
+        #mylist = [
+        #    0, 1, 2, 3, 4
+        #]
+        #
+        #for ix, text in enumerate(mylist):
+        #    #cb_v.append(tk.StringVar())
+        #    #self.cb_string_v.append(tk.StringVar())
+        #    off_value = -1  # whatever you want it to be when the checkbutton is off
+        #    cb.append(tk.Checkbutton(self.selectCamIndexesFrame, text=text, onvalue=text, offvalue=off_value,
+        #                             variable=cb_v[ix],
+        #                             command=chkbox_checked))
+        #    cb[ix].grid(row=ix, column=0, sticky='w')
+        #    self.opt.append(off_value)
+        #    cb[-1].deselect()  # uncheck the boxes initially.
+        #    self.cb_string.append(Label(self.selectCamIndexesFrame, textvariable=self.cb_string_v[ix], text="Disconnected",fg="red"))
+        #    self.cb_string_v[ix].set('Disconnected')
+        #    self.cb_string[ix].grid(row=ix,column=1)#,sticky='w')
+        #label = tk.Label(self.selectCamIndexesFrame, width=20)
+        #label.grid(row=5 + 1, column=0, sticky='w')
 
         # e1 = Entry(self.midtopSectionLabel_configPaneTabMain)
         # self.midSection_configPaneTabMain.pack(e1)
@@ -407,7 +460,12 @@ class GUIApplication(threading.Thread):
         # Add buttons for resetting camera extrinsic matrixes
         self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
         resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
-
+        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",command=self.applyCamList)
+        self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
+        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100)
+        self.midSection_configPaneTabMain.add(deadspace2)
+    def applyCamList(self):
+        pass
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point. # TODO: Use stack to indicate job done?

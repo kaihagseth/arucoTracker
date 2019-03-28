@@ -50,7 +50,7 @@ class PoseEstimator():
             VE.addBoards(self.getBoards())
         return cam_list
 
-    def findConnectedCamIndexes(self, wantedCams=None):
+    def findConnectedCamIndexes(self, wantedCams=([1,2])):
         '''
         Find all cams connected to system.  
         :return: 
