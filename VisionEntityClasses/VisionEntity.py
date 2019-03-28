@@ -236,11 +236,11 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
-        self._detection_quality[boardIndex] = visible_marker_count / total_marker_count
+        self._detection_quality[board.ID] = visible_marker_count / total_marker_count
         #return None
         #7print(self.__cameraToModelMatrix)
         #print("Cam index: ", self._camera.getSrc())
-        CToMMatrix = self.__cameraToModelMatrices[boardIndex]
+        CToMMatrix = self.__cameraToModelMatrices[board.ID]
         if CToMMatrix is not None:
             z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
             z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
