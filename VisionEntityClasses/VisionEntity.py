@@ -8,8 +8,6 @@ import logging
 
 class VisionEntity:
     """
-    TODO: Still only supports tracking of one board. Mrvec and Mtvec needs to be updated to a dictionary containing
-    TODO: Positions of all boards
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
     stream.
     """

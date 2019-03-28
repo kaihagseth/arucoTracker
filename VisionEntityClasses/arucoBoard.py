@@ -7,11 +7,12 @@ from VisionEntityClasses.helperFunctions import *
 
 
 class arucoBoard:
-    # FIXME: first_marker is not working as intended.
+    # TODO: first_marker should only be updated when board is added to tracking list.
     first_marker = 0
 
     def __init__(self, board_width, board_height, marker_size, marker_gap,
                  dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)):
+        self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
         self.ID = None
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
@@ -20,7 +21,7 @@ class arucoBoard:
         self._poseQuality = None # How good the current estimated pose is from a scale from 0 to 1.
         self.board_height = board_height
         self.board_width = board_width
-        self.first_marker = self.first_marker + (self.board_height * self.board_width)
+        arucoBoard.first_marker = self.first_marker + (self.board_height * self.board_width)
 
     def getGridBoardSize(self):
         return self._board.getGridSize()
@@ -42,17 +43,17 @@ class arucoBoard:
         """
         return self._transformationMatrix
 
-    def updateBoardPose(self, master_entity):
+    def updateBoardPose(self):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = master_entity.getPoses()
-        world_to_camera_transformation = master_entity.getCameraPose()
+        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID]
+        world_to_camera_transformation = self._tracking_ve.getCameraPose()
         world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation
         self._transformationMatrix = world_to_model_transformation
-        self.setPoseQuality(master_entity)
+        self.setPoseQuality()
 
     def setFirstBoardPosition(self, ve, q_threshold):
         """
@@ -69,15 +70,16 @@ class arucoBoard:
             return False
         return True
 
-    def setPoseQuality(self, master_entity):
+    def setPoseQuality(self):
         """
         Calculates and sets pose quality based on the vision entity's camera pose quality and pose estimation quality.
+        # TODO: This function should probably be in the vision entity class.
         :param master_entity:
         :return:
         """
-        assert master_entity.getCameraPoseQuality() <= 1, "master camera camera pose quality is above 1"
-        assert master_entity.getDetectionQuality() <= 1, "master camera detection quality is above 1"
-        self._poseQuality = master_entity.getDetectionQuality() * master_entity.getCameraPoseQuality()
+        assert self._tracking_ve.getCameraPoseQuality() <= 1, "master camera camera pose quality is above 1"
+        assert self._tracking_ve.getDetectionQuality()[self.ID] <= 1, "master camera detection quality is above 1"
+        self._poseQuality = self._tracking_ve.getDetectionQuality()[self.ID] * self._tracking_ve.getCameraPoseQuality()
 
     def getPoseQuality(self):
         return self._poseQuality
@@ -118,3 +120,18 @@ class arucoBoard:
         :return: cv2 image array of board.
         """
         return self._board.draw(size)
+
+    def getTrackingEntity(self):
+        """
+        Returns the vision entity that is currently tracking this board.
+        :return: the vision entity that is currently tracking this board.
+        """
+        return self._tracking_ve
+
+    def setTrackingEntity(self, ve):
+        """
+        Sets the vision entity that has the responsibility for tracking this board.
+        :param ve: the vision entity that is currently tracking this board.
+        :return:
+        """
+        self._tracking_ve = ve

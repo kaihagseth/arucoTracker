@@ -36,7 +36,7 @@ class Connector():
         time.sleep(5)
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            camID, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
+            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
             if startCommand:
                 logging.debug("startCommand received")
                 self.PE.createVisionEntities()
@@ -51,8 +51,7 @@ class Connector():
             if runApp:
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
-                frame = self.PE.getPosePreviewImg(camID)
-                boardPose_quality = self.PE.getBoardPositionQuality()
+                frame = self.PE.getPosePreviewImg(id, auto)
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
