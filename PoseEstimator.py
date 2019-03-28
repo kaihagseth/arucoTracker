@@ -183,7 +183,7 @@ class PoseEstimator():
                 rvec, tvec = board.getRvecTvec()
                 tvec = tvec.astype(int).reshape(-1)
                 evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(int)
-            except TypeError:
+            except (TypeError, AttributeError):
                 tvec = None
                 evec = None
             pose = evec, tvec
@@ -194,12 +194,6 @@ class PoseEstimator():
     def chooseMasterCam(self, board):
         """
         Chooses a master vision entity based on the potential board positional quality they can deliver
-        # FIXME: Need a smart fix selecting master cam when multiple boards are tracked.
-        # 1. Add list of master cameras, one per board.
-        #
-        # ideas: One master camera per board? master cam is calculated from the sum of both boards?
-        # The problems arise because the master camera is giving each boards it's position, and is serving a frame to
-        # the GUI at the same time. Might need to think new regarding the master camera variable.
         :return: master cam
         """
         highest_potential_board_quality = 0
@@ -211,7 +205,7 @@ class PoseEstimator():
                 master_ve = ve
         return master_ve
 
-    def getPosePreviewImg(self, autoTrack, ID):
+    def getPosePreviewImg(self, ID, autoTrack):
         """
         Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
         index 0.
@@ -220,6 +214,7 @@ class PoseEstimator():
         :return: Frame drawn with axis cross, corners, and poses
         """
         if autoTrack:
+            print("Autotrack active, tracking board: " + str(ID))
             boards = self.getBoards()
             board = boards[ID]
             tracking_entity = board.getTrackingEntity()
@@ -228,6 +223,7 @@ class PoseEstimator():
             else:
                 vision_entity = copy.copy(tracking_entity)
         else:
+            print("Autotrack not active, showing cam: " + str(ID))
             vision_entity = self.getVEById(ID)
 
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
@@ -260,6 +256,7 @@ class PoseEstimator():
         """
         for VE in self.getVisionEntityList():
             VE.runThread = False
+        self.VisionEntityList = []
 
     def addBoard(self, board):
         """
