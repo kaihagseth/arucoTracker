@@ -8,8 +8,6 @@ from VisionEntityClasses.helperFunctions import *
 
 class VisionEntity:
     """
-    TODO: Still only supports tracking of one board. Mrvec and Mtvec needs to be updated to a dictionary containing
-    TODO: Positions of all boards
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
     stream.
     """
@@ -236,8 +234,6 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
-        print(board.ID)
-        print(self._detection_quality)
         self._detection_quality[board.ID] = visible_marker_count / total_marker_count
 
     def drawAxis(self):

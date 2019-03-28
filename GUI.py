@@ -310,7 +310,7 @@ class GUIApplication(threading.Thread):
         self.calibrate_btn.grid(column=1, row=1)
         self.calibrate_btn.grid_rowconfigure(1, weight=1)
         self.calibrate_btn.grid_columnconfigure(1, weight=1)
-        self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show -1 means auto.
+        self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show. negatives means auto.
         self.__displayedCameraIndex.set(-1)
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
@@ -601,12 +601,17 @@ class GUIApplication(threading.Thread):
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
         """
-        camID = self.__displayedCameraIndex.get()
+        previewIndex = self.__displayedCameraIndex.get()
+        if previewIndex < 0:
+            auto = True
+            previewIndex = (previewIndex + 1) * -1
+        else:
+            auto = False
         newBoard = stackChecker(self.__pushedBoards)
         resetExtrinsic = stackChecker(self.__resetBoardPosition)
         startCommand = stackChecker(self.__start_application)
         stopCommand = stackChecker(self.__stop_application)
-        return camID, newBoard, resetExtrinsic, startCommand, stopCommand
+        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand
 
     def sendStartSignal(self):
         """

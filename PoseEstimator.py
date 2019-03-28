@@ -23,7 +23,6 @@ class PoseEstimator():
         self._log_start_time = None
         self._arucoBoards = []  # List of aruco boards to track.
         self.createArucoBoard(3, 3, 40, 5)
-        self._master_entity = None
         self.worldCoordinatesIsSet = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
@@ -157,19 +156,19 @@ class PoseEstimator():
                 # Idea: Set a flag in pose estimator when the first board is detected.
                 if not self.worldCoordinatesIsSet and model_pose is not None:
                     self.worldCoordinatesIsSet = board.setFirstBoardPosition(ve, self.QTHRESHOLD)
-                    self._master_entity = ve
+                    board.setTrackingEntity(ve)
 
-            self._master_entity = self.chooseMasterCam()
-            if self._master_entity is not None and self._master_entity.getPoses() is not None:
-                board.updateBoardPose(self._master_entity)
-
+            board.setTrackingEntity(self.chooseMasterCam(board))
+            tracking_entity = board.getTrackingEntity()
+            if tracking_entity is not None and tracking_entity.getPoses() is not None:
+                board.updateBoardPose()
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
-                if self._master_entity is None:
+                if tracking_entity is None:
                     break
-                if ve.getPoses() is not None and self._master_entity.getPoses() is not None:
+                if ve.getPoses() is not None and tracking_entity.getPoses() is not None:
                     currentCameraPoseQuality = ve.getCameraPoseQuality()
-                    potentialCameraPoseQuality = ve.getDetectionQuality() * board.getPoseQuality()
+                    potentialCameraPoseQuality = ve.getDetectionQuality()[board.ID] * board.getPoseQuality()
                     if potentialCameraPoseQuality > currentCameraPoseQuality:
                         ve.setCameraPose(board, 0)
 
@@ -192,10 +191,12 @@ class PoseEstimator():
         return poses
 
 
-    def chooseMasterCam(self):
+    def chooseMasterCam(self, board):
         """
         Chooses a master vision entity based on the potential board positional quality they can deliver
         # FIXME: Need a smart fix selecting master cam when multiple boards are tracked.
+        # 1. Add list of master cameras, one per board.
+        #
         # ideas: One master camera per board? master cam is calculated from the sum of both boards?
         # The problems arise because the master camera is giving each boards it's position, and is serving a frame to
         # the GUI at the same time. Might need to think new regarding the master camera variable.
@@ -204,25 +205,31 @@ class PoseEstimator():
         highest_potential_board_quality = 0
         master_ve = None
         for ve in self.getVisionEntityList():
-            potential_board_quality = ve.getCameraPoseQuality() * ve.getDetectionQuality()
+            potential_board_quality = ve.getCameraPoseQuality() * ve.getDetectionQuality()[board.ID]
             if potential_board_quality > highest_potential_board_quality:
                 highest_potential_board_quality = potential_board_quality
                 master_ve = ve
         return master_ve
 
-    def getPosePreviewImg(self, camID):
+    def getPosePreviewImg(self, autoTrack, ID):
         """
         Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
         index 0.
+        :param autoTrack Bool that decides if auto tracking is active.
+        :param ID. The ID of the board to track, or the cam to use.
         :return: Frame drawn with axis cross, corners, and poses
         """
-        if camID == -1:
-            if self._master_entity is None:
+        if autoTrack:
+            boards = self.getBoards()
+            board = boards[ID]
+            tracking_entity = board.getTrackingEntity()
+            if tracking_entity is None:
                 vision_entity = copy.copy(self.getVEById(0))
             else:
-                vision_entity = copy.copy(self._master_entity)
+                vision_entity = copy.copy(tracking_entity)
         else:
-            vision_entity = self.getVEById(camID)
+            vision_entity = self.getVEById(ID)
+
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
                 vision_entity.getPoses() is not None:
             out_frame = vision_entity.drawAxis()
@@ -232,7 +239,7 @@ class PoseEstimator():
                         (0, 0, 255), 2)
         else:
             if vision_entity is None:
-                out_frame = self.getVEById(camID).getFrame()
+                out_frame = self.getVEById(0).getFrame()
             else:
                 out_frame = vision_entity.getFrame()
         return out_frame
