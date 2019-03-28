@@ -125,7 +125,7 @@ class VisionEntity:
         """
         self._cameraPoseMatrix = None
 
-    def setCameraPose(self, board, boardID, threshold):
+    def setCameraPose(self, board, threshold):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
@@ -134,10 +134,9 @@ class VisionEntity:
         :return:
         """
         origin_to_model = board.getTransformationMatrix()
-        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[boardID])
+        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
         assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
-
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
@@ -147,11 +146,12 @@ class VisionEntity:
         """
         Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
         camera to be calibrated and the master camera.
-        :param board:
+        :param board: The board to calculate camera pose quality from
+        :param threshold: The threshold to overcome in order to set the camera pose quality
         :return:
         """
         w, h = board.getGridBoardSize()
-        detectionQuality = self.getDetectionQuality()
+        detectionQuality = self.getDetectionQuality()[board.ID]
         boardPoseQuality = board.getPoseQuality()
         assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
         assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
@@ -208,27 +208,23 @@ class VisionEntity:
         return cam.retrieveFrame()
 
 
-    def estimatePose(self, board, boardID):
+    def estimatePose(self, board):
         """
         Estimates pose and saves pose to object field
         :param board: Board yo estimate
         :return: None
         """
-        extendListToIndex(self._detection_quality, boardID, None)
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
-                                                      self.intrinsic_matrix, self.getDistortionCoefficients())
+                                                    self.intrinsic_matrix, self.getDistortionCoefficients())
         self.setModelPoseQuality(board)
-        self.__cameraToModelMatrices[boardID] = rvecTvecToTransMatrix(rvec, tvec)
+        self.__cameraToModelMatrices[board.ID] = rvecTvecToTransMatrix(rvec, tvec)
 
-    def setModelPoseQuality(self, board, boardIndex):
+    def setModelPoseQuality(self, board):
         """
         Calculates the quality of the current pose estimation between the camera and the model
-        # TODO: Test if recursive call is working as intended.
         :return: None
         """
-
         # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
-        extendListToIndex(self._detection_quality, boardIndex, 0)
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = set(board.getIds())
@@ -260,7 +256,6 @@ class VisionEntity:
 
     def drawAxis(self):
         """
-        TODO: Multi object support.
         Draws axis cross on image frame
         :param frame: Image frame to be drawn on
         :param vision_entity: Vision entity the frame came from.
@@ -290,15 +285,27 @@ class VisionEntity:
 
     def getCornerDetectionAttributes(self):
         """
-
-        :return:
+        Returns saved values from co
+        :return: None
         """
         return self.__corners, self.__ids, self.__rejected
 
     def terminate(self):
         """
         Readies Vision Entity for termination
-        :return:
+        :return: None
         """
         self._camera.terminate()
 
+    def addBoards(self, boards):
+        """
+        Extends cameraToModelMatrices list to accommodate for tracking of more boards.
+        :return: None
+        """
+        if boards is list or boards is tuple:
+            for board in boards:
+                self.__cameraToModelMatrices.append(None)
+                self._detection_quality.append(0)
+        else:
+            self.__cameraToModelMatrices.append(None)
+            self._detection_quality.append(0)
