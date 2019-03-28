@@ -434,7 +434,8 @@ class GUIApplication(threading.Thread):
         return self.VEsToSend
     def resetCamExtrinsic(self):
         '''
-        Reset the cam extrinsic matrixes to the current frame point. # TODO: Use stack to indicate job done?
+        Reset the cam extrinsic matrixes to the current frame point.
+        # TODO: Use stack to indicate job done? Add button to GUI.
         :return:
         '''
         self.resetBoardPosition.append(True)
@@ -598,6 +599,7 @@ class GUIApplication(threading.Thread):
     def updateFields(self, poses, frame, boardPose_quality):
         """
         Update GUI-objects fields outputframe and six axis pose.
+        # Pose should probably be a datatype/class
         :param poses: The poses of all models tracked.
         :param frame: The frame to display in camera view.
         :return: None
@@ -610,7 +612,7 @@ class GUIApplication(threading.Thread):
             self.boardPose_quality.set(0.0)
 
         if poses:
-            evec,tvec = poses[0]
+            evec, tvec = poses[0]
             if evec is not None:
                 x, y, z = tvec
                 self.x_value.set(x)
