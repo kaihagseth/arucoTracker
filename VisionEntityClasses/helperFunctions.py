@@ -51,9 +51,13 @@ def transMatrixToRvecTvec(RT):
     :param RT: 4x4 Transformation Matrix
     :return: Rodrigues vectors
     """
-    R = RT[0:3, 0:3]
-    rvec = cv2.Rodrigues(R)[0]
-    tvec = np.asarray(RT[0:3, 3])
+    if RT is not None:
+        R = RT[0:3, 0:3]
+        rvec = cv2.Rodrigues(R)[0]
+        tvec = np.asarray(RT[0:3, 3])
+    else:
+        rvec = None
+        tvec = None
 
     return rvec, tvec
 

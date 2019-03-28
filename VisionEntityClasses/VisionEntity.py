@@ -262,9 +262,10 @@ class VisionEntity:
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
         for matrix in self.__cameraToModelMatrices:
-            rvec, tvec = transMatrixToRvecTvec(matrix)
-            image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                    rvec, tvec, 100)
+            if matrix is not None:
+                rvec, tvec = transMatrixToRvecTvec(matrix)
+                image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
+                                           rvec, tvec, 100)
         return image
 
     def getPoses(self):

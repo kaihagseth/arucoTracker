@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 from fpdf import FPDF
-
-
 from VisionEntityClasses.helperFunctions import *
 
 
@@ -18,7 +16,7 @@ class arucoBoard:
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
         self._transformationMatrix = None # World -> Model transformation
-        self._poseQuality = None # How good the current estimated pose is from a scale from 0 to 1.
+        self._poseQuality = 0 # How good the current estimated pose is from a scale from 0 to 1.
         self.board_height = board_height
         self.board_width = board_width
         arucoBoard.first_marker = self.first_marker + (self.board_height * self.board_width)
