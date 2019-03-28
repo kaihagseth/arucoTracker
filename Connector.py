@@ -12,9 +12,6 @@ class Connector():
     '''
     Connect the UI with rest of the application.
     Start the GUI.
-    # TODO: Refactor connector and GUI classes.
-    #
-    hello
     '''
 
     def __init__(self, ui_string):
@@ -47,7 +44,7 @@ class Connector():
                 runApp = False
                 self.PE.stopThreads()
             if newBoard:
-                self.PE.addBoard()
+                self.PE.addBoard(newBoard)
             if runApp:
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
