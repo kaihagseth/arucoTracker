@@ -33,15 +33,24 @@ class Connector():
         '''
         doAbort = False
         runApp = False
+        VEsInitInGUI = False
         time.sleep(5)
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
+            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
             if startCommand:
                 logging.debug("startCommand received")
-                self.PE.createVisionEntities()
+                if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
+                    self.PE.createVisionEntities()
+                else:
+                    # Do nothing. VEs already initialised
+                    pass
                 self.PE.runPoseEstimator()  # Create all threads and start them
                 runApp = True
+            if collectGUIVEs:
+                VElist = self.UI.getVEsForPE()
+                self.PE.setVisionEntityList(VElist)
+                VEsInitInGUI = True
             if stopCommand:
                 logging.debug("stop command received")
                 runApp = False

@@ -48,7 +48,9 @@ class PoseEstimator():
             self.VisionEntityList.append(VE)
             VE.addBoards(self.getBoards())
         return cam_list
-
+    def setVisionEntityList(self, VElist):
+        for VE in VElist:
+            self.VisionEntityList.append(VE)
     def findConnectedCamIndexes(self, wantedCams=([1,2])):
         '''
         Find all cams connected to system.  

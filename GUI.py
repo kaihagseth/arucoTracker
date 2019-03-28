@@ -10,6 +10,8 @@ from PIL import ImageTk, Image
 import GUIDataPlotting
 from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
+from VisionEntityClasses.VisionEntity import VisionEntity
+from VEConfigUnit import VEConfigUnit
 
 
 class GUIApplication(threading.Thread):
@@ -37,6 +39,7 @@ class GUIApplication(threading.Thread):
         self.__pushedBoards = []
         self.__start_application = []
         self.__stop_application = []
+        self.__collectGUIVEs = []
 
         # GUI Handling flags
         self.doStopApp = False
@@ -376,96 +379,59 @@ class GUIApplication(threading.Thread):
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
+        Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
 
-        class VEConfigUnit():
-            '''
-            Class for holding choices regarding cam and VE in config tab GUI.
-            '''
-            def __init__(self, camID, parent):
-                self._frame = Frame(parent) # Container for all widgets
-                self._id = camID # Camera index
-                self._currState = 0
-                self._cb_v = StringVar() # Variable to hold state of
-                self._state = IntVar()
-                self._state = 'Disconnected'
-                self._connectionStatusLabel = "Disconnected" # Statustext of connection with cam
-                self._cb = tk.Checkbutton(self._frame, text=str(self._id), onvalue=self._id, offvalue=-1,
-                                     variable=self._cb_v, command=self.chkbox_checked)  # Checkbutton
-                self.cb_string_v = []  # List for telling the status of the cam on given index
-                #self.cb_string = []  # Status for each index/camera on index
-                self.conStatusLabel = Label(self._frame, textvariable=self.cb_string_v[ix],
-                                            text="Disconnected", fg="red")
-                self.connectBtn = Checkbutton(self._frame, text="Connect", command=self.setConnectionStatus, variable=self._state, onvalue=1, offvalue=0)
-                self.previewBtn = Checkbutton(self._frame, text="Preview", command=self.setConnectionStatus, variable = self._state, onvalue=3, offvalue=2)
-
-                # Pack everything in container
-                self._cb.grid(row=0,column=0,sticky='w')
-                deadspace3 = Frame(self._frame, width = 20).grid(row=0,column=1)
-                self.connectBtn.grid(row=0,column=2)
-                self.previewBtn.grid(row=0, column=3,state=DISABLED)
-                return self._frame
-            def chkbox_checked(self):
-                pass
-            def setConnectionStatus(self):
-                #self._state
-                state = self._state.get()
-                msg = state,""
-                logging.debug(msg)
-            def setButtonStates(self, state):
-                if state is 2 and self._currState is not 2: # Show previewbutton
-                    pass
-            def doConnect(self):
-                pass
-            def getFrame(self):
-                return self._frame
         mylist = [
             0, 1, 2, 3, 4
         ]
-        VEConfigUnits = []
-        for i in mylist:
-            VECU = VEConfigUnit(i,self.selectCamIndexesFrame)
-            VECU.getFrame.grid(row=i,column=0)
+        self.VEConfigUnits = []
+        for i in mylist: # Create VEConfigUnits
+            VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
+            self.VEConfigUnits.append(VECU)
+            print(i)
+            #VECU.getFrame.grid(row=i,column=0)
 
-
-        # Create list to select which cams to use in the Pose Estimator. Need to be applied by the Apply-button.
-        #self.opt = []
-        #def chkbox_checked():
-        #    for ix, item in enumerate(cb):
-        #        self.opt[ix] = (cb_v[ix].get())
-        #    print(self.opt)
-        #
-        #mylist = [
-        #    0, 1, 2, 3, 4
-        #]
-        #
-        #for ix, text in enumerate(mylist):
-        #    #cb_v.append(tk.StringVar())
-        #    #self.cb_string_v.append(tk.StringVar())
-        #    off_value = -1  # whatever you want it to be when the checkbutton is off
-        #    cb.append(tk.Checkbutton(self.selectCamIndexesFrame, text=text, onvalue=text, offvalue=off_value,
-        #                             variable=cb_v[ix],
-        #                             command=chkbox_checked))
-        #    cb[ix].grid(row=ix, column=0, sticky='w')
-        #    self.opt.append(off_value)
-        #    cb[-1].deselect()  # uncheck the boxes initially.
-        #    self.cb_string.append(Label(self.selectCamIndexesFrame, textvariable=self.cb_string_v[ix], text="Disconnected",fg="red"))
-        #    self.cb_string_v[ix].set('Disconnected')
-        #    self.cb_string[ix].grid(row=ix,column=1)#,sticky='w')
-        #label = tk.Label(self.selectCamIndexesFrame, width=20)
-        #label.grid(row=5 + 1, column=0, sticky='w')
-
-        # e1 = Entry(self.midtopSectionLabel_configPaneTabMain)
-        # self.midSection_configPaneTabMain.pack(e1)
-
-        # Add buttons for resetting camera extrinsic matrixes
         self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
         resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
         self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",command=self.applyCamList)
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
         deadspace2 = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(deadspace2)
+        # List for VEs stored in GUI
+        self.prelimVEList = []
+
+    def createPrelimVE(self,index):
+        VE = VisionEntity(index)
+        self.prelimVEList.append(VE)
+        print("Source of VE: ", VE.getCam().getSrc())
+
     def applyCamList(self):
-        pass
+        '''
+        Collect all VEs to be sent to PE for PoseEstimation.
+        :return:
+        '''
+        self.VEsToSend = [] # List of VEs to send to PoseEstimator
+        logging.debug("In applyCamList()")
+        #print("VEConfigUnits:", len(self.VEConfigUnits), self.VEConfigUnits)
+        for VECU in self.VEConfigUnits:
+            #print("Inside")
+            # Check if this VE should be included
+            include = VECU.getIncludeStatus()
+            print(include)
+            if include:
+                VECU_VE = VECU.getVE()
+                if VECU_VE is not None:
+                    # VE already created
+                    # Include the VC
+                    self.VEsToSend.append(VECU_VE)
+                else:
+                    index = VECU.getIndex()
+                    VE = VisionEntity(index)
+                    self.VEsToSend.append(VE)
+                VECU.setState(6) # Set status as PE running
+        self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
+    def getVEsForPE(self):
+        return self.VEsToSend
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point. # TODO: Use stack to indicate job done?
@@ -682,7 +648,8 @@ class GUIApplication(threading.Thread):
         resetExtrinsic = stackChecker(self.__resetBoardPosition)
         startCommand = stackChecker(self.__start_application)
         stopCommand = stackChecker(self.__stop_application)
-        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand
+        collectGUIVEs = stackChecker(self.__collectGUIVEs)
+        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
 
     def sendStartSignal(self):
         """
