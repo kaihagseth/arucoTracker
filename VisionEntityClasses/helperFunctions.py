@@ -51,9 +51,13 @@ def transMatrixToRvecTvec(RT):
     :param RT: 4x4 Transformation Matrix
     :return: Rodrigues vectors
     """
-    R = RT[0:3, 0:3]
-    rvec = cv2.Rodrigues(R)[0]
-    tvec = np.asarray(RT[0:3, 3])
+    if RT is not None:
+        R = RT[0:3, 0:3]
+        rvec = cv2.Rodrigues(R)[0]
+        tvec = np.asarray(RT[0:3, 3])
+    else:
+        rvec = None
+        tvec = None
 
     return rvec, tvec
 
@@ -81,3 +85,15 @@ def stackChecker(list):
     else:
         out = False
     return out
+
+def extendListToIndex(list, index, fillObject=None):
+    """
+    Pads a list to the point where its last index is the same as the input index if the list is shorter than the
+    :param list: List to extend
+    :param index: Index to extend to
+    :param fillObject: Object to pad list with
+    :return: None
+    """
+    indexListLengthDifference = (index + 1) - len(list)
+    if indexListLengthDifference > 0:
+        list.extend([fillObject] * indexListLengthDifference)

@@ -3,13 +3,11 @@ import numpy as np
 import exceptions as exc
 from VisionEntityClasses.Camera import Camera
 from VisionEntityClasses.helperFunctions import *
-
+import logging
 
 
 class VisionEntity:
     """
-    TODO: Still only supports tracking of one board. Mrvec and Mtvec needs to be updated to a dictionary containing
-    TODO: Positions of all boards
     Represents a stand alone vision entity that handles a camera and the logic that can be applied to a single video
     stream.
     """
@@ -20,10 +18,11 @@ class VisionEntity:
     def __init__(self, cv2_index):
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
-        self.__cameraToModelMatrix = None  # Camera -> Model transformation - Should only be written to from thread!!
+        # cameraToModelToMatrix should be a list containing all boards
+        self.__cameraToModelMatrices = []  # Camera -> Model transformation - Should only be written to from thread!!
         self._cameraPoseMatrix = None
         self._cameraPoseQuality = 0
-        self._detection_quality = 0
+        self._detection_quality = []
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -46,6 +45,7 @@ class VisionEntity:
             self.detectMarkers(dictionary)
             for board in boards:
                 self.estimatePose(board)
+        self.terminate()
 
     def calibrateCameraWithTool(self):
         """
@@ -132,10 +132,9 @@ class VisionEntity:
         :return:
         """
         origin_to_model = board.getTransformationMatrix()
-        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrix)
+        model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
         assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
-
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
@@ -145,11 +144,12 @@ class VisionEntity:
         """
         Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
         camera to be calibrated and the master camera.
-        :param board:
+        :param board: The board to calculate camera pose quality from
+        :param threshold: The threshold to overcome in order to set the camera pose quality
         :return:
         """
         w, h = board.getGridBoardSize()
-        detectionQuality = self.getDetectionQuality()
+        detectionQuality = self.getDetectionQuality()[board.ID]
         boardPoseQuality = board.getPoseQuality()
         assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
         assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
@@ -168,7 +168,7 @@ class VisionEntity:
 
     def getDetectionQuality(self):
         """
-        returns model pose quality
+        Returns model pose quality
         :return: Model pose quality
         """
         return self._detection_quality
@@ -209,19 +209,20 @@ class VisionEntity:
     def estimatePose(self, board):
         """
         Estimates pose and saves pose to object field
-        :param board: Board yo estomate
+        :param board: Board yo estimate
         :return: None
         """
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
-                                                      self.intrinsic_matrix, self.getDistortionCoefficients())
+                                                    self.intrinsic_matrix, self.getDistortionCoefficients())
         self.setModelPoseQuality(board)
-        self.__cameraToModelMatrix = rvecTvecToTransMatrix(rvec, tvec)
+        self.__cameraToModelMatrices[board.ID] = rvecTvecToTransMatrix(rvec, tvec)
 
     def setModelPoseQuality(self, board):
         """
         Calculates the quality of the current pose estimation between the camera and the model
         :return: None
         """
+        # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = set(board.getIds())
@@ -233,7 +234,23 @@ class VisionEntity:
             visible_marker_count = len(detectedBoardIds)
         else:
             visible_marker_count = 0
-        self._detection_quality = visible_marker_count / total_marker_count
+        self._detection_quality[board.ID] = visible_marker_count / total_marker_count
+        #return None
+        #7print(self.__cameraToModelMatrix)
+        #print("Cam index: ", self._camera.getSrc())
+        CToMMatrix = self.__cameraToModelMatrices[board.ID]
+        if CToMMatrix is not None:
+            z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
+            z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
+            print("Z1: ", z1)
+            print("Z2: ", z2)
+            msg1 = CToMMatrix
+            logging.debug(msg1)
+            q = np.linalg.norm(np.dot(z1,z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
+            msg = "Q: ", q
+            logging.debug(msg)
+        else:
+            logging.error("__cameraToModelMatrix not set.")
 
     def drawAxis(self):
         """
@@ -244,9 +261,11 @@ class VisionEntity:
         """
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
-        rvec, tvec = transMatrixToRvecTvec(self.__cameraToModelMatrix)
-        image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
-                                   rvec, tvec, 100)
+        for matrix in self.__cameraToModelMatrices:
+            if matrix is not None:
+                rvec, tvec = transMatrixToRvecTvec(matrix)
+                image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
+                                           rvec, tvec, 100)
         return image
 
     def getPoses(self):
@@ -254,7 +273,7 @@ class VisionEntity:
         Returns pose from private fields.
         :return: Transformation matrix from camera to model
         """
-        return self.__cameraToModelMatrix
+        return self.__cameraToModelMatrices
 
     def getCameraPose(self):
         """
@@ -265,8 +284,27 @@ class VisionEntity:
 
     def getCornerDetectionAttributes(self):
         """
-
-        :return:
+        Returns saved values from co
+        :return: None
         """
         return self.__corners, self.__ids, self.__rejected
 
+    def terminate(self):
+        """
+        Readies Vision Entity for termination
+        :return: None
+        """
+        self._camera.terminate()
+
+    def addBoards(self, boards):
+        """
+        Extends cameraToModelMatrices list to accommodate for tracking of more boards.
+        :return: None
+        """
+        if boards is list or boards is tuple:
+            for board in boards:
+                self.__cameraToModelMatrices.append(None)
+                self._detection_quality.append(0)
+        else:
+            self.__cameraToModelMatrices.append(None)
+            self._detection_quality.append(0)

@@ -139,3 +139,10 @@ class Camera():
         :return: Frame
         """
         return self._frame
+
+    def terminate(self):
+        """
+        Readies camera for termination
+        :return:
+        """
+        self._vidCap.release()
