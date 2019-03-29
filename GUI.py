@@ -353,57 +353,58 @@ class GUIApplication(threading.Thread):
     def setupConfigTab(self):
         self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
-
+        self.configPaneTabMain.configure(bg='#424242')
         # Create paned windows
-        self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)  # , text="left pane")
-        self.configPaneTabMain.add(self.left_configPaneTabMain)
+        #self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)  # , text="left pane")
+        #self.configPaneTabMain.add(self.left_configPaneTabMain)
 
         # Mid section Pane for configuring
         self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
         self.configPaneTabMain.add(self.midSection_configPaneTabMain)
-
+        self.midSection_configPaneTabMain.configure(bg='#424242')
         self.rightSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)
         self.configPaneTabMain.add(self.rightSection_configPaneTabMain)
-
-        self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
-        self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
+        self.configPaneTabMain.configure(bg='#424242')
+#        self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
+#        self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
 
         self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
-
+        self.midtopSectionLabel_configPaneTabMain.configure(bg='#424242')
         #self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
         #self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
 
         self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
         self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
+        self.rightSection_configPaneTabMain.configure(bg='#424242')
+        self.rightSectionLabel_configPaneTabMain.configure(bg='#424242')
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
+        self.selectCamIndexesFrame.configure(bg='#424242')
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
 
-        mylist = [
-            0, 1, 2, 3, 4
-        ]
+        ''' Create VEConfigUnits that controls all  '''
+        numbCamsToShow = 5
         self.VEConfigUnits = []
-        for i in mylist: # Create VEConfigUnits
+        for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
+            # Create VECU fpr given index
             VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
             self.VEConfigUnits.append(VECU)
-            print(i)
-            #VECU.getFrame.grid(row=i,column=0)
 
-        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
-        resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
-        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",command=self.applyCamList)
+#        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
+#        resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
+        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",bg='#424242',command=self.applyCamList)
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
-        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100)
+        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg='#424242')
         self.midSection_configPaneTabMain.add(deadspace2)
         # List for VEs stored in GUI
         self.prelimVEList = []
 
-    def createPrelimVE(self,index):
-        VE = VisionEntity(index)
-        self.prelimVEList.append(VE)
-        print("Source of VE: ", VE.getCam().getSrc())
+    #def createPrelimVE(self,index):
+    #    VE = VisionEntity(index)
+    #    self.prelimVEList.append(VE)
+    #    print("Source of VE: ", VE.getCam().getSrc())
 
     def applyCamList(self):
         '''
@@ -431,7 +432,12 @@ class GUIApplication(threading.Thread):
                 VECU.setState(6) # Set status as PE running
         self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
     def getVEsForPE(self):
+        '''
+        Send the VEs defined and applied in the Config tab in GUI.
+        :return: List of VEs
+        '''
         return self.VEsToSend
+
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point.
