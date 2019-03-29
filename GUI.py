@@ -10,6 +10,8 @@ from PIL import ImageTk, Image
 import GUIDataPlotting
 from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
+from VisionEntityClasses.VisionEntity import VisionEntity
+from VEConfigUnit import VEConfigUnit
 
 
 class GUIApplication(threading.Thread):
@@ -37,6 +39,7 @@ class GUIApplication(threading.Thread):
         self.__pushedBoards = []
         self.__start_application = []
         self.__stop_application = []
+        self.__collectGUIVEs = []
 
         # GUI Handling flags
         self.doStopApp = False
@@ -150,6 +153,7 @@ class GUIApplication(threading.Thread):
         self.roll_value = DoubleVar()
         self.pitch_value = DoubleVar()
         self.yaw_value = DoubleVar()
+        self.boardPose_quality = DoubleVar()
 
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
         self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='orange',
@@ -188,6 +192,13 @@ class GUIApplication(threading.Thread):
         self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='green',
                                             font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispYaw_camPaneTabMain.grid(column=5, row=1)
+        # Display the quality of board estimation
+        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality, bg='blue',
+                                          font=(self.poseFontType, self.poseFontSize), padx=15)
+        self.boardPoseQuality_label.grid(column=7, row=0)
+        self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg='blue',
+                                            font=(self.poseFontType, self.poseFontSize), padx=15)
+        self.dispBoardPoseQual_camPaneTabMain.grid(column=6, row=0)
 
         self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
@@ -357,49 +368,70 @@ class GUIApplication(threading.Thread):
         self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
         self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
 
-        self.midtopSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="top pane")
+        self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
 
-        self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
-        self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
-        self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
+        #self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
+        #self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
 
         self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
         self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
-        opt = []
-
-        def chkbox_checked():
-            for ix, item in enumerate(cb):
-                opt[ix] = (cb_v[ix].get())
-            print(opt)
+        Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
 
         mylist = [
-            1, 2, 3, 4, 5
+            0, 1, 2, 3, 4
         ]
-        cb = []
-        cb_v = []
-        for ix, text in enumerate(mylist):
-            cb_v.append(tk.StringVar())
-            off_value = -1  # whatever you want it to be when the checkbutton is off
-            cb.append(tk.Checkbutton(self.selectCamIndexesFrame, text=text, onvalue=text, offvalue=off_value,
-                                     variable=cb_v[ix],
-                                     command=chkbox_checked))
-            cb[ix].grid(row=ix, column=0, sticky='w')
-            opt.append(off_value)
-            cb[-1].deselect()  # uncheck the boxes initially.
-        label = tk.Label(self.selectCamIndexesFrame, width=20)
-        label.grid(row=5 + 1, column=0, sticky='w')
+        self.VEConfigUnits = []
+        for i in mylist: # Create VEConfigUnits
+            VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
+            self.VEConfigUnits.append(VECU)
+            print(i)
+            #VECU.getFrame.grid(row=i,column=0)
 
-        # e1 = Entry(self.midtopSectionLabel_configPaneTabMain)
-        # self.midSection_configPaneTabMain.pack(e1)
-
-        # Add buttons for resetting camera extrinsic matrixes
         self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
         resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
+        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",command=self.applyCamList)
+        self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
+        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100)
+        self.midSection_configPaneTabMain.add(deadspace2)
+        # List for VEs stored in GUI
+        self.prelimVEList = []
 
+    def createPrelimVE(self,index):
+        VE = VisionEntity(index)
+        self.prelimVEList.append(VE)
+        print("Source of VE: ", VE.getCam().getSrc())
+
+    def applyCamList(self):
+        '''
+        Collect all VEs to be sent to PE for PoseEstimation.
+        :return:
+        '''
+        self.VEsToSend = [] # List of VEs to send to PoseEstimator
+        logging.debug("In applyCamList()")
+        #print("VEConfigUnits:", len(self.VEConfigUnits), self.VEConfigUnits)
+        for VECU in self.VEConfigUnits:
+            #print("Inside")
+            # Check if this VE should be included
+            include = VECU.getIncludeStatus()
+            print(include)
+            if include:
+                VECU_VE = VECU.getVE()
+                if VECU_VE is not None:
+                    # VE already created
+                    # Include the VC
+                    self.VEsToSend.append(VECU_VE)
+                else:
+                    index = VECU.getIndex()
+                    VE = VisionEntity(index)
+                    self.VEsToSend.append(VE)
+                VECU.setState(6) # Set status as PE running
+        self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
+    def getVEsForPE(self):
+        return self.VEsToSend
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point.
@@ -564,7 +596,7 @@ class GUIApplication(threading.Thread):
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
 
-    def updateFields(self, poses, frame):
+    def updateFields(self, poses, frame, boardPose_quality):
         """
         Update GUI-objects fields outputframe and six axis pose.
         # Pose should probably be a datatype/class
@@ -574,6 +606,11 @@ class GUIApplication(threading.Thread):
         """
         self.modelPoses = poses
         self.frame = frame
+        if boardPose_quality is not None:
+            self.boardPose_quality.set(round(boardPose_quality, 2))
+        else:
+            self.boardPose_quality.set(0.0)
+
         if poses:
             evec, tvec = poses[0]
             if evec is not None:
@@ -613,7 +650,8 @@ class GUIApplication(threading.Thread):
         resetExtrinsic = stackChecker(self.__resetBoardPosition)
         startCommand = stackChecker(self.__start_application)
         stopCommand = stackChecker(self.__stop_application)
-        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand
+        collectGUIVEs = stackChecker(self.__collectGUIVEs)
+        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
 
     def sendStartSignal(self):
         """

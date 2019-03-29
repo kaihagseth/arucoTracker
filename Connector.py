@@ -30,15 +30,24 @@ class Connector():
         '''
         doAbort = False
         runApp = False
+        VEsInitInGUI = False
         time.sleep(5)
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand = self.UI.readUserInputs()
+            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
             if startCommand:
                 logging.debug("startCommand received")
-                self.PE.createVisionEntities()
+                if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
+                    self.PE.createVisionEntities()
+                else:
+                    # Do nothing. VEs already initialised
+                    pass
                 self.PE.runPoseEstimator()  # Create all threads and start them
                 runApp = True
+            if collectGUIVEs:
+                VElist = self.UI.getVEsForPE()
+                self.PE.setVisionEntityList(VElist)
+                VEsInitInGUI = True
             if stopCommand:
                 logging.debug("stop command received")
                 runApp = False
@@ -52,7 +61,7 @@ class Connector():
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
-                self.UI.updateFields(poses, frame)  # Write relevant information to UI-thread.
+                self.UI.updateFields(poses, frame, boardPose_quality)  # Write relevant information to UI-thread.
                 self.UI.showFindPoseStream()
             else:
                 time.sleep(0.1)
