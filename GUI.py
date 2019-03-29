@@ -598,7 +598,7 @@ class GUIApplication(threading.Thread):
     def readUserInputs(self):
         """
         Exports all user commands relevant outside of the GUI
-        :return: camID: index of selected camera. -1 if auto. newBoard: arucoboard created and pushed from GUI
+        :return: camID: index of selected camera. negative if auto. newBoard: arucoboard created and pushed from GUI
         resetExtrinsic: Command to reset extrinsic matrices of cameras.
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
