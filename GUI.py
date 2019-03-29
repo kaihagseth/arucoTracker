@@ -12,6 +12,7 @@ from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VEConfigUnit import VEConfigUnit
+from exceptions import CamNotOpenedException
 
 
 class GUIApplication(threading.Thread):
@@ -40,6 +41,7 @@ class GUIApplication(threading.Thread):
         self.__start_application = []
         self.__stop_application = []
         self.__collectGUIVEs = []
+        self.__doPreviewIndex = -1
 
         # GUI Handling flags
         self.doStopApp = False
@@ -351,6 +353,7 @@ class GUIApplication(threading.Thread):
         # Configuration setup
 
     def setupConfigTab(self):
+
         self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
         self.configPaneTabMain.configure(bg='#424242')
@@ -384,12 +387,20 @@ class GUIApplication(threading.Thread):
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
 
+        self.midSection_configPaneTabMain.configure(relief='groove')
+        self.midSection_configPaneTabMain.configure(borderwidth='2')
+        self.rightSection_configPaneTabMain.configure(relief='groove')
+        self.rightSection_configPaneTabMain.configure(borderwidth='2')
+
+        self.selectCamIndexesFrame.configure(relief='groove')
+        self.selectCamIndexesFrame.configure(borderwidth='2', pady='10')
         ''' Create VEConfigUnits that controls all  '''
         numbCamsToShow = 5
         self.VEConfigUnits = []
         for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
             VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
+            VECU.run()
             self.VEConfigUnits.append(VECU)
 
 #        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
@@ -400,6 +411,11 @@ class GUIApplication(threading.Thread):
         self.midSection_configPaneTabMain.add(deadspace2)
         # List for VEs stored in GUI
         self.prelimVEList = []
+
+        #Container for preview image
+        self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
+        self.imgHolder.image = None
+        self.imgHolder.pack()
 
     #def createPrelimVE(self,index):
     #    VE = VisionEntity(index)
@@ -418,18 +434,24 @@ class GUIApplication(threading.Thread):
             #print("Inside")
             # Check if this VE should be included
             include = VECU.getIncludeStatus()
-            print(include)
             if include:
                 VECU_VE = VECU.getVE()
+                VECU.setDoPreviewState(False)
                 if VECU_VE is not None:
                     # VE already created
                     # Include the VC
                     self.VEsToSend.append(VECU_VE)
-                else:
-                    index = VECU.getIndex()
-                    VE = VisionEntity(index)
-                    self.VEsToSend.append(VE)
-                VECU.setState(6) # Set status as PE running
+                else: # VE not already made, try to make a new.
+                    try:
+                        index = VECU.getIndex()
+                        VE = VisionEntity(index)
+                        self.VEsToSend.append(VE)
+                        VECU.setState(6) # Set status as PE running
+                    except CamNotOpenedException as e:
+                        msg = "Failed to open camera on {0}. Not running in PE".format(VECU.getIndex())
+                        logging.error(msg)
+                        VECU.setIncludeInPEbool(False) # Deselect checkbutton
+                        VECU.setState(9)
         self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
     def getVEsForPE(self):
         '''
@@ -645,8 +667,14 @@ class GUIApplication(threading.Thread):
         resetExtrinsic: Command to reset extrinsic matrices of cameras.
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
+        doPreview: Return whether to previuew a frame from a camera in the VECU GUI section.
         """
-        previewIndex = self.__displayedCameraIndex.get()
+        previewIndex = None
+        try:
+            previewIndex = self.__displayedCameraIndex.get()
+        except AttributeError as e:
+            # Don't crash if __displayedCameraIndex not initialised, but set a safe value instead.
+            previewIndex = 5
         if previewIndex < 0:
             auto = True
             previewIndex = (previewIndex + 1) * -1
@@ -657,6 +685,16 @@ class GUIApplication(threading.Thread):
         startCommand = stackChecker(self.__start_application)
         stopCommand = stackChecker(self.__stop_application)
         collectGUIVEs = stackChecker(self.__collectGUIVEs)
+        self.__doPreviewIndex = self.checkPreviewStatus() # -1 if none preview was requested
+#        msg = "__doPreviewIndex: ", self.__doPreviewIndex
+#        logging.debug(msg)
+        if self.__doPreviewIndex is not -1 and self.__doPreviewIndex is not None:
+            #Activate thread for showing prev image TODO: Use threading
+            print("Inside")
+            self.showPreviewImage(self.__doPreviewIndex)
+        elif self.imgHolder.image is not None:
+            self.imgHolder.configure(image='')
+            self.imgHolder.image = None
         return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
 
     def sendStartSignal(self):
@@ -674,3 +712,42 @@ class GUIApplication(threading.Thread):
         """
         self.__stop_application.append(True)
         logging.debug("Stop signal sent.")
+    def checkPreviewStatus(self):
+        """
+        Check whether one of the VECU has requested to do preview. If so return index
+        :return:
+        """
+        for VECU in self.VEConfigUnits:
+            doPrev = VECU.getDoPreviewState()
+            if doPrev:
+                id = VECU.getIndex()
+                return id
+
+    def showPreviewImage(self, index):
+        print("Index to preview:", index)
+        if index is not -1 and index is not None:
+            try:
+                VECU = self.getVECUByIndex(index)
+                VE = VECU.getVE()
+                VE.grabFrame()
+                _, frame = VE.retrieveFrame()
+                print(frame)
+                try:
+                    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    image = Image.fromarray(image)
+                    image = ImageTk.PhotoImage(image)
+                    self.imgHolder.configure(image=image)
+                    self.imgHolder.image = image
+                except cv2.error as e:
+                    logging.error(str(e))
+            except AttributeError as e:
+                # VE not found or something.
+                # TODO: Change so this is a impossible error to hit. Hard to change cause threading etc.
+                msg = str(e) + " \n Probably caused by shutting down preview."
+                logging.error(str(e))
+
+    def getVECUByIndex(self, index):
+        for VECU in self.VEConfigUnits:
+            if index is VECU.getIndex():
+                return VECU
+        return None
