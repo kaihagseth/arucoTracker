@@ -5,7 +5,7 @@ import numpy as np
 
 from VisionEntityClasses import IntrinsicCalibrator as ic
 from WebcamVideoStream import WebcamVideoStream
-
+from exceptions import CamNotOpenedException
 
 class Camera():
     """
@@ -32,6 +32,7 @@ class Camera():
         # Test
         if not self._vidCap.open(self._src):
             logging.error('Camera not opened!')
+            raise CamNotOpenedException("Cam not opened on corresponding index.")
         if load_camera_parameters:
             self.loadCameraParameters()
 
