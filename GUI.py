@@ -144,7 +144,7 @@ class GUIApplication(threading.Thread):
         self.bottom.configure(height=20, bg='#424242')
         self.midSection_camPaneTabMain.add(self.bottom, height=50)
 
-        self.poseFontType = "Courier"
+        self.poseFontType = "Roboto"
         self.poseFontSize = 14
         self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg='#424242', fg='white',
                                                   font=(self.poseFontType, self.poseFontSize))
@@ -166,7 +166,7 @@ class GUIApplication(threading.Thread):
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
         self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='orange',
                                           font=(self.poseFontType, self.poseFontSize))
-        self.x_label.grid(column=0, row=0)
+        self.x_label.grid(column=0, row=0, sticky='w')
         self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg='orange',
                                           font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispX_camPaneTabMain.grid(column=1, row=0)
@@ -182,19 +182,19 @@ class GUIApplication(threading.Thread):
         self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='orange',
                                           font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
-        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:  ', bg='green',
+        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:      ', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.roll_label.grid(column=0, row=1, sticky='w')
         self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='green'
                                              ,font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispRoll_camPaneTabMain.grid(column=1, row=1)
-        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='green',
+        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:   ', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.pitch_label.grid(column=2, row=1)
         self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,
                                               bg='green',font=(self.poseFontType,self.poseFontSize), padx=15)
         self.dispPitch_camPaneTabMain.grid(column=3, row=1)
-        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='green',
+        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:     ', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.yaw_label.grid(column=4, row=1)
         self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='green',
