@@ -68,9 +68,11 @@ class VEConfigUnit(Thread):
         6 = VE running in PoseEstimator
         7 = Failed to open cam
         8 = Remove cam from PE. Not implemented
+        9 = Failed to use in PE (i.e. cam not opened)
         :param newState:
         :return:
         '''
+        msg = "State "
         if newState is 0: # Disconnected, VE not initialised
             self.conStatusLabel.config(text="Disconnected", fg="red")
             self.connectBtn.config(text="Connect", command=self.doConnect)

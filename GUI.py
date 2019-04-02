@@ -738,6 +738,11 @@ class GUIApplication(threading.Thread):
                 return id
 
     def showPreviewImage(self, index):
+        '''
+        Show preview video-feed from camera on given index.
+        :param index: Index of cam to preview
+        :return: None
+        '''
         print("Index to preview:", index)
         if index is not -1 and index is not None:
             try:
