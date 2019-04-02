@@ -182,27 +182,27 @@ class GUIApplication(threading.Thread):
         self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='orange',
                                           font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
-        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:      ', bg='green',
+        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.roll_label.grid(column=0, row=1, sticky='w')
         self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='green'
                                              ,font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispRoll_camPaneTabMain.grid(column=1, row=1)
-        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:   ', bg='green',
+        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.pitch_label.grid(column=2, row=1)
         self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,
                                               bg='green',font=(self.poseFontType,self.poseFontSize), padx=15)
         self.dispPitch_camPaneTabMain.grid(column=3, row=1)
-        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:     ', bg='green',
+        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.yaw_label.grid(column=4, row=1)
         self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='green',
                                             font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispYaw_camPaneTabMain.grid(column=5, row=1)
         # Display the quality of board estimation
-        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality, bg='blue',
-                                          font=(self.poseFontType, self.poseFontSize), padx=15)
+        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality,
+                                            bg='blue',font=(self.poseFontType, self.poseFontSize), padx=15)
         self.boardPoseQuality_label.grid(column=7, row=0)
         self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg='blue',
                                             font=(self.poseFontType, self.poseFontSize), padx=15)
@@ -252,28 +252,28 @@ class GUIApplication(threading.Thread):
         vcmd_gap = (self.gap_entry.register(self.on_validate), '%P')
 
         self.length.pack()
-        self.length_entry.insert(0, '3')  # Add generic text
+        self.length_entry.insert(0, 'Length')  # Add generic text
         self.length_entry.bind('<Button-1>', self.on_entry_click)  # If clicked on
         self.length_entry.configure(foreground='gray')
         self.length_entry.pack()
         self.length_entry.config(validate='key', validatecommand=vcmd_length)
 
         self.width.pack()
-        self.width_entry.insert(0, '3')
+        self.width_entry.insert(0, 'Width')
         self.width_entry.bind('<Button-1>', self.on_entry_click)
         self.width_entry.configure(foreground='gray')
         self.width_entry.pack()
         self.width_entry.config(validate='key', validatecommand=vcmd_width)
 
         self.size.pack()
-        self.size_entry.insert(0, '40')
+        self.size_entry.insert(0, 'Size')
         self.size_entry.configure(foreground='gray')
         self.size_entry.bind('<Button-1>', self.on_entry_click)
         self.size_entry.pack()
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
 
         self.gap.pack()
-        self.gap_entry.insert(0, '5')
+        self.gap_entry.insert(0, 'Gap')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
         self.gap_entry.configure(foreground='gray')
         self.gap_entry.pack()
@@ -332,6 +332,7 @@ class GUIApplication(threading.Thread):
         self.calibrate_btn.grid_columnconfigure(1, weight=1)
         self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show. negatives means auto.
         self.__displayedCameraIndex.set(-1)
+
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
@@ -394,9 +395,7 @@ class GUIApplication(threading.Thread):
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
 
-        mylist = [
-            0, 1, 2, 3, 4
-        ]
+        mylist = [0, 1, 2, 3, 4]
         self.VEConfigUnits = []
         for i in mylist: # Create VEConfigUnits
             VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
@@ -592,19 +591,19 @@ class GUIApplication(threading.Thread):
     # This function needs improvement so that it only checks the entry that is clicked instead of all at the same time.
     def on_entry_click(self, event):
         '''function that gets called whenever entry is clicked'''
-        if self.length_entry.get() == '3':
+        if self.length_entry.get() == 'Length':
             self.length_entry.delete(0, 'end')  # delete all the text in the entry
             self.length_entry.insert(0, '')  # Insert blank for user input
             self.length_entry.configure(foreground='black')
-        elif self.width_entry.get() == '3':
+        elif self.width_entry.get() == 'Width':
             self.width_entry.delete(0, 'end')  # delete all the text in the entry
             self.width_entry.insert(0, '')  # Insert blank for user input
             self.width_entry.configure(foreground='black')
-        elif self.size_entry.get() == '40':
+        elif self.size_entry.get() == 'Size':
             self.size_entry.delete(0, 'end')  # delete all the text in the entry
             self.size_entry.insert(0, '')  # Insert blank for user input
             self.size_entry.configure(foreground='black')
-        elif self.gap_entry.get() == '5':
+        elif self.gap_entry.get() == 'Gap':
             self.gap_entry.delete(0, 'end')  # delete all the text in the entry
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
