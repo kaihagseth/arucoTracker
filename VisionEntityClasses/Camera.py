@@ -5,7 +5,7 @@ import numpy as np
 
 from VisionEntityClasses import IntrinsicCalibrator as ic
 from WebcamVideoStream import WebcamVideoStream
-
+from exceptions import CamNotOpenedException
 
 class Camera():
     """
@@ -19,7 +19,7 @@ class Camera():
         :param camera_label: String corresponding to yellow label on camera.
         :param loadCameraParameters: Flag to decide if you should load this cameras parameters.
         """
-        print("Creating Camer: Name: ", cam_name, "; Label: ", camera_label, "Index: ", src_index)
+        print("Creating Camera: Name: ", cam_name, "; Label: ", camera_label, "Index: ", src_index)
         self._name = cam_name
         self.camera_label = camera_label
         self.camera_parameters = {'mtx': None, 'ret': None, 'dist': None, 'rvecs': None, 'tvecs': None,
@@ -32,6 +32,7 @@ class Camera():
         # Test
         if not self._vidCap.open(self._src):
             logging.error('Camera not opened!')
+            raise CamNotOpenedException("Cam not opened on corresponding index.")
         if load_camera_parameters:
             self.loadCameraParameters()
 

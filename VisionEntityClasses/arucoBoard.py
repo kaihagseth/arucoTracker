@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import logging
 from fpdf import FPDF
 from VisionEntityClasses.helperFunctions import *
 
@@ -44,16 +45,18 @@ class arucoBoard:
     def updateBoardPose(self):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
+        # FIXME: Sometimes causes crashes when ve loses sight of board.
+        # FIXME: Does this always set the transformationmatrix to Identity?
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID]
+        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID] #FIXME: Bug is probably here??
         world_to_camera_transformation = self._tracking_ve.getCameraPose()
-        world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation
+        world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
         self._transformationMatrix = world_to_model_transformation
-        self.setPoseQuality()
+        self.setPoseQuality(self.calculatePoseQuality())
 
-    def setFirstBoardPosition(self, ve, q_threshold):
+    def setFirstBoardPosition(self, ve):
         """
         Sets the board pose to origen and calibrates VE.
         :param ve: Vision entity to calibrate
@@ -61,23 +64,28 @@ class arucoBoard:
         :return: ret
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
-        self._poseQuality = 1
-        if not ve.setCameraPose(self, q_threshold):
-            self._transformationMatrix = None
-            self._poseQuality = 0
-            return False
+        self.setPoseQuality(1)
+        ve.setCameraPose(self)
+        ve.setCameraPoseQuality(1)
         return True
 
-    def setPoseQuality(self):
+    def calculatePoseQuality(self):
+        """
+        Returns the pose quality for this board based on the tracking ves detection quality and pose quality
+        :return: Pose quality
+        """
+        assert self._tracking_ve.getCameraPoseQuality() <= 1, "master camera camera pose quality is above 1"
+        assert self._tracking_ve.getDetectionQuality()[self.ID] <= 1, "master camera detection quality is above 1"
+        return self._tracking_ve.getDetectionQuality()[self.ID] * self._tracking_ve.getCameraPoseQuality()
+
+    def setPoseQuality(self, quality):
         """
         Calculates and sets pose quality based on the vision entity's camera pose quality and pose estimation quality.
         # TODO: This function should probably be in the vision entity class.
         :param master_entity:
         :return:
         """
-        assert self._tracking_ve.getCameraPoseQuality() <= 1, "master camera camera pose quality is above 1"
-        assert self._tracking_ve.getDetectionQuality()[self.ID] <= 1, "master camera detection quality is above 1"
-        self._poseQuality = self._tracking_ve.getDetectionQuality()[self.ID] * self._tracking_ve.getCameraPoseQuality()
+        self._poseQuality = quality
 
     def getPoseQuality(self):
         return self._poseQuality

@@ -12,6 +12,7 @@ from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VEConfigUnit import VEConfigUnit
+from exceptions import CamNotOpenedException
 
 
 class GUIApplication(threading.Thread):
@@ -40,12 +41,16 @@ class GUIApplication(threading.Thread):
         self.__start_application = []
         self.__stop_application = []
         self.__collectGUIVEs = []
+        self.__doPreviewIndex = -1
 
         # GUI Handling flags
         self.doStopApp = False
         self.show_video = False
         self.showPoseStream = False
         self.videoPanel = None
+
+        # Button lists
+        self.boardButtonList = []
 
     def run(self):
         '''
@@ -343,8 +348,10 @@ class GUIApplication(threading.Thread):
             # grid(column=1,row=0+vali)
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
-        self.radio_btn  = tk.Radiobutton(self.bottom_left, text="Board", padx=20, bg='#424242', fg='green')
-        self.radio_btn.pack()
+
+        # Board selection variable setup
+        self.boardIndex = tk.IntVar()  # Radio buttons controlling which board to track.
+        self.boardIndex.set(0)
 
 
         # invoke the button on the return key
@@ -358,64 +365,81 @@ class GUIApplication(threading.Thread):
 
         # Set focus to start button
         self.start_btn.focus()
-
+        self.addBoardButton()
         # Start it all
         self.root.mainloop()
 
         # Configuration setup
 
     def setupConfigTab(self):
+
         self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
-
+        self.configPaneTabMain.configure(bg='#424242')
         # Create paned windows
-        self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)  # , text="left pane")
-        self.configPaneTabMain.add(self.left_configPaneTabMain)
+        #self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)  # , text="left pane")
+        #self.configPaneTabMain.add(self.left_configPaneTabMain)
 
         # Mid section Pane for configuring
         self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
         self.configPaneTabMain.add(self.midSection_configPaneTabMain)
-
+        self.midSection_configPaneTabMain.configure(bg='#424242')
         self.rightSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)
         self.configPaneTabMain.add(self.rightSection_configPaneTabMain)
-
-        self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
-        self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
+        self.configPaneTabMain.configure(bg='#424242')
+#        self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
+#        self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
 
         self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
-
+        self.midtopSectionLabel_configPaneTabMain.configure(bg='#424242')
         #self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
         #self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
 
         self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
         self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
+        self.rightSection_configPaneTabMain.configure(bg='#424242')
+        self.rightSectionLabel_configPaneTabMain.configure(bg='#424242')
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
+        self.selectCamIndexesFrame.configure(bg='#424242')
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
 
-        mylist = [0, 1, 2, 3, 4]
-        self.VEConfigUnits = []
-        for i in mylist: # Create VEConfigUnits
-            VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
-            self.VEConfigUnits.append(VECU)
-            print(i)
-            #VECU.getFrame.grid(row=i,column=0)
+        self.midSection_configPaneTabMain.configure(relief='groove')
+        self.midSection_configPaneTabMain.configure(borderwidth='2')
+        self.rightSection_configPaneTabMain.configure(relief='groove')
+        self.rightSection_configPaneTabMain.configure(borderwidth='2')
 
-        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
-        resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
-        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",command=self.applyCamList)
+        self.selectCamIndexesFrame.configure(relief='groove')
+        self.selectCamIndexesFrame.configure(borderwidth='2', pady='10')
+        ''' Create VEConfigUnits that controls all  '''
+        numbCamsToShow = 5
+        self.VEConfigUnits = []
+        for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
+            # Create VECU fpr given index
+            VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
+            VECU.run()
+            self.VEConfigUnits.append(VECU)
+
+#        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
+#        resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
+        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",bg='#424242',command=self.applyCamList)
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
-        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100)
+        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg='#424242')
         self.midSection_configPaneTabMain.add(deadspace2)
         # List for VEs stored in GUI
         self.prelimVEList = []
 
-    def createPrelimVE(self,index):
-        VE = VisionEntity(index)
-        self.prelimVEList.append(VE)
-        print("Source of VE: ", VE.getCam().getSrc())
+        #Container for preview image
+        self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
+        self.imgHolder.image = None
+        self.imgHolder.pack()
+
+    #def createPrelimVE(self,index):
+    #    VE = VisionEntity(index)
+    #    self.prelimVEList.append(VE)
+    #    print("Source of VE: ", VE.getCam().getSrc())
 
     def applyCamList(self):
         '''
@@ -429,21 +453,32 @@ class GUIApplication(threading.Thread):
             #print("Inside")
             # Check if this VE should be included
             include = VECU.getIncludeStatus()
-            print(include)
             if include:
                 VECU_VE = VECU.getVE()
+                VECU.setDoPreviewState(False)
                 if VECU_VE is not None:
                     # VE already created
                     # Include the VC
                     self.VEsToSend.append(VECU_VE)
-                else:
-                    index = VECU.getIndex()
-                    VE = VisionEntity(index)
-                    self.VEsToSend.append(VE)
-                VECU.setState(6) # Set status as PE running
+                else: # VE not already made, try to make a new.
+                    try:
+                        index = VECU.getIndex()
+                        VE = VisionEntity(index)
+                        self.VEsToSend.append(VE)
+                        VECU.setState(6) # Set status as PE running
+                    except CamNotOpenedException as e:
+                        msg = "Failed to open camera on {0}. Not running in PE".format(VECU.getIndex())
+                        logging.error(msg)
+                        VECU.setIncludeInPEbool(False) # Deselect checkbutton
+                        VECU.setState(9)
         self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
     def getVEsForPE(self):
+        '''
+        Send the VEs defined and applied in the Config tab in GUI.
+        :return: List of VEs
+        '''
         return self.VEsToSend
+
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point.
@@ -555,6 +590,7 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         self.__pushedBoards.append(self.userBoard)
+        self.addBoardButton()
 
     def saveArucoPDF(self):
         '''
@@ -618,13 +654,14 @@ class GUIApplication(threading.Thread):
         """
         self.modelPoses = poses
         self.frame = frame
+        boardIndex = self.boardIndex.get()
         if boardPose_quality is not None:
             self.boardPose_quality.set(round(boardPose_quality, 2))
         else:
             self.boardPose_quality.set(0.0)
 
         if poses:
-            evec, tvec = poses[0]
+            evec, tvec = poses[boardIndex]
             if evec is not None:
                 x, y, z = tvec
                 self.x_value.set(x)
@@ -647,12 +684,18 @@ class GUIApplication(threading.Thread):
     def readUserInputs(self):
         """
         Exports all user commands relevant outside of the GUI
-        :return: camID: index of selected camera. -1 if auto. newBoard: arucoboard created and pushed from GUI
+        :return: camID: index of selected camera. negative if auto. newBoard: arucoboard created and pushed from GUI
         resetExtrinsic: Command to reset extrinsic matrices of cameras.
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
+        doPreview: Return whether to previuew a frame from a camera in the VECU GUI section.
         """
-        previewIndex = self.__displayedCameraIndex.get()
+        previewIndex = None
+        try:
+            previewIndex = self.__displayedCameraIndex.get()
+        except AttributeError as e:
+            # Don't crash if __displayedCameraIndex not initialised, but set a safe value instead.
+            previewIndex = 5
         if previewIndex < 0:
             auto = True
             previewIndex = (previewIndex + 1) * -1
@@ -663,6 +706,16 @@ class GUIApplication(threading.Thread):
         startCommand = stackChecker(self.__start_application)
         stopCommand = stackChecker(self.__stop_application)
         collectGUIVEs = stackChecker(self.__collectGUIVEs)
+        self.__doPreviewIndex = self.checkPreviewStatus() # -1 if none preview was requested
+#        msg = "__doPreviewIndex: ", self.__doPreviewIndex
+#        logging.debug(msg)
+        if self.__doPreviewIndex is not -1 and self.__doPreviewIndex is not None:
+            #Activate thread for showing prev image TODO: Use threading
+            print("Inside")
+            self.showPreviewImage(self.__doPreviewIndex)
+        elif self.imgHolder.image is not None:
+            self.imgHolder.configure(image='')
+            self.imgHolder.image = None
         return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
 
     def sendStartSignal(self):
@@ -681,5 +734,66 @@ class GUIApplication(threading.Thread):
         self.__stop_application.append(True)
         logging.debug("Stop signal sent.")
 
+    def checkPreviewStatus(self):
+        """
+        Check whether one of the VECU has requested to do preview. If so return index
+        :return:
+        """
+        for VECU in self.VEConfigUnits:
+            doPrev = VECU.getDoPreviewState()
+            if doPrev:
+                id = VECU.getIndex()
+                return id
+
+    def showPreviewImage(self, index):
+        print("Index to preview:", index)
+        if index is not -1 and index is not None:
+            try:
+                VECU = self.getVECUByIndex(index)
+                VE = VECU.getVE()
+                VE.grabFrame()
+                _, frame = VE.retrieveFrame()
+                print(frame)
+                try:
+                    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    image = Image.fromarray(image)
+                    image = ImageTk.PhotoImage(image)
+                    self.imgHolder.configure(image=image)
+                    self.imgHolder.image = image
+                except cv2.error as e:
+                    logging.error(str(e))
+            except AttributeError as e:
+                # VE not found or something.
+                # TODO: Change so this is a impossible error to hit. Hard to change cause threading etc.
+                msg = str(e) + " \n Probably caused by shutting down preview."
+                logging.error(str(e))
+
+    def getVECUByIndex(self, index):
+        for VECU in self.VEConfigUnits:
+            if index is VECU.getIndex():
+                return VECU
+        return None
+
     def addBoardButton(self):
-        tk.Radiobutton(self.left_camPaneTabMain, text="Board", padx=5, bg='#424242', fg='green').pack()
+        """
+        Adds a radio button to the board list in the side panel.
+        :return: None
+        """
+        i = len(self.boardButtonList)
+        buttonText = "Board " + str(i)
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
+                                variable=self.boardIndex, value=i)
+        self.boardButtonList.append(button)
+        self.boardButtonList[-1].pack()
+
+    def addCameraButton(self):
+        """
+        Adds a radio button to the camera list in the side panel.
+        :return: None
+        """
+        i = len(self.boardButtonList)
+        buttonText = "Camera " + str(i)
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
+                                variable=self.boardIndex, value=i)
+        self.boardButtonList.append(button)
+        self.boardButtonList[-1].pack()
