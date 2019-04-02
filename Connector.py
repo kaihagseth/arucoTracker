@@ -18,8 +18,7 @@ class Connector():
         self.logging_setup()
         self.PE = PoseEstimator()
         if ui_string == "GUI":
-            cam_list = self.PE.getVisionEntityList()
-            self.UI = GUIApplication(cam_list)
+            self.UI = GUIApplication()
             guil = GUILogin(mainGUI=self.UI)
             guil.startLogin()
 
@@ -43,6 +42,8 @@ class Connector():
                     # Do nothing. VEs already initialised
                     pass
                 self.PE.runPoseEstimator()  # Create all threads and start them
+                camlist = self.PE.getVisionEntityIndexes()
+                self.UI.updateCamlist(camlist)
                 runApp = True
             if collectGUIVEs:
                 VElist = self.UI.getVEsForPE()

@@ -132,7 +132,21 @@ class PoseEstimator():
         logging.error('Camera not found on given index, VE returned None. ')
 
     def getVisionEntityList(self):
+        """
+        Returns list of all Vision entities.
+        :return:
+        """
         return self.VisionEntityList
+
+    def getVisionEntityIndexes(self):
+        """
+        Returns a list of all camera IDs of Vision Entities.
+        :return: List of all indexes of Vision entities.
+        """
+        indexList = []
+        for ve in self.getVisionEntityList():
+            indexList.append(ve.getCameraID())
+        return indexList
 
     def updateBoardPoses(self):
         """
@@ -218,11 +232,6 @@ class PoseEstimator():
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
                 vision_entity.getPoses() is not None:
             out_frame = vision_entity.drawAxis()
-            poses = self.getEulerPoses()
-            board = self._arucoBoards[0]
-            bp_string = "{0:.2f}".format(board.getPoseQuality())
-            cv2.putText(out_frame, "Quality: " + bp_string, (15, 15), cv2.FONT_HERSHEY_SIMPLEX, .6,
-                        (0, 0, 255), 2)
         else:
             if vision_entity is None:
                 out_frame = self.getVEById(0).getFrame()

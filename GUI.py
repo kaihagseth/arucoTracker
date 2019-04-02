@@ -18,7 +18,7 @@ from exceptions import CamNotOpenedException
 class GUIApplication(threading.Thread):
     global length
 
-    def __init__(self, cam_list):
+    def __init__(self):
         threading.Thread.__init__(self)
 
         msg = 'Thread: ', threading.current_thread().name
@@ -26,7 +26,6 @@ class GUIApplication(threading.Thread):
 
         # Camera variables
         self.counter = 0
-        self.cam_list = cam_list
         self.image_tk = None
 
         # Fields written to by external objects. Should only be read in this object.
@@ -342,10 +341,6 @@ class GUIApplication(threading.Thread):
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
-        for vali, cam in enumerate(self.cam_list):
-            tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
-                           padx=20,bg='#424242', fg='orange',
-                           variable=self.__displayedCameraIndex, value=vali).pack()  #
             # grid(column=1,row=0+vali)
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
@@ -702,6 +697,8 @@ class GUIApplication(threading.Thread):
             boardIndex = 0
         if cameraIndex < 0:
             auto = True
+        else:
+            auto = False
         newBoard = stackChecker(self.__pushedBoards)
         resetExtrinsic = stackChecker(self.__resetBoardPosition)
         startCommand = stackChecker(self.__start_application)
@@ -794,7 +791,24 @@ class GUIApplication(threading.Thread):
         """
         i = len(self.boardButtonList)
         buttonText = "Camera " + str(i)
-        button = tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex,
-                                value=i, bg='#424242', fg='orange').pack()
+        button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
+                                value=i, bg='#424242', fg='orange')
         self.cameraButtonList.append(button)
         self.cameraButtonList[-1].pack()
+
+    def updateCamlist(self, camIDlist):
+        """
+        Updates the camera list to match the input camlist.
+        :param camlist: List of indexes of cameras to add.
+        :return: None
+        """
+        if camIDlist is None:
+            logging.debug("CamIDlist is empty. No buttons were added.")
+            return
+        for camID in camIDlist:
+            buttonText = "Camera " + str(camID)
+            button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
+                                    variable=self.__displayedCameraIndex,
+                                    value=camID, bg='#424242', fg='orange')
+            self.cameraButtonList.append(button)
+            self.cameraButtonList[-1].pack()
