@@ -49,6 +49,9 @@ class GUIApplication(threading.Thread):
         self.showPoseStream = False
         self.videoPanel = None
 
+        # Button lists
+        self.boardButtonList = []
+
     def run(self):
         '''
         Run the main application.
@@ -334,6 +337,7 @@ class GUIApplication(threading.Thread):
         self.calibrate_btn.grid_columnconfigure(1, weight=1)
         self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show. negatives means auto.
         self.__displayedCameraIndex.set(-1)
+
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
@@ -344,8 +348,10 @@ class GUIApplication(threading.Thread):
             # grid(column=1,row=0+vali)
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
-        self.radio_btn  = tk.Radiobutton(self.bottom_left, text="Board", padx=20, bg='#424242', fg='green')
-        self.radio_btn.pack()
+
+        # Board selection variable setup
+        self.boardIndex = tk.IntVar()  # Radio buttons controlling which board to track.
+        self.boardIndex.set(0)
 
 
         # invoke the button on the return key
@@ -359,7 +365,7 @@ class GUIApplication(threading.Thread):
 
         # Set focus to start button
         self.start_btn.focus()
-
+        self.addBoardButton()
         # Start it all
         self.root.mainloop()
 
@@ -584,6 +590,7 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         self.__pushedBoards.append(self.userBoard)
+        self.addBoardButton()
 
     def saveArucoPDF(self):
         '''
@@ -647,13 +654,14 @@ class GUIApplication(threading.Thread):
         """
         self.modelPoses = poses
         self.frame = frame
+        boardIndex = self.boardIndex.get()
         if boardPose_quality is not None:
             self.boardPose_quality.set(round(boardPose_quality, 2))
         else:
             self.boardPose_quality.set(0.0)
 
         if poses:
-            evec, tvec = poses[0]
+            evec, tvec = poses[boardIndex]
             if evec is not None:
                 x, y, z = tvec
                 self.x_value.set(x)
@@ -767,4 +775,25 @@ class GUIApplication(threading.Thread):
         return None
 
     def addBoardButton(self):
-        tk.Radiobutton(self.left_camPaneTabMain, text="Board", padx=5, bg='#424242', fg='green').pack()
+        """
+        Adds a radio button to the board list in the side panel.
+        :return: None
+        """
+        i = len(self.boardButtonList)
+        buttonText = "Board " + str(i)
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
+                                variable=self.boardIndex, value=i)
+        self.boardButtonList.append(button)
+        self.boardButtonList[-1].pack()
+
+    def addCameraButton(self):
+        """
+        Adds a radio button to the camera list in the side panel.
+        :return: None
+        """
+        i = len(self.boardButtonList)
+        buttonText = "Camera " + str(i)
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
+                                variable=self.boardIndex, value=i)
+        self.boardButtonList.append(button)
+        self.boardButtonList[-1].pack()

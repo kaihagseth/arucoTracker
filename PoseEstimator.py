@@ -48,15 +48,16 @@ class PoseEstimator():
             self.VisionEntityList.append(VE)
             VE.addBoards(self.getBoards())
         return cam_list
+
     def setVisionEntityList(self, VElist):
         for VE in VElist:
             self.VisionEntityList.append(VE)
-    def findConnectedCamIndexes(self, wantedCamIndexes=([0, 1])):
+
+    def findConnectedCamIndexes(self, wantedCamIndexes=([])):
         '''
         Find all cams connected to system.  
         :return: List of indexes of wanted cameras.
         '''  # TODO: Find new algorithm, this thing is sloooow.
-        unwantedCams = []
         for i in wantedCamIndexes:
                 msg = 'Webcam on index {0} included.'.format(i)
                 logging.info(msg)
