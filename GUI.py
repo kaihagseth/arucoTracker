@@ -99,7 +99,7 @@ class GUIApplication(threading.Thread):
         self.file_menu.add_command(label='Open', command=None)
         self.file_menu.add_command(label='Settings', command=None)
         self.file_menu.add_command(label='Export', command=None)
-        self.file_menu.add_command(label='Exit', command=self.root.quit)
+        self.file_menu.add_command(label='Exit', command=lambda: [self.root.quit])
         self.menu.add_cascade(label='File', menu=self.file_menu)
 
         # Edit menu setup
@@ -113,23 +113,31 @@ class GUIApplication(threading.Thread):
         self.root.config(menu=self.menu)
 
         # Camera Page: Configure PanedWindows
-        self.camPaneTabMain = PanedWindow(self.page_1)
-        self.camPaneTabMain.configure(bg='#424242')
-        self.camPaneTabMain.pack(fill=BOTH,
-                                 expand=True)  # camPaneTabMain.pack(page_1)#(row=0, column=0,columnspan=1,rowspan=1,sticky='NESW')
+        self.root_cam_tab = PanedWindow(self.page_1)
+        self.root_cam_tab.configure(bg='#424242')
+        self.root_cam_tab.pack(fill=BOTH,
+                               expand=True)
 
-        self.left_camPaneTabMain = Label(self.camPaneTabMain)  # , text="left pane")
-        self.left_camPaneTabMain.configure(bg='#424242')
-        self.camPaneTabMain.add(self.left_camPaneTabMain)
+        self.left_camPaneTabMain = tk.PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='#424242')  # Left side of GUI
+        self.root_cam_tab.add(self.left_camPaneTabMain)
 
-        self.midSection_camPaneTabMain = PanedWindow(self.camPaneTabMain, orient=VERTICAL, bg='gray80')
-        self.camPaneTabMain.add(self.midSection_camPaneTabMain)
+        self.top_left = PanedWindow(self.left_camPaneTabMain)
+        self.top_left.configure(bg='#424242', relief='groove', borderwidth='2')
 
-        self.top = PanedWindow(self.midSection_camPaneTabMain)
+        self.bottom_left = PanedWindow(self.left_camPaneTabMain)
+        self.bottom_left.configure( bg='#424242', relief='groove', borderwidth='2')
+
+
+        self.left_camPaneTabMain.add(self.top_left, height=500)
+        self.left_camPaneTabMain.add(self.bottom_left, height=250)
+
+        self.midSection_camPaneTabMain = PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='gray80') # Mid GUI
+        self.root_cam_tab.add(self.midSection_camPaneTabMain)
+
+        self.top = PanedWindow(self.midSection_camPaneTabMain) # Top Mid GUI
         self.top.configure(bg='#424242')
-        # self.top.config(height=60)
+
         self.midSection_camPaneTabMain.add(self.top, height=500)
-        self.main_label = None
         self.main_label = Label(self.top, text='Camera Views')
         self.main_label.config(height=480, bg='#424242')
         self.main_label.grid(column=0, row=0)
@@ -138,7 +146,7 @@ class GUIApplication(threading.Thread):
         self.bottom.configure(height=20, bg='#424242')
         self.midSection_camPaneTabMain.add(self.bottom, height=50)
 
-        self.poseFontType = "Courier"
+        self.poseFontType = "Roboto"
         self.poseFontSize = 14
         self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg='#424242', fg='white',
                                                   font=(self.poseFontType, self.poseFontSize))
@@ -160,7 +168,7 @@ class GUIApplication(threading.Thread):
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
         self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='orange',
                                           font=(self.poseFontType, self.poseFontSize))
-        self.x_label.grid(column=0, row=0)
+        self.x_label.grid(column=0, row=0, sticky='w')
         self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg='orange',
                                           font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispX_camPaneTabMain.grid(column=1, row=0)
@@ -176,19 +184,19 @@ class GUIApplication(threading.Thread):
         self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='orange',
                                           font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
-        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='green',
+        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:      ', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.roll_label.grid(column=0, row=1, sticky='w')
         self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='green'
                                              ,font=(self.poseFontType, self.poseFontSize), padx=15)
         self.dispRoll_camPaneTabMain.grid(column=1, row=1)
-        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='green',
+        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:   ', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.pitch_label.grid(column=2, row=1)
         self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,
                                               bg='green',font=(self.poseFontType,self.poseFontSize), padx=15)
         self.dispPitch_camPaneTabMain.grid(column=3, row=1)
-        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='green',
+        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:     ', bg='green',
                                           font=(self.poseFontType, self.poseFontSize))
         self.yaw_label.grid(column=4, row=1)
         self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='green',
@@ -216,14 +224,15 @@ class GUIApplication(threading.Thread):
         self.btn_img = Label(self.page_3_frame, image=self.ph)
         self.btn_img.pack()
         self.page_3_frame.pack()
+
         self.page_3_label_frame = Frame(self.page_3_frame)
         self.page_3_label_frame.configure(relief='groove')
         self.page_3_label_frame.configure(borderwidth='2')
-        self.page_3_label_frame.configure(relief='groove')
+
         self.page_3_entry_frame = Frame(self.page_3_frame)
-        self.page_3_entry_frame.configure(relief='groove')
-        self.page_3_entry_frame.configure(borderwidth='2')
-        self.page_3_entry_frame.configure(relief='groove')
+        self.page_3_entry_frame.configure(relief='groove', borderwidth='2')
+
+
 
         self.page_3_label_frame.pack(side=LEFT)
         self.page_3_entry_frame.pack(side=RIGHT)
@@ -299,7 +308,7 @@ class GUIApplication(threading.Thread):
         except IndexError:
             logging.info('Sketchy, but OK.')
 
-        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242')  # , orient=HORIZONTAL)
+        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500)  # , orient=HORIZONTAL)
         #self.camFrameSettingSection.configure(bg='#424242')
 
         # Start and stop button setup
@@ -333,6 +342,10 @@ class GUIApplication(threading.Thread):
                            padx=20,bg='#424242', fg='orange',
                            variable=self.__displayedCameraIndex, value=vali).pack()  #
             # grid(column=1,row=0+vali)
+
+        self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
+        self.radio_btn  = tk.Radiobutton(self.bottom_left, text="Board", padx=20, bg='#424242', fg='green')
+        self.radio_btn.pack()
 
 
         # invoke the button on the return key
@@ -663,7 +676,7 @@ class GUIApplication(threading.Thread):
     def readUserInputs(self):
         """
         Exports all user commands relevant outside of the GUI
-        :return: camID: index of selected camera. -1 if auto. newBoard: arucoboard created and pushed from GUI
+        :return: camID: index of selected camera. negative if auto. newBoard: arucoboard created and pushed from GUI
         resetExtrinsic: Command to reset extrinsic matrices of cameras.
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
@@ -712,6 +725,7 @@ class GUIApplication(threading.Thread):
         """
         self.__stop_application.append(True)
         logging.debug("Stop signal sent.")
+
     def checkPreviewStatus(self):
         """
         Check whether one of the VECU has requested to do preview. If so return index
@@ -751,3 +765,6 @@ class GUIApplication(threading.Thread):
             if index is VECU.getIndex():
                 return VECU
         return None
+
+    def addBoardButton(self):
+        tk.Radiobutton(self.left_camPaneTabMain, text="Board", padx=5, bg='#424242', fg='green').pack()

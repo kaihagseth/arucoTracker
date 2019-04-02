@@ -123,7 +123,7 @@ class VisionEntity:
         """
         self._cameraPoseMatrix = None
 
-    def setCameraPose(self, board, threshold):
+    def setCameraPose(self, board):
         """
         Sets the camera position in world coordinates
         :param board: The aruco board seen from cam.
@@ -131,6 +131,7 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
+        print("This message should only pop up once or twice")
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
@@ -138,26 +139,26 @@ class VisionEntity:
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
-        self.setCameraPoseQuality(board, threshold)
 
-    def setCameraPoseQuality(self, board, threshold):
+    def calculatePotentialCameraPoseQuality(self, board):
         """
-        Sets the quality of the camera pose to a number between 0 and 1, based on how many markers are visible from the
-        camera to be calibrated and the master camera.
-        :param board: The board to calculate camera pose quality from
-        :param threshold: The threshold to overcome in order to set the camera pose quality
-        :return:
+        Checks what the camera pose quality would be with current parameters.
+        :param board: Board to check camera pose quality in relation to.
+        :return: potential camera pose quality
         """
-        w, h = board.getGridBoardSize()
         detectionQuality = self.getDetectionQuality()[board.ID]
         boardPoseQuality = board.getPoseQuality()
         assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
         assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
-        cameraPoseQuality = min(detectionQuality, boardPoseQuality)
-        if cameraPoseQuality >= threshold:
-            self._cameraPoseQuality = cameraPoseQuality
-            return True
-        return False
+        return detectionQuality * boardPoseQuality
+
+    def setCameraPoseQuality(self, quality):
+        """
+        Sets the camera pose quality.
+        :param quality: The board to calculate camera pose quality from
+        :return: None
+        """
+        self._cameraPoseQuality = quality
 
     def getCameraPoseQuality(self):
         """
@@ -235,7 +236,7 @@ class VisionEntity:
         else:
             visible_marker_count = 0
         self._detection_quality[board.ID] = visible_marker_count / total_marker_count
-        #return None
+        return None
         #7print(self.__cameraToModelMatrix)
         #print("Cam index: ", self._camera.getSrc())
         CToMMatrix = self.__cameraToModelMatrices[board.ID]
@@ -246,7 +247,7 @@ class VisionEntity:
             print("Z2: ", z2)
             msg1 = CToMMatrix
             logging.debug(msg1)
-            q = np.linalg.norm(np.dot(z1,z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
+            q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
             msg = "Q: ", q
             logging.debug(msg)
         else:

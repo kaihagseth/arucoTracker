@@ -58,6 +58,7 @@ class Connector():
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
                 frame = self.PE.getPosePreviewImg(id, auto)
+                boardPose_quality = self.PE.getBoardPositionQuality()
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.

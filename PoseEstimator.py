@@ -51,29 +51,16 @@ class PoseEstimator():
     def setVisionEntityList(self, VElist):
         for VE in VElist:
             self.VisionEntityList.append(VE)
-    def findConnectedCamIndexes(self, wantedCams=([1,2])):
+    def findConnectedCamIndexes(self, wantedCamIndexes=([0, 1])):
         '''
         Find all cams connected to system.  
-        :return: 
+        :return: List of indexes of wanted cameras.
         '''  # TODO: Find new algorithm, this thing is sloooow.
-        #return [1] #A hack
-        if wantedCams is None:
-            unwantedCams = [1,2,3,4]  # Index of the webcam we dont want to use, if any.
-        else: # Wanted cams specified in GUI.
-            pass
-        logging.info('Inside findConnectedCams()')
-        #logging.info('Using a hack. Hardcoded index list in return.')
-        num_cams = 5
-        ilist = []
-        for i in range(num_cams):
-            if i not in unwantedCams:
-                ilist.append(i)
+        unwantedCams = []
+        for i in wantedCamIndexes:
                 msg = 'Webcam on index {0} included.'.format(i)
                 logging.info(msg)
-            else:
-                msg = 'Webcam on index {0} not included.'.format(i)
-                logging.info(msg)
-        return ilist
+        return wantedCamIndexes
 
     def runPoseEstimator(self):
         '''
@@ -156,10 +143,10 @@ class PoseEstimator():
                 # Collecting frame and detecting markers for each camera
                 model_pose = ve.getPoses()[board.ID]
                 # Idea: Set a flag in pose estimator when the first board is detected.
-                if not self.worldCoordinatesIsSet and model_pose is not None:
-                    self.worldCoordinatesIsSet = board.setFirstBoardPosition(ve, self.QTHRESHOLD)
+                if (not self.worldCoordinatesIsSet) and ve.getDetectionQuality()[board.ID] >= self.QTHRESHOLD:
+                    self.worldCoordinatesIsSet = True
+                    board.setFirstBoardPosition(ve)
                     board.setTrackingEntity(ve)
-
             board.setTrackingEntity(self.chooseMasterCam(board))
             tracking_entity = board.getTrackingEntity()
             if tracking_entity is not None and tracking_entity.getPoses() is not None:
@@ -170,9 +157,10 @@ class PoseEstimator():
                     break
                 if ve.getPoses() is not None and tracking_entity.getPoses() is not None:
                     currentCameraPoseQuality = ve.getCameraPoseQuality()
-                    potentialCameraPoseQuality = ve.getDetectionQuality()[board.ID] * board.getPoseQuality()
+                    potentialCameraPoseQuality = ve.calculatePotentialCameraPoseQuality(board)
                     if potentialCameraPoseQuality > currentCameraPoseQuality:
-                        ve.setCameraPose(board, 0)
+                        ve.setCameraPose(board)
+                        ve.setCameraPoseQuality(potentialCameraPoseQuality)
 
     def getEulerPoses(self):
         """
@@ -216,7 +204,6 @@ class PoseEstimator():
         :return: Frame drawn with axis cross, corners, and poses
         """
         if autoTrack:
-            print("Autotrack active, tracking board: " + str(ID))
             boards = self.getBoards()
             board = boards[ID]
             tracking_entity = board.getTrackingEntity()
@@ -225,7 +212,6 @@ class PoseEstimator():
             else:
                 vision_entity = copy.copy(tracking_entity)
         else:
-            print("Autotrack not active, showing cam: " + str(ID))
             vision_entity = self.getVEById(ID)
 
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
