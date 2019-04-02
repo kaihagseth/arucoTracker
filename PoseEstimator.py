@@ -53,7 +53,7 @@ class PoseEstimator():
         for VE in VElist:
             self.VisionEntityList.append(VE)
 
-    def findConnectedCamIndexes(self, wantedCamIndexes=([])):
+    def findConnectedCamIndexes(self, wantedCamIndexes=([0,1])):
         '''
         Find all cams connected to system.  
         :return: List of indexes of wanted cameras.
@@ -196,7 +196,7 @@ class PoseEstimator():
                 master_ve = ve
         return master_ve
 
-    def getPosePreviewImg(self, ID, autoTrack):
+    def getPosePreviewImg(self, cameraIndex, boardIndex, autoTrack):
         """
         Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
         index 0.
@@ -206,14 +206,14 @@ class PoseEstimator():
         """
         if autoTrack:
             boards = self.getBoards()
-            board = boards[ID]
+            board = boards[boardIndex]
             tracking_entity = board.getTrackingEntity()
             if tracking_entity is None:
                 vision_entity = copy.copy(self.getVEById(0))
             else:
                 vision_entity = copy.copy(tracking_entity)
         else:
-            vision_entity = self.getVEById(ID)
+            vision_entity = self.getVEById(cameraIndex)
 
         if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
                 vision_entity.getPoses() is not None:

@@ -34,7 +34,7 @@ class Connector():
         time.sleep(5)
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
+            cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
             if startCommand:
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
@@ -57,7 +57,7 @@ class Connector():
             if runApp:
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
-                frame = self.PE.getPosePreviewImg(id, auto)
+                frame = self.PE.getPosePreviewImg(cameraIndex, boardIndex, auto)
                 boardPose_quality = self.PE.getBoardPositionQuality()
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)

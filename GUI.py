@@ -51,6 +51,7 @@ class GUIApplication(threading.Thread):
 
         # Button lists
         self.boardButtonList = []
+        self.cameraButtonList = []
 
     def run(self):
         '''
@@ -690,17 +691,17 @@ class GUIApplication(threading.Thread):
         stopCommand: Command to stop PoseEstimator
         doPreview: Return whether to previuew a frame from a camera in the VECU GUI section.
         """
-        previewIndex = None
+        cameraIndex = None
+        boardIndex = None
         try:
-            previewIndex = self.__displayedCameraIndex.get()
+            cameraIndex = self.__displayedCameraIndex.get()
+            boardIndex = self.boardIndex.get()
         except AttributeError as e:
             # Don't crash if __displayedCameraIndex not initialised, but set a safe value instead.
-            previewIndex = 5
-        if previewIndex < 0:
+            cameraIndex = 5
+            boardIndex = 0
+        if cameraIndex < 0:
             auto = True
-            previewIndex = (previewIndex + 1) * -1
-        else:
-            auto = False
         newBoard = stackChecker(self.__pushedBoards)
         resetExtrinsic = stackChecker(self.__resetBoardPosition)
         startCommand = stackChecker(self.__start_application)
@@ -716,7 +717,7 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
+        return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
 
     def sendStartSignal(self):
         """
@@ -793,7 +794,7 @@ class GUIApplication(threading.Thread):
         """
         i = len(self.boardButtonList)
         buttonText = "Camera " + str(i)
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
-                                variable=self.boardIndex, value=i)
-        self.boardButtonList.append(button)
-        self.boardButtonList[-1].pack()
+        button = tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex,
+                                value=i, bg='#424242', fg='orange').pack()
+        self.cameraButtonList.append(button)
+        self.cameraButtonList[-1].pack()
