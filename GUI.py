@@ -345,7 +345,6 @@ class GUIApplication(threading.Thread):
             tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
                            padx=20,bg='#424242', fg='orange',
                            variable=self.__displayedCameraIndex, value=vali).pack()  #
-            # grid(column=1,row=0+vali)
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
 
@@ -355,30 +354,42 @@ class GUIApplication(threading.Thread):
 
 
         # invoke the button on the return key
-        self.root.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+        self.root.bind_class('Button', '<Key-Return>', lambda event: event.widget.invoke())
 
         # remove the default behavior of invoking the button with the space key
-        self.root.unbind_class("Button", "<Key-space>")
+        self.root.unbind_class('Button', '<Key-space>')
+
+        # Bool to check if it is full screen or not
+        self.state = False
+
+        # Makes full screen possible by pressing F11 and change back by pressing F11 or escape
+        self.root.bind('<F11>', self.toggleFullscreen)
+        self.root.bind('<Escape>', self.endFullscreen)
 
         # Setup the config tab
         self.setupConfigTab()
 
         # Set focus to start button
         self.start_btn.focus()
+
+        # Adds board radio button to the GUI
         self.addBoardButton()
+
         # Start it all
         self.root.mainloop()
 
         # Configuration setup
 
     def setupConfigTab(self):
+        '''
+        # Create paned windows for GUI
+        :return:
+        '''
 
         self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
         self.configPaneTabMain.configure(bg='#424242')
-        # Create paned windows
-        #self.left_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)  # , text="left pane")
-        #self.configPaneTabMain.add(self.left_configPaneTabMain)
+
 
         # Mid section Pane for configuring
         self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
@@ -387,32 +398,29 @@ class GUIApplication(threading.Thread):
         self.rightSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)
         self.configPaneTabMain.add(self.rightSection_configPaneTabMain)
         self.configPaneTabMain.configure(bg='#424242')
-#        self.leftSectionLabel_configPaneTabMain = Label(self.left_configPaneTabMain, text="left pane")
-#        self.left_configPaneTabMain.add(self.leftSectionLabel_configPaneTabMain)
 
         self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
         self.midtopSectionLabel_configPaneTabMain.configure(bg='#424242')
-        #self.midbottomSectionLabel_configPaneTabMain = Label(self.midSection_configPaneTabMain, text="bottom pane")
-        #self.midSection_configPaneTabMain.add(self.midbottomSectionLabel_configPaneTabMain)
 
         self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
         self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
         self.rightSection_configPaneTabMain.configure(bg='#424242')
         self.rightSectionLabel_configPaneTabMain.configure(bg='#424242')
+
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
         self.selectCamIndexesFrame.configure(bg='#424242')
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
+        self.selectCamIndexesFrame.configure(relief='groove')
+        self.selectCamIndexesFrame.configure(borderwidth='2', pady='10')
 
         self.midSection_configPaneTabMain.configure(relief='groove')
         self.midSection_configPaneTabMain.configure(borderwidth='2')
         self.rightSection_configPaneTabMain.configure(relief='groove')
         self.rightSection_configPaneTabMain.configure(borderwidth='2')
 
-        self.selectCamIndexesFrame.configure(relief='groove')
-        self.selectCamIndexesFrame.configure(borderwidth='2', pady='10')
         ''' Create VEConfigUnits that controls all  '''
         numbCamsToShow = 5
         self.VEConfigUnits = []
@@ -422,8 +430,6 @@ class GUIApplication(threading.Thread):
             VECU.run()
             self.VEConfigUnits.append(VECU)
 
-#        self.resettingCamExtrinsicFrame = Frame(self.leftSectionLabel_configPaneTabMain)
-#        resetCamExtrinsicBtn = Button(self.resettingCamExtrinsicFrame, command=self.resetCamExtrinsic).pack()
         self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",bg='#424242',command=self.applyCamList)
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
         deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg='#424242')
@@ -436,10 +442,6 @@ class GUIApplication(threading.Thread):
         self.imgHolder.image = None
         self.imgHolder.pack()
 
-    #def createPrelimVE(self,index):
-    #    VE = VisionEntity(index)
-    #    self.prelimVEList.append(VE)
-    #    print("Source of VE: ", VE.getCam().getSrc())
 
     def applyCamList(self):
         '''
@@ -472,6 +474,7 @@ class GUIApplication(threading.Thread):
                         VECU.setIncludeInPEbool(False) # Deselect checkbutton
                         VECU.setState(9)
         self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
+
     def getVEsForPE(self):
         '''
         Send the VEs defined and applied in the Config tab in GUI.
@@ -533,7 +536,7 @@ class GUIApplication(threading.Thread):
         self.camIDInUse = camid
 
     def placeGraph(self):
-        GUIDataPlotting.plotGraph()
+        GUIDataPlotting.plotXYZ()
 
     def doAbortApp(self):
         '''
@@ -797,3 +800,23 @@ class GUIApplication(threading.Thread):
                                 variable=self.boardIndex, value=i)
         self.boardButtonList.append(button)
         self.boardButtonList[-1].pack()
+
+    def toggleFullscreen(self, event=None):
+        '''
+        Toggle full screen on GUI
+        :param event: None
+        :return: 'break'
+        '''
+        self.state = not self.state  # Just toggling the boolean
+        self.root.attributes('-fullscreen', self.state)
+        return 'break'
+
+    def endFullscreen(self, event=None):
+        '''
+        End full screen
+        :param event: None
+        :return: 'break'
+        '''
+        self.state = False
+        self.root.attributes('-fullscreen', False)
+        return 'break'
