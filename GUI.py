@@ -643,7 +643,7 @@ class GUIApplication(threading.Thread):
     def updateFields(self, poses, frame, boardPose_quality):
         """
         Update GUI-objects fields outputframe and six axis pose.
-        # Pose should probably be a datatype/class
+        # Pose should probably be a datatype/class?
         :param poses: The poses of all models tracked.
         :param frame: The frame to display in camera view.
         :return: None

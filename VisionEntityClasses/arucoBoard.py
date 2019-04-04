@@ -22,6 +22,8 @@ class arucoBoard:
         self.board_width = board_width
         arucoBoard.first_marker = self.first_marker + (self.board_height * self.board_width)
 
+
+
     def getGridBoardSize(self):
         return self._board.getGridSize()
 
@@ -45,12 +47,11 @@ class arucoBoard:
     def updateBoardPose(self):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
-        # FIXME: Sometimes causes crashes when ve loses sight of board.
-        # FIXME: Does this always set the transformationmatrix to Identity?
+        # FIXME: Sometimes causes crashes when ve loses sight of board?
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID] #FIXME: Bug is probably here??
+        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID]
         world_to_camera_transformation = self._tracking_ve.getCameraPose()
         world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
         self._transformationMatrix = world_to_model_transformation
@@ -81,7 +82,6 @@ class arucoBoard:
     def setPoseQuality(self, quality):
         """
         Calculates and sets pose quality based on the vision entity's camera pose quality and pose estimation quality.
-        # TODO: This function should probably be in the vision entity class.
         :param master_entity:
         :return:
         """
@@ -141,3 +141,33 @@ class arucoBoard:
         :return:
         """
         self._tracking_ve = ve
+
+    @staticmethod
+    def mergeBoards(main_board, sub_boards):
+        """
+        Merges a list of arucoboard to a single board. This function should be called every time a higher quality scan
+        of the boards have been done.
+
+        :param boards: A list of the arucoboards that should be merged.
+        :return: The merged board.
+        """
+
+        dictionary = main_board.getDictionary()
+        ids = []
+        obj_points = []
+        ids.append(main_board.getIds())
+        obj_points.append(main_board.getObjpoints())
+        for sub_board in sub_boards:
+            # TODO: Transform sub_board points to the place where main_board is in origin.
+            # TODO: Inverse transform of the main boards position for sub boards.
+            # TODO: Find new obj-points by transforming obj-points of sub-board with matrix from last step.
+            ids.append(sub_board.getIds())  # Add ids to a list.
+            sub_board_pose = sub_board.getTransformationMatrix()
+            main_board_pose = main_board.getTransformationMatrix()
+            sub_board_corner_points = sub_board.getCornerPositions()
+            obj_points.append( * )
+        mergedBoard = cv2.aruco.Board_create(obj_points, dictionary, ids)
+        return mergedBoard
+
+    def interpolateObstructedIds(self):
+        self.__corners, self.__ids, self.__rejected, recovered = cv2.aruco.refineDetectedMarkers()
