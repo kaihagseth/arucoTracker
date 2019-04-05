@@ -97,3 +97,17 @@ def extendListToIndex(list, index, fillObject=None):
     indexListLengthDifference = (index + 1) - len(list)
     if indexListLengthDifference > 0:
         list.extend([fillObject] * indexListLengthDifference)
+
+def transformVectorHomogeneous(vector, matrix):
+    """
+    Returns a vector transformed by a homogenous matrix.
+    :param vector: Vector to transform
+    :param matrix: Homogenous transformation matrix
+    :return: Transformed vector
+    """
+    homogeneous_vector = np.asmatrix(np.reshape(vector, (-1, 1)))     # Create column vector
+    homogeneous_vector = np.vstack(homogeneous_vector, [1])           # Add 1 to make vector homogeneous
+    homogeneous_vector = matrix * homogeneous_vector                  # Transform vector
+    homogeneous_vector = homogeneous_vector / homogeneous_vector[-1]  # Perspective divide
+    transformed_vector = np.reshape(np.asarray(homogeneous_vector[:, 0:-1]), vector.shape) # Return vector to input format
+    return transformed_vector

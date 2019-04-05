@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import logging
+import copy
 from fpdf import FPDF
 from VisionEntityClasses.helperFunctions import *
 
@@ -162,12 +163,27 @@ class arucoBoard:
             # TODO: Inverse transform of the main boards position for sub boards.
             # TODO: Find new obj-points by transforming obj-points of sub-board with matrix from last step.
             ids.append(sub_board.getIds())  # Add ids to a list.
+
             sub_board_pose = sub_board.getTransformationMatrix()
             main_board_pose = main_board.getTransformationMatrix()
-            sub_board_corner_points = sub_board.getCornerPositions()
-            obj_points.append( * )
+            inv_main_board_pose = invertTransformationMatrix(main_board_pose)
+            relative_sub_board_pose = sub_board_pose * inv_main_board_pose
+            sub_board_obj_points = sub_board.getObjPoints()
+
+            new_board_obj_points = relative_sub_board_pose * sub_board_obj_points #FIXME: obj points must be transformed to 3x1 matrix
+            obj_points.append(new_board_obj_points)
         mergedBoard = cv2.aruco.Board_create(obj_points, dictionary, ids)
         return mergedBoard
 
     def interpolateObstructedIds(self):
         self.__corners, self.__ids, self.__rejected, recovered = cv2.aruco.refineDetectedMarkers()
+
+    def getObjPoints(self):
+        """
+        Returns a copy of the arucoboards obj-points.
+        :return: an array of size 1xnx4x3 for n markers in the board, containing relative cartesian coordinates of
+        points
+        """
+        return copy.copy(self._board.objPoints)
+
+
