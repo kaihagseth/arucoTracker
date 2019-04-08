@@ -341,7 +341,7 @@ class GUIApplication(threading.Thread):
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
-            # grid(column=1,row=0+vali)
+
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
 
         # Board selection variable setup
@@ -819,10 +819,6 @@ class GUIApplication(threading.Thread):
                                     value=camID, bg='#424242', fg='orange')
             self.cameraButtonList.append(button)
             self.cameraButtonList[-1].pack()
-            button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
-                                    variable=self.boardIndex, value=i)
-            self.boardButtonList.append(button)
-            self.boardButtonList[-1].pack()
 
     def toggleFullscreen(self, event=None):
         '''
