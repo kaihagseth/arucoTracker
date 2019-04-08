@@ -708,7 +708,7 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs, VEsToRun
+        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
 
     def sendStartSignal(self):
         """
@@ -750,7 +750,6 @@ class GUIApplication(threading.Thread):
                 VE = VECU.getVE()
                 VE.grabFrame()
                 _, frame = VE.retrieveFrame()
-                print(frame)
                 try:
                     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     image = Image.fromarray(image)
