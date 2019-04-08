@@ -341,14 +341,6 @@ class GUIApplication(threading.Thread):
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
-<<<<<<< HEAD
-            # grid(column=1,row=0+vali)
-=======
-        for vali, cam in enumerate(self.cam_list):
-            tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
-                           padx=20,bg='#424242', fg='orange',
-                           variable=self.__displayedCameraIndex, value=vali).pack()  #
->>>>>>> b9f965887b8882bbd6dbd04620283eb287f3403f
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
 

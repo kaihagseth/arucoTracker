@@ -174,9 +174,7 @@ class arucoBoard:
                     newMarker.append(newCorner)
                 obj_points.append(newMarker)
             obj_points.append(new_board_obj_points)
-        print(obj_points)
         mergedBoard = cv2.aruco.Board_create(obj_points, dictionary, ids)
-
         return mergedBoard
 
     def interpolateObstructedIds(self):
@@ -189,10 +187,3 @@ class arucoBoard:
         points
         """
         return copy.copy(self._board.objPoints)
-
-
-if __name__ == '__main__':
-    board1 = arucoBoard(3, 3, 40, 5)
-    board2 = arucoBoard(3, 3, 40, 5)
-    ve1 = VisionEntity(0)
-    board1.setFirstBoardPosition(ve1)
