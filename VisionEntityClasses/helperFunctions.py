@@ -98,16 +98,22 @@ def extendListToIndex(list, index, fillObject=None):
     if indexListLengthDifference > 0:
         list.extend([fillObject] * indexListLengthDifference)
 
-def transformVectorHomogeneous(vector, matrix):
+def transformPointHomogeneous(point, matrix):
     """
-    Returns a vector transformed by a homogenous matrix.
+    Rotates and translates a point in space with a homogenous matrix, and returns the transformed point in space.
     :param vector: Vector to transform
     :param matrix: Homogenous transformation matrix
     :return: Transformed vector
     """
-    homogeneous_vector = np.asmatrix(np.reshape(vector, (-1, 1)))     # Create column vector
-    homogeneous_vector = np.vstack(homogeneous_vector, [1])           # Add 1 to make vector homogeneous
+    homogeneous_vector = np.asmatrix(np.reshape(point, (-1, 1)))     # Create column vector
+    homogeneous_vector = np.vstack((homogeneous_vector, [[1]]))       # Add 1 to make vector homogeneous
     homogeneous_vector = matrix * homogeneous_vector                  # Transform vector
     homogeneous_vector = homogeneous_vector / homogeneous_vector[-1]  # Perspective divide
-    transformed_vector = np.reshape(np.asarray(homogeneous_vector[:, 0:-1]), vector.shape) # Return vector to input format
-    return transformed_vector
+    transformed_point = np.reshape(np.asarray(homogeneous_vector[0:-1, :]), vector.shape) # Return vector to input format
+    return transformed_point
+
+if __name__ == '__main__':
+    vector = np.array([1, 2, 3])
+    matrix = rvecTvecToTransMatrix(np.array([np.pi, 1, 2]), np.array([5, 5, 5]))
+    transformed = transformPointHomogeneous(vector, matrix)
+    print(transformed)
