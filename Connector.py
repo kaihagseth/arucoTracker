@@ -30,11 +30,11 @@ class Connector():
         '''
         doAbort = False
         runApp = False
-        VEsInitInGUI = False
+        VEsInitInGUI = True
         time.sleep(5)
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
+            id, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs, VEsToRun = self.UI.readUserInputs()
             if startCommand:
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
@@ -66,6 +66,7 @@ class Connector():
                 self.UI.showFindPoseStream()
             else:
                 time.sleep(0.1)
+
         print('Ended')
 
     def initConnectedCams(self):

@@ -21,6 +21,7 @@ class VEConfigUnit(Thread):
         self._cb_v.set(False)
         self._state = IntVar()
         self._stateText = StringVar()
+        self.continueRunInPE = False # Whether to contniue to use VE in PE.
         self._stateText.set('Disconnected')  # Statustext of connection with cam
         # self._connectionStatusLabel = "Disconnected"
         self._cb = Checkbutton(self._frame, text=str(self._id),
@@ -126,6 +127,7 @@ class VEConfigUnit(Thread):
             self.connectBtn.config(text="Deactivate", command=self.removeVEFromRunningPE)
             self.previewBtn.config(state="disabled")
             self.conStatusLabel.config(text="Used in PE", fg="green")
+            self.continueRunInPE = True
             self._VE = None # Not the responsibility of GUI anymore
 
         elif newState is 7: # Failed to open camera
@@ -137,6 +139,7 @@ class VEConfigUnit(Thread):
         elif newState is 9: # Failed to use in PE (i.e. cam not opened)
             self.conStatusLabel.config(text="Failed.", fg="black")
             self.setState(0)
+            self.continueRunInPE = False
 
 
 
@@ -160,7 +163,7 @@ class VEConfigUnit(Thread):
         :return:
         """
         self.setDoPreviewState(False)
-        self.setState(0)
+        self.setState(2)
     def getFrame(self):
         """
         Get image container.
@@ -180,7 +183,8 @@ class VEConfigUnit(Thread):
         Set flag to remove the VE from the current PE running. Not implemented.
         :return:
         '''
-        pass
+        self.continueRunInPE = False
+
     def setIncludeInPEbool(self, bool):
         '''
         Set the the mark whether to include VE in PE when applied. If false, the mark is taken away.
