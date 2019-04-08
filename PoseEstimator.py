@@ -53,7 +53,7 @@ class PoseEstimator():
         for VE in VElist:
             self.VisionEntityList.append(VE)
 
-    def findConnectedCamIndexes(self, wantedCamIndexes=([0,1])):
+    def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
         '''
         Find all cams connected to system.  
         :return: List of indexes of wanted cameras.

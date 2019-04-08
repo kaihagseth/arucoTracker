@@ -794,7 +794,6 @@ class GUIApplication(threading.Thread):
         """
         i = len(self.boardButtonList)
         buttonText = "Camera " + str(i)
-<<<<<<< HEAD
         button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
                                 value=i, bg='#424242', fg='orange')
         self.cameraButtonList.append(button)
@@ -816,11 +815,6 @@ class GUIApplication(threading.Thread):
                                     value=camID, bg='#424242', fg='orange')
             self.cameraButtonList.append(button)
             self.cameraButtonList[-1].pack()
-=======
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
-                                variable=self.boardIndex, value=i)
-        self.boardButtonList.append(button)
-        self.boardButtonList[-1].pack()
 
     def toggleFullscreen(self, event=None):
         '''
@@ -841,4 +835,3 @@ class GUIApplication(threading.Thread):
         self.state = False
         self.root.attributes('-fullscreen', False)
         return 'break'
->>>>>>> b9f965887b8882bbd6dbd04620283eb287f3403f
