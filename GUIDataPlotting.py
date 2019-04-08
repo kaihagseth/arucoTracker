@@ -1,5 +1,6 @@
 import sys
 import tkinter as tk
+import GUI
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,6 +21,7 @@ class dataReading:
         #top.configure(background=_fgcolor)
         width = 0.95
         height = 0.2
+
 
         self.frame_1 = tk.Frame(top)
         self.frame_1.place(relx=0.017, rely=0.8, relheight=height, relwidth=width)
@@ -158,31 +160,28 @@ class dataReading:
         self.label_yaw.configure(width=44)
 
         self.graph_frame = tk.Frame(top)
-        self.graph_frame.place(relx=0.2, rely=0.2, height=225, width=425)
+        self.graph_frame.pack()
         self.graph_frame.configure(background='red')
         self.graph_frame.configure(borderwidth='2')
         self.graph_frame.configure(relief='ridge')
-        self.graph_frame.configure(width=233)
+        self.graph_frame.configure(width=750)
+        self.graph_frame.configure(height=500)
 
 
         self.btn_plot = tk.Button(top)
-        self.btn_plot.place(relx=0.4, rely=0.05, height=30, width=100)
+        self.btn_plot.pack()
         self.btn_plot.configure(background='#665959')
         self.btn_plot.configure(disabledforeground='#911515')
         self.btn_plot.configure(foreground='#FFFFFF')
         self.btn_plot.configure(text='Plot Data')
-        self.btn_plot.configure(width=150)
-        self.btn_plot.configure(command=lambda: plotGraph(self.graph_frame))
-
+        self.btn_plot.configure(command=lambda: plotXYZ(self.graph_frame,1,2,3))
 
         self.btn_save =  tk.Button(top)
-        self.btn_save.place(relx=0.4, rely=0.7, height=30, width=100)
+        self.btn_save.pack()
         self.btn_save.configure(background='#665959')
         self.btn_save.configure(disabledforeground='#911515')
         self.btn_save.configure(foreground='#FFFFFF')
         self.btn_save.configure(text='Save Data')
-        self.btn_save.configure(width=150)
-        #self.btn_plot.configure(command=lambda: self.saveData())
 
 
 def vp_start_gui():
@@ -215,6 +214,33 @@ def destroy_Toplevel1():
     w = None
 
 
+
+def plotXYZ(frame, x, y, z):
+    plot3d = frame
+    fig=plt.figure()
+    canvas = FigureCanvasTkAgg(fig, master=fig)
+    canvas.draw()
+    x_list = []
+    y_list = []
+    z_list = []
+    ax = plt.axes(projection='3d')
+    list = x_list,y_list,z_list
+    x_list = x_list.append(x)
+    y_list = y_list.append(y)
+    z_list = z_list.append(z)
+    if list >= 50:
+        x_list.pop(0)
+        x_list = x_list.append(x)
+        y_list.pop(0)
+        y_list = y_list.append(x)
+        z_list.pop(0)
+        z_list = z_list.append(x)
+    ax.plot3D(x,y,z, 'red')
+    toolbar = NavigationToolbar2Tk(canvas, plot3d)
+    toolbar.update()
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+
 def plotGraph(frame):
     pass
     ''' Draw a matplotlib figure onto a Tk canvas
@@ -229,14 +255,8 @@ def plotGraph(frame):
     canvas = FigureCanvasTkAgg(fig, master=plot3d)  # A tk.DrawingArea.
     canvas.draw()
 
-    #if tvec is None:
-    #    tvec = ['-', '-', '-']
-    #if evec is None:
-    #    evec = ['-', '-', '-']
     ax = plt.axes(projection='3d')
-    #x = tvec[0]
-    #y = tvec[1]
-    #z = tvec[2]
+
     x = []
     y = []
     z = []
@@ -255,11 +275,22 @@ def plotGraph(frame):
     z = np.asarray(z)
     array = [x,y,z]
     for i in array:
-        ax.plot3D(x[i], y[i], z[i], 'red')
-        x = np.asarray(x)
-        y = np.asarray(y)
-        z = np.asarray(z)
 
+        if x is not x:
+            x = np.asarray(x)
+        if y is not y:
+            y = np.asarray(y)
+        if z is not z:
+            z = np.asarray(z)
+        if i >= 50:
+            x.pop(0)
+            x.append(i)
+            y.pop(0)
+            y.append(i)
+            z.pop(0)
+            z.append(i)
+
+        #ax.plot3D(x[i], y[i], z[i], 'red')
         ax.plot3D(x, y, z, 'red')
 
     toolbar = NavigationToolbar2Tk(canvas, plot3d)
@@ -268,3 +299,4 @@ def plotGraph(frame):
 
 if __name__ == '__main__':
     vp_start_gui()
+    plotXYZ()

@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 import logging
+import copy
 from fpdf import FPDF
+from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.helperFunctions import *
 
 
@@ -21,6 +23,8 @@ class arucoBoard:
         self.board_height = board_height
         self.board_width = board_width
         arucoBoard.first_marker = self.first_marker + (self.board_height * self.board_width)
+
+
 
     def getGridBoardSize(self):
         return self._board.getGridSize()
@@ -45,12 +49,11 @@ class arucoBoard:
     def updateBoardPose(self):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
-        # FIXME: Sometimes causes crashes when ve loses sight of board.
-        # FIXME: Does this always set the transformationmatrix to Identity?
+        # FIXME: Sometimes causes crashes when ve loses sight of board?
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID] #FIXME: Bug is probably here??
+        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID]
         world_to_camera_transformation = self._tracking_ve.getCameraPose()
         world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
         self._transformationMatrix = world_to_model_transformation
@@ -81,7 +84,6 @@ class arucoBoard:
     def setPoseQuality(self, quality):
         """
         Calculates and sets pose quality based on the vision entity's camera pose quality and pose estimation quality.
-        # TODO: This function should probably be in the vision entity class.
         :param master_entity:
         :return:
         """
@@ -141,3 +143,56 @@ class arucoBoard:
         :return:
         """
         self._tracking_ve = ve
+
+    @staticmethod
+    def mergeBoards(main_board, sub_boards):
+        """
+        Merges a list of arucoboard to a single board. This function should be called every time a higher quality scan
+        of the boards have been done.
+        TODO: TEST ME
+        :param boards: A list of the arucoboards that should be merged.
+        :return: The merged board.
+        """
+
+        dictionary = main_board.getDictionary()
+        ids = []
+        obj_points = []
+        ids.append(main_board.getIds())
+        obj_points.append(main_board.getObjpoints())
+        for sub_board in sub_boards:        # For each board to add
+            ids.append(sub_board.getIds())  # Add ids to a list.
+            sub_board_pose = sub_board.getTransformationMatrix()
+            main_board_pose = main_board.getTransformationMatrix()
+            inv_main_board_pose = invertTransformationMatrix(main_board_pose)
+            relative_sub_board_pose = sub_board_pose * inv_main_board_pose
+            sub_board_obj_points = sub_board.getObjPoints()
+            new_board_obj_points = copy.copy(sub_board_obj_points)
+            for markeridx, marker in enumerate(sub_board_obj_points):
+                newMarker = []
+                for corneridx, corner in enumerate(marker):
+                    newCorner = transformPointHomogeneous(corner, relative_sub_board_pose)
+                    newMarker.append(newCorner)
+                obj_points.append(newMarker)
+            obj_points.append(new_board_obj_points)
+        print(obj_points)
+        mergedBoard = cv2.aruco.Board_create(obj_points, dictionary, ids)
+
+        return mergedBoard
+
+    def interpolateObstructedIds(self):
+        self.__corners, self.__ids, self.__rejected, recovered = cv2.aruco.refineDetectedMarkers()
+
+    def getObjPoints(self):
+        """
+        Returns a copy of the arucoboards obj-points.
+        :return: an array of size nx4x3 for n markers in the board, containing relative cartesian coordinates of
+        points
+        """
+        return copy.copy(self._board.objPoints)
+
+
+if __name__ == '__main__':
+    board1 = arucoBoard(3, 3, 40, 5)
+    board2 = arucoBoard(3, 3, 40, 5)
+    ve1 = VisionEntity(0)
+    board1.setFirstBoardPosition(ve1)
