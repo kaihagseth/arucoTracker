@@ -341,15 +341,7 @@ class GUIApplication(threading.Thread):
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
-<<<<<<< HEAD
             # grid(column=1,row=0+vali)
-=======
-        for vali, cam in enumerate(self.cam_list):
-            tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
-                           padx=20,bg='#424242', fg='orange',
-                           variable=self.__displayedCameraIndex, value=vali).pack()  #
->>>>>>> b9f965887b8882bbd6dbd04620283eb287f3403f
-
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
 
         # Board selection variable setup
@@ -725,7 +717,7 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
+        return auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
 
     def sendStartSignal(self):
         """
@@ -806,7 +798,6 @@ class GUIApplication(threading.Thread):
         """
         i = len(self.boardButtonList)
         buttonText = "Camera " + str(i)
-<<<<<<< HEAD
         button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
                                 value=i, bg='#424242', fg='orange')
         self.cameraButtonList.append(button)
@@ -828,11 +819,10 @@ class GUIApplication(threading.Thread):
                                     value=camID, bg='#424242', fg='orange')
             self.cameraButtonList.append(button)
             self.cameraButtonList[-1].pack()
-=======
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
-                                variable=self.boardIndex, value=i)
-        self.boardButtonList.append(button)
-        self.boardButtonList[-1].pack()
+            button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
+                                    variable=self.boardIndex, value=i)
+            self.boardButtonList.append(button)
+            self.boardButtonList[-1].pack()
 
     def toggleFullscreen(self, event=None):
         '''
@@ -853,4 +843,3 @@ class GUIApplication(threading.Thread):
         self.state = False
         self.root.attributes('-fullscreen', False)
         return 'break'
->>>>>>> b9f965887b8882bbd6dbd04620283eb287f3403f

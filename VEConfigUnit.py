@@ -3,6 +3,8 @@ import logging
 from tkinter import *
 from exceptions import CamNotOpenedException
 from threading import Thread
+import os
+
 class VEConfigUnit(Thread):
     '''
     Class for holding choices regarding cam and VE in config tab GUI.
@@ -34,6 +36,21 @@ class VEConfigUnit(Thread):
                                  command=self.doConnect)  # , variable=self._state, onvalue=1, offvalue=0)
         self.previewBtn = Button(self._frame, text="Preview", command=self.doPreview,bg='#424242',
                                  state=DISABLED)  # , variable = self._state, onvalue=3, offvalue=2)
+        # Create a Tkinter variable
+        self.tkvar = StringVar(parent)
+
+        # Dictionary with options
+        path = "calibValues"
+        choices = os.listdir(path)
+        self.calibFilePopup = OptionMenu(self._frame, self.tkvar, *choices)
+        self.calibFilePopup.config(bg="#424242",fg="#424242")
+
+        #Label(self._frame, text="Choose a dish").grid(row=1, column=1)
+        self.calibFilePopup.grid(row=2, column=1)
+
+    # on change dropdown value
+    def change_dropdown(self, *args):
+        print(self.tkvar.get())
     def run(self):
         # Pack everything in container
         self._cb.grid(row=0, column=0, sticky='w')
@@ -41,6 +58,7 @@ class VEConfigUnit(Thread):
         self.connectBtn.grid(row=0, column=2)
         self.previewBtn.grid(row=0, column=3)
         self.conStatusLabel.grid(row=0, column=4)
+        self.calibFilePopup.grid(row=0,column=5)
         # return self._frame
         self._frame.grid(row=self._id, column=0)
 
