@@ -21,7 +21,7 @@ class PoseEstimator():
         self.threadInfoList = []  # List for reading results from VEs.
         self._writer = None
         self._log_start_time = None
-        self._arucoBoards = []  # List of aruco boards to track.
+        self._arucoBoards = dict()  # List of aruco boards to track.
         self.createArucoBoard(3, 3, 40, 5)
         self.worldCoordinatesIsSet = False
 
@@ -311,9 +311,8 @@ class PoseEstimator():
         :return: None
         """
         logging.debug("attempting to add board to vision entities")
-        index = len(self._arucoBoards)
-        board.ID = index
-        self._arucoBoards.append(board)
+        key = board.ID
+        self._arucoBoards[key] = board
         for ve in self.getVisionEntityList():
             ve.addBoards(board)
             logging.debug("board added to vision entity")

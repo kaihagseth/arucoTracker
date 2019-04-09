@@ -1,6 +1,8 @@
 import threading
 import tkinter as tk
 import logging
+from tkinter.messagebox import showinfo
+
 import cv2
 import ttkthemes
 from tkinter import *
@@ -21,6 +23,7 @@ class GUIApplication(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+        self.boardlist_pdftab = []
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
 
@@ -226,9 +229,12 @@ class GUIApplication(threading.Thread):
         self.ph = ImageTk.PhotoImage(self.im)
         # Need to use ph for tkinter to understand
         self.btn_img = Label(self.page_3_frame, image=self.ph)
-        self.btn_img.pack()
+        self.btn_img.pack(side=RIGHT)
         self.page_3_frame.pack()
-
+        # Create container for holding board list
+        self.boardlist_container = Frame(self.page_3)
+        self.boardlist_container.pack(side=LEFT)
+        self.boardimgs = []
         self.page_3_label_frame = Frame(self.page_3_frame)
         self.page_3_label_frame.configure(relief='groove')
         self.page_3_label_frame.configure(borderwidth='2')
@@ -301,6 +307,7 @@ class GUIApplication(threading.Thread):
         self.pdf_btn.configure(bg='#424242', fg='white')
         self.pdf_btn.pack(side=LEFT)
 
+
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
         self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
@@ -367,6 +374,8 @@ class GUIApplication(threading.Thread):
         self.root.bind('<Escape>', self.endFullscreen)
 
         # Setup the config tab
+
+        self.VEConfigUnits = []
         self.setupConfigTab()
 
         # Set focus to start button
@@ -423,7 +432,6 @@ class GUIApplication(threading.Thread):
 
         ''' Create VEConfigUnits that controls all  '''
         numbCamsToShow = 5
-        self.VEConfigUnits = []
         for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
             VECU = VEConfigUnit(i, self.selectCamIndexesFrame)
@@ -575,36 +583,59 @@ class GUIApplication(threading.Thread):
         Generates and stores an aruco board internally in the GUI. Displays board preview in pdf-tab.
         :return:
         """
-        length_value = self.length_entry.get()
-        length_value = int(length_value)
-        width_value = self.width_entry.get()
-        width_value = int(width_value)
-        size_value = self.size_entry.get()
-        size_value = int(size_value)
-        gap_value = self.gap_entry.get()
-        gap_value = int(gap_value)
-        self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
-        self.ph = self.userBoard.getBoardImage((300, 300))
-        self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
-        self.ph = Image.fromarray(self.ph)
-        self.ph = ImageTk.PhotoImage(self.ph)
-        self.btn_img.configure(image=self.ph)
+        try: # Try to create board
+            length_value = self.length_entry.get()
+            length_value = int(length_value)
+            width_value = self.width_entry.get()
+            width_value = int(width_value)
+            size_value = self.size_entry.get()
+            size_value = int(size_value)
+            gap_value = self.gap_entry.get()
+            gap_value = int(gap_value)
+            self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
+            self.ph = self.userBoard.getBoardImage((300, 300))
+            self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
+            self.ph = Image.fromarray(self.ph)
+            self.ph = ImageTk.PhotoImage(self.ph)
+            self.btn_img.configure(image=self.ph)
+        except ValueError as e: # Invalid values entered, try again
+            logging.error(str(e))
+            self.userBoard = None
+            showinfo("Error", "Please insert insert whole numbers in the boxes to create board.")
+
+
 
     def exportArucoBoard(self):
         """
         Adds an aruco board to the pushed boards list, to make it accessible to external objects.
         :return: None
         """
-        self.__pushedBoards.append(self.userBoard)
-        self.addBoardButton()
-
+        if self.userBoard is not None:
+            self.__pushedBoards.append(self.userBoard)
+            self.addBoardToGUIList(self.userBoard)
+            self.addBoardButton()
+    def addBoardToGUIList(self, board):
+        id = self.userBoard.ID
+        container = Frame(self.boardlist_container, bd=5)
+        id_label = Label(container, text="ID: "+str(id))
+        id_label.grid(row=0, column=0)
+        deadspace4 = Label(container,width=20, height=10).grid(row=1,column=0)
+        self.pht = self.userBoard.getBoardImage((50, 50))
+        self.pht = cv2.cvtColor(self.pht, cv2.COLOR_BGR2RGB)
+        self.pht = Image.fromarray(self.pht)
+        self.pht = ImageTk.PhotoImage(self.pht)
+        self.img = Label(container, image=self.pht)
+        self.img.grid(row=2,column=0)
+        self.boardimgs.append(self.img)
+        container.pack()
+        self.boardlist_pdftab.append(container)
     def saveArucoPDF(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator
         :return:None
         '''
-
-        self.userBoard.writeBoardToPDF()
+        if self.userBoard is not None:
+            self.userBoard.writeBoardToPDF()
 
     def validate(self, string):
         '''

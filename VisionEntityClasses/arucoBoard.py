@@ -10,11 +10,13 @@ from VisionEntityClasses.helperFunctions import *
 class arucoBoard:
     # TODO: first_marker should only be updated when board is added to tracking list.
     first_marker = 0
+    nextIndex = 0
 
     def __init__(self, board_width, board_height, marker_size, marker_gap,
                  dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)):
         self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
-        self.ID = None
+        self.ID = arucoBoard.nextIndex
+        arucoBoard.nextIndex += 1
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
@@ -23,6 +25,7 @@ class arucoBoard:
         self.board_height = board_height
         self.board_width = board_width
         arucoBoard.first_marker = self.first_marker + (self.board_height * self.board_width)
+
 
 
 
