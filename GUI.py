@@ -47,6 +47,7 @@ class GUIApplication(threading.Thread):
         self.show_video = False
         self.showPoseStream = False
         self.videoPanel = None
+        self.poseEstimationStartAllowed = False # Only True if we have applied some VEs to run with in configtab
 
         # Button lists
         self.boardButtonList = []
@@ -322,6 +323,9 @@ class GUIApplication(threading.Thread):
                                command=lambda: [self.sendStopSignal()])
         self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,
                                   bg='#424242', fg='white',)
+        # Label to respond if button pushed before VEs have been inited
+        self.poseEstimationStartDenied_label = Label(self.camFrameSettingSection,
+                                                     text="Please init VEs in config tab first.", bg="#424242")
         self.camFrameSettingSection.pack()
         self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
 
@@ -469,6 +473,9 @@ class GUIApplication(threading.Thread):
                         logging.error(msg)
                         VECU.setIncludeInPEbool(False) # Deselect checkbutton
                         VECU.setState(9)
+        if self.VEsToSend: # is not empty
+            self.poseEstimationStartAllowed = True
+            self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
         self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
 
     def getVEsForPE(self):
@@ -717,15 +724,19 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
+        return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
 
     def sendStartSignal(self):
         """
         Adds a start signal to the stop signal stack. The signal is consumed when read.
         :return: None
         """
-        self.__start_application.append(True)
-        logging.debug("Start signal sent.")
+        if self.poseEstimationStartAllowed: # VEs are initialised
+            self.__start_application.append(True)
+            logging.debug("Start signal sent.")
+            self.poseEstimationStartDenied_label.grid_forget()
+        else:
+            self.poseEstimationStartDenied_label.grid(row=1, column=0, columnspan=3)
 
     def sendStopSignal(self):
         """
@@ -740,11 +751,12 @@ class GUIApplication(threading.Thread):
         Check whether one of the VECU has requested to do preview. If so return index
         :return:
         """
-        for VECU in self.VEConfigUnits:
-            doPrev = VECU.getDoPreviewState()
-            if doPrev:
-                id = VECU.getIndex()
-                return id
+        if self.VEConfigUnits: # Only do if not empty.
+            for VECU in self.VEConfigUnits:
+                doPrev = VECU.getDoPreviewState()
+                if doPrev:
+                    id = VECU.getIndex()
+                    return id
 
     def showPreviewImage(self, index):
         '''
