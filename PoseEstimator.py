@@ -153,10 +153,11 @@ class PoseEstimator():
         Writes a new pose to each board in board list.
         :return: None
         """
-        for board in self._arucoBoards:
+        for _, board in self._arucoBoards.items():
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
-                model_pose = ve.getPoses()[board.ID]
+                poses = ve.getPoses()
+                model_pose = poses[board.ID]
                 # Idea: Set a flag in pose estimator when the first board is detected.
                 if (not self.worldCoordinatesIsSet) and ve.getDetectionQuality()[board.ID] >= self.QTHRESHOLD:
                     self.worldCoordinatesIsSet = True
