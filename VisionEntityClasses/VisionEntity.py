@@ -309,3 +309,10 @@ class VisionEntity:
         else:
             self.__cameraToModelMatrices.append(None)
             self._detection_quality.append(0)
+
+    def getCameraID(self):
+        """
+        Returns camera ID
+        :return: camera Id
+        """
+        return self._camera.getSrc()

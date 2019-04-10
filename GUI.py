@@ -18,7 +18,7 @@ from exceptions import CamNotOpenedException
 class GUIApplication(threading.Thread):
     global length
 
-    def __init__(self, cam_list):
+    def __init__(self):
         threading.Thread.__init__(self)
 
         msg = 'Thread: ', threading.current_thread().name
@@ -26,7 +26,6 @@ class GUIApplication(threading.Thread):
 
         # Camera variables
         self.counter = 0
-        self.cam_list = cam_list
         self.image_tk = None
 
         # Fields written to by external objects. Should only be read in this object.
@@ -51,6 +50,7 @@ class GUIApplication(threading.Thread):
 
         # Button lists
         self.boardButtonList = []
+        self.cameraButtonList = []
 
     def run(self):
         '''
@@ -341,10 +341,6 @@ class GUIApplication(threading.Thread):
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
                        bg='#424242', fg='orange').pack()
-        for vali, cam in enumerate(self.cam_list):
-            tk.Radiobutton(self.left_camPaneTabMain, text=str(vali),
-                           padx=20,bg='#424242', fg='orange',
-                           variable=self.__displayedCameraIndex, value=vali).pack()  #
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
 
@@ -650,7 +646,7 @@ class GUIApplication(threading.Thread):
     def updateFields(self, poses, frame, boardPose_quality):
         """
         Update GUI-objects fields outputframe and six axis pose.
-        # Pose should probably be a datatype/class
+        # Pose should probably be a datatype/class?
         :param poses: The poses of all models tracked.
         :param frame: The frame to display in camera view.
         :return: None
@@ -693,15 +689,17 @@ class GUIApplication(threading.Thread):
         stopCommand: Command to stop PoseEstimator
         doPreview: Return whether to previuew a frame from a camera in the VECU GUI section.
         """
-        previewIndex = None
+        cameraIndex = None
+        boardIndex = None
         try:
-            previewIndex = self.__displayedCameraIndex.get()
+            cameraIndex = self.__displayedCameraIndex.get()
+            boardIndex = self.boardIndex.get()
         except AttributeError as e:
             # Don't crash if __displayedCameraIndex not initialised, but set a safe value instead.
-            previewIndex = 5
-        if previewIndex < 0:
+            cameraIndex = 5
+            boardIndex = 0
+        if cameraIndex < 0:
             auto = True
-            previewIndex = (previewIndex + 1) * -1
         else:
             auto = False
         newBoard = stackChecker(self.__pushedBoards)
@@ -719,7 +717,7 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return previewIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
+        return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
 
     def sendStartSignal(self):
         """
@@ -796,10 +794,27 @@ class GUIApplication(threading.Thread):
         """
         i = len(self.boardButtonList)
         buttonText = "Camera " + str(i)
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
-                                variable=self.boardIndex, value=i)
-        self.boardButtonList.append(button)
-        self.boardButtonList[-1].pack()
+        button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
+                                value=i, bg='#424242', fg='orange')
+        self.cameraButtonList.append(button)
+        self.cameraButtonList[-1].pack()
+
+    def updateCamlist(self, camIDlist):
+        """
+        Updates the camera list to match the input camlist.
+        :param camlist: List of indexes of cameras to add.
+        :return: None
+        """
+        if camIDlist is None:
+            logging.debug("CamIDlist is empty. No buttons were added.")
+            return
+        for camID in camIDlist:
+            buttonText = "Camera " + str(camID)
+            button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
+                                    variable=self.__displayedCameraIndex,
+                                    value=camID, bg='#424242', fg='orange')
+            self.cameraButtonList.append(button)
+            self.cameraButtonList[-1].pack()
 
     def toggleFullscreen(self, event=None):
         '''
