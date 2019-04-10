@@ -531,9 +531,6 @@ class GUIApplication(threading.Thread):
         print("Previous camid: ", self.camIDInUse)
         self.camIDInUse = camid
 
-    def placeGraph(self):
-        GUIDataPlotting.plotXYZ()
-
     def doAbortApp(self):
         '''
         Stop the poseestimation running, but (for now), don't stop the application. .
@@ -679,6 +676,35 @@ class GUIApplication(threading.Thread):
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
+
+    def plotGraph(self, poses, frame):
+        '''
+        Send position for the board to GUIDataPlotting and plot pos on graph
+        :param poses:
+        :param frame:
+        :return:
+        '''
+        self.modelPoses = poses
+        self.frame = frame
+        boardIndex = self.boardIndex.get()
+        if poses:
+            evec, tvec = poses[boardIndex]
+            x, y, z = tvec
+            x1 = 0
+            y1 = 0
+            z1 = 0
+            try:
+                if tvec is not None and x is not x1 and y is not y1 and z is not z1:
+                    GUIDataPlotting.plotXYZ(frame, x, y, z)
+                    x=x1
+                    y=y1
+                    z=z1
+                else:
+                    pass
+            except TypeError:
+                print('test')
+
+
 
     def readUserInputs(self):
         """

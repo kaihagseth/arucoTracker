@@ -3,10 +3,11 @@ import tkinter as tk
 import GUI
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 import numpy as np
 import csv
 
-class dataReading:
+class dataReading():
     def __init__(self, top=None):
         '''This class configures and populates the data window.
                     top is the toplevel containing window.'''
@@ -174,7 +175,7 @@ class dataReading:
         self.btn_plot.configure(disabledforeground='#911515')
         self.btn_plot.configure(foreground='#FFFFFF')
         self.btn_plot.configure(text='Plot Data')
-        self.btn_plot.configure(command=lambda: plotXYZ(self.graph_frame,1,2,3))
+        self.btn_plot.configure(command=lambda: plotXYZ(self.graph_frame,1,1,1))
 
         self.btn_save =  tk.Button(top)
         self.btn_save.pack()
@@ -197,8 +198,7 @@ w = None
 
 def createDataWindow(root, *args, **kwargs):
     '''Starting point when module is imported by another program.'''
-    global w, w_win, rt
-    rt = root
+    global w, w_win
     frame = root
     top = dataReading(frame)
     return top
@@ -213,29 +213,32 @@ def destroy_Toplevel1():
     w.destroy()
     w = None
 
+def plotXYZ(frame, x ,y, z):
 
-
-def plotXYZ(frame, x, y, z):
     plot3d = frame
     fig=plt.figure()
-    canvas = FigureCanvasTkAgg(fig, master=fig)
+    canvas = FigureCanvasTkAgg(fig, master=plot3d)
     canvas.draw()
     x_list = []
     y_list = []
     z_list = []
     ax = plt.axes(projection='3d')
-    list = x_list,y_list,z_list
-    x_list = x_list.append(x)
-    y_list = y_list.append(y)
-    z_list = z_list.append(z)
-    if list >= 50:
-        x_list.pop(0)
-        x_list = x_list.append(x)
-        y_list.pop(0)
-        y_list = y_list.append(x)
-        z_list.pop(0)
-        z_list = z_list.append(x)
-    ax.plot3D(x,y,z, 'red')
+    x_list = x_list.append(int(x))
+    y_list = y_list.append(int(y))
+    z_list = z_list.append(int(z))
+    pos = x_list, y_list, z_list
+
+    if pos is not None:
+            if len(x_list) > 50:
+                x_list.pop(0)
+                x_list = x_list.append(x)
+            if len(y_list) > 50:
+                y_list.pop(0)
+                y_list = y_list.append(x)
+            if len(z_list) > 50:
+                z_list.pop(0)
+                z_list = z_list.append(x)
+            ax.plot3D(x,y,z, 'green')
     toolbar = NavigationToolbar2Tk(canvas, plot3d)
     toolbar.update()
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -299,4 +302,4 @@ def plotGraph(frame):
 
 if __name__ == '__main__':
     vp_start_gui()
-    plotXYZ()
+
