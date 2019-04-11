@@ -43,7 +43,7 @@ class VisionEntity:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
-            for board in boards:
+            for _,board in boards.items():
                 self.estimatePose(board)
         self.terminate()
 
