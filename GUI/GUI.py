@@ -22,17 +22,19 @@ from exceptions import CamNotOpenedException
 class GUIApplication(threading.Thread):
     global length
 
-    def __init__(self):
+    def __init__(self, connector):
         threading.Thread.__init__(self)
-
+        self.connector = connector
         self.arucoBoardUnits = []
-        self.boardlist_pdftab = []
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
-
+        self.camIndexesDisplayed = [False, False, False, False, False, False] # Set corresponding index for what indexes are displayed
         # Camera variables
         self.counter = 0
-        self.image_tk = None
+
+        # Observer technique: Tell connector which function to call when updating fileds.
+        self.connector.setGUIupdaterFunction(self.updateGUIFields)
+        self.connector.setGUIStreamerFunction(self.showFindPoseStream)
 
         # Fields written to by external objects. Should only be read in this object.
         self.frame = None           # Image frame to be shown in camera window.
@@ -355,8 +357,8 @@ class GUIApplication(threading.Thread):
         self.__displayedCameraIndex.set(-1)
 
         # Camera selection variable
-        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex, value=-1,
-                       bg='#424242', fg='orange').pack()
+        tk.Radiobutton(self.left_camPaneTabMain, text="auto", padx=5, variable=self.__displayedCameraIndex,
+                       command=self.setCameraIndex, value=-1, bg='#424242', fg='orange').pack()
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='green').pack()
 
@@ -443,7 +445,8 @@ class GUIApplication(threading.Thread):
             VECU.run()
             self.VEConfigUnits.append(VECU)
 
-        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20, text="Apply",bg='#424242',command=self.applyCamList)
+        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 20,
+                                                       text="Apply",bg='#424242',command=self.applyCamList)
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
         deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg='#424242')
         self.midSection_configPaneTabMain.add(deadspace2)
@@ -458,7 +461,7 @@ class GUIApplication(threading.Thread):
 
     def applyCamList(self):
         '''
-        Collect all VEs to be sent to PE for PoseEstimation.
+        Collect all VEs to be sent to PE for PoseEstimation, and send it to connector-.
         :return:
         '''
         self.VEsToSend = [] # List of VEs to send to PoseEstimator
@@ -489,7 +492,13 @@ class GUIApplication(threading.Thread):
         if self.VEsToSend: # is not empty
             self.poseEstimationStartAllowed = True
             self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
-        self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
+            self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
+            self.updateCamlist(self.VEsToSend)
+        #self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
+
+    def setCameraIndex(self):
+        cameraIndex = self.__displayedCameraIndex.get()
+        self.connector.setCameraIndex(cameraIndex)
 
     def getVEsForPE(self):
         '''
@@ -504,7 +513,8 @@ class GUIApplication(threading.Thread):
         # TODO: Use stack to indicate job done? Add button to GUI.
         :return:
         '''
-        self.resetBoardPosition.append(True)
+        self.connector.setResetExtrinsic(True)
+        #self.resetBoardPosition.append(True)
 
     def stopRawCameraClicked(self):
         '''
@@ -675,7 +685,7 @@ class GUIApplication(threading.Thread):
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
 
-    def updateFields(self, poses, frame, boardPose_quality):
+    def updateGUIFields(self, poses, frame, boardPose_quality):
         """
         Update GUI-objects fields outputframe and six axis pose.
         # Pose should probably be a datatype/class?
@@ -713,6 +723,7 @@ class GUIApplication(threading.Thread):
                 self.yaw_value.set(0.0)
 
     def readUserInputs(self):
+        # TODO: Remove, and use direct contact with connector.
         """
         Exports all user commands relevant outside of the GUI
         :return: camID: index of selected camera. negative if auto. newBoard: arucoboard created and pushed from GUI
@@ -732,8 +743,9 @@ class GUIApplication(threading.Thread):
             boardIndex = 0
         if cameraIndex < 0:
             auto = True
+            self.connector.setAuto(True)
         else:
-            auto = False
+            self.connector.setAuto(False)
         newBoard = stackChecker(self.__pushedBoards)
         resetExtrinsic = stackChecker(self.__resetBoardPosition)
         startCommand = stackChecker(self.__start_application)
@@ -756,6 +768,8 @@ class GUIApplication(threading.Thread):
         Adds a start signal to the stop signal stack. The signal is consumed when read.
         :return: None
         """
+        self.connector.setStartCommand(True)
+        self.connector.run()
         if self.poseEstimationStartAllowed: # VEs are initialised
             self.__start_application.append(True)
             logging.debug("Start signal sent.")
@@ -768,6 +782,7 @@ class GUIApplication(threading.Thread):
         Adds a start signal to the stop signal stack. The signal is consumed when read.
         :return: None
         """
+        self.connector.setStopCommand(True)
         self.__stop_application.append(True)
         logging.debug("Stop signal sent.")
 
@@ -824,11 +839,17 @@ class GUIApplication(threading.Thread):
         i = len(self.boardButtonList)
         buttonText = "Board " + str(i)
         button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='green',
-                                variable=self.boardIndex, value=i)
+                                command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=i)
         self.boardButtonList.append(button)
         self.boardButtonList[-1].pack()
 
+    def setBoardIndexToDisplay(self):
+        #TODO: Can be called directly from radiobutton.
+        boardIndex = self.boardIndex.get()
+        self.connector.setBoardIndexToDisplay(boardIndex)
+
     def addCameraButton(self):
+        #TODO: Not used. Remove?
         """
         Adds a radio button to the camera list in the side panel.
         :return: None
@@ -840,22 +861,24 @@ class GUIApplication(threading.Thread):
         self.cameraButtonList.append(button)
         self.cameraButtonList[-1].pack()
 
-    def updateCamlist(self, camIDlist):
+    def updateCamlist(self, VElist):
         """
         Updates the camera list to match the input camlist.
         :param camlist: List of indexes of cameras to add.
         :return: None
         """
-        if camIDlist is None:
+        if VElist is None:
             logging.debug("CamIDlist is empty. No buttons were added.")
             return
-        for camID in camIDlist:
-            buttonText = "Camera " + str(camID)
-            button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
-                                    variable=self.__displayedCameraIndex,
-                                    value=camID, bg='#424242', fg='orange')
-            self.cameraButtonList.append(button)
-            self.cameraButtonList[-1].pack()
+        for VE in VElist:
+            camID = VE.getCam().getSrc()
+            if not self.camIndexesDisplayed[camID]: # Not already placed
+                buttonText = "Camera " + str(camID)
+                button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
+                                        variable=self.__displayedCameraIndex,
+                                        value=camID, bg='#424242', fg='orange')
+                self.cameraButtonList.append(button)
+                self.cameraButtonList[-1].pack()
 
     def toggleFullscreen(self, event=None):
         '''

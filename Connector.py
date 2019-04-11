@@ -13,35 +13,50 @@ from logging.config import dictConfig
 from GUI.GUI import GUIApplication
 from GUI.GUILogin import GUILogin
 from PoseEstimator import PoseEstimator
+from threading import Thread
 
-
-class Connector():
+class Connector(Thread):
     '''
     Connect the UI with rest of the application.
     Start the GUI.
     '''
 
-    def __init__(self, ui_string):
+    def __init__(self):#ui_string):
+        Thread.__init__(self)
         self.logging_setup()
+        self.GUIupdaterFunction = None
+        self.GUIstreamFunction = None
         self.PE = PoseEstimator()
-        if ui_string == "GUI":
-            self.UI = GUIApplication()
-            guil = GUILogin(mainGUI=self.UI)
-            guil.startLogin()
-
+        self._cameraIndex = None
+        self._boardIndex = None
+        self._auto = None
+        self._newBoard = None
+        self._resetExtrinsic = None
+        self._startCommand = None
+        self._stopCommand = None
+        self._collectGUIVEs = None#self.UI.readUserInputs()
+        #if ui_string == "GUI":
+            #self.UI = GUIApplication()
+            #guil = GUILogin(mainGUI=self.UI)
+            #guil.startLogin()
+    def run(self):
+        self.startApplication()
 
     def startApplication(self):
         '''
         Start the UI, and communicate continuous with the GUI while loop is running in separate threads.
         '''
+        logging.info("Running StartApplication loop.")
         doAbort = False
         runApp = False
         VEsInitInGUI = True
         time.sleep(5)
+        counter = 0
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
-            if startCommand:
+            counter += 1
+            logging.debug("Running startApplication loop " + str(counter)+" times. ")
+            if self._startCommand:
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
                     self.PE.createVisionEntities()
@@ -49,29 +64,27 @@ class Connector():
                     # Do nothing. VEs already initialised
                     pass
                 self.PE.runPoseEstimator()  # Create all threads and start them
-                camlist = self.PE.getVisionEntityIndexes()
-                self.UI.updateCamlist(camlist)
+                #camlist = self.PE.getVisionEntityIndexes()
+                #self.UI.updateCamlist(camlist)
                 runApp = True
-            if collectGUIVEs:
-                VElist = self.UI.getVEsForPE()
-                self.PE.setVisionEntityList(VElist)
+            if self._collectGUIVEs:
                 VEsInitInGUI = True
-            if stopCommand:
+            if self._stopCommand:
                 logging.debug("stop command received")
                 runApp = False
                 self.PE.stopThreads()
-            if newBoard:
-                self.PE.addBoard(newBoard)
+            if self._newBoard:
+                self.PE.addBoard(self._newBoard)
             if runApp:
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
-                frame = self.PE.getPosePreviewImg(cameraIndex, boardIndex, auto)
+                frame = self.PE.getPosePreviewImg(self._cameraIndex, self._boardIndex, self._auto)
                 boardPose_quality = self.PE.getBoardPositionQuality()
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
-                self.UI.updateFields(poses, frame, boardPose_quality)  # Write relevant information to UI-thread.
-                self.UI.showFindPoseStream()
+                self.updateFields(poses, frame, boardPose_quality)  # Write relevant information to UI-thread.
+                self.doFindPoseStreamer()
             else:
                 time.sleep(0.1)
 
@@ -111,6 +124,49 @@ class Connector():
             i = VE.getCam().getSrc()
             camlist.append(i)
         return camlist
+
+    # Set class variables:
+    def setCameraIndex(self, ci):
+        self._cameraIndex = ci
+    def setBoardIndex(self, bi):
+        self._boardIndex = bi
+    def setAuto(self, auto):
+        self._auto = auto
+    def setNewBoard(self, nb):
+        self._newBoard = nb
+    def setResetExtrinsic(self, reset):
+        self._resetExtrinsic = reset
+    def setStartCommand(self, sc):
+        self._startCommand = sc
+    def setStopCommand(self, sc):
+        self._stopCommand = sc
+    def setCollectGUIVEs(self, var):
+        self._collectGUIVEs = var
+    def collectGUIVEs(self, VElist):
+        self.PE.setVisionEntityList(VElist)
+        self.setCollectGUIVEs(True) # Ready to be included
+
+    def setGUIupdaterFunction(self, updaterFX):
+        self.GUIupdaterFunction = updaterFX
+    def setGUIStreamerFunction(self, streamerFX):
+        self.GUIstreamFunction = streamerFX
+
+    def doFindPoseStreamer(self):
+        """" This is NOT a connector function. It's just a connector variable that keeps a reference
+        to GUIApplication function! This variable is given a function in 'setGUIStreamerFunction' """
+        self.GUIstreamFunction()
+
+    def updateFields(self, poses, frame, boardPose_quality):
+        """
+        Ask GUI to update fieldsa in GUI class. 
+        :param poses: 
+        :param frame: 
+        :param boardPose_quality: 
+        :return: 
+        """"""
+        This is NOT a connector function. It's just a connector variable that keeps a reference 
+        to GUIApplication function!  This variable is given a function in 'setGUIupdaterFunction'"""
+        self.GUIupdaterFunction(poses, frame, boardPose_quality)
 
 
 if __name__ == '__main__':

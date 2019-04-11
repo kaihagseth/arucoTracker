@@ -50,9 +50,16 @@ class PoseEstimator():
         return cam_list
 
     def setVisionEntityList(self, VElist):
+        """
+        Add VEs to the VisionEntityList.
+        :param VElist: List of new VEs to add to PoseEstimator.
+        :return: None
+        """
         for VE in VElist:
-            self.VisionEntityList.append(VE)
-
+            if VE not in self.VisionEntityList: # Don't add double
+                self.VisionEntityList.append(VE)
+            else:
+                logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
     def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
         '''
         Find all cams connected to system.  
