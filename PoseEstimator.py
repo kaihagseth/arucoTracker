@@ -21,7 +21,7 @@ class PoseEstimator():
         self.threadInfoList = []  # List for reading results from VEs.
         self._writer = None
         self._log_start_time = None
-        self._arucoBoards = []  # List of aruco boards to track.
+        self._arucoBoards = dict()  # List of aruco boards to track.
         self.createArucoBoard(3, 3, 40, 5)
         self.worldCoordinatesIsSet = False
 
@@ -50,10 +50,17 @@ class PoseEstimator():
         return cam_list
 
     def setVisionEntityList(self, VElist):
+        """
+        Add VEs to the VisionEntityList.
+        :param VElist: List of new VEs to add to PoseEstimator.
+        :return: None
+        """
         for VE in VElist:
-            self.VisionEntityList.append(VE)
-
-    def findConnectedCamIndexes(self, wantedCamIndexes=([0,1])):
+            if VE not in self.VisionEntityList: # Don't add double
+                self.VisionEntityList.append(VE)
+            else:
+                logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
+    def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
         '''
         Find all cams connected to system.  
         :return: List of indexes of wanted cameras.
@@ -153,10 +160,11 @@ class PoseEstimator():
         Writes a new pose to each board in board list.
         :return: None
         """
-        for board in self._arucoBoards:
+        for _, board in self._arucoBoards.items():
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
-                model_pose = ve.getPoses()[board.ID]
+                poses = ve.getPoses()
+                model_pose = poses[board.ID]
                 # Idea: Set a flag in pose estimator when the first board is detected.
                 if (not self.worldCoordinatesIsSet) and ve.getDetectionQuality()[board.ID] >= self.QTHRESHOLD:
                     self.worldCoordinatesIsSet = True
@@ -311,9 +319,8 @@ class PoseEstimator():
         :return: None
         """
         logging.debug("attempting to add board to vision entities")
-        index = len(self._arucoBoards)
-        board.ID = index
-        self._arucoBoards.append(board)
+        key = board.ID
+        self._arucoBoards[key] = board
         for ve in self.getVisionEntityList():
             ve.addBoards(board)
             logging.debug("board added to vision entity")

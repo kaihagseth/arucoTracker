@@ -3,6 +3,8 @@ import logging
 from tkinter import *
 from exceptions import CamNotOpenedException
 from threading import Thread
+import os
+
 class VEConfigUnit(Thread):
     '''
     Class for holding choices regarding cam and VE in config tab GUI.
@@ -21,6 +23,7 @@ class VEConfigUnit(Thread):
         self._cb_v.set(False)
         self._state = IntVar()
         self._stateText = StringVar()
+        self.continueRunInPE = False # Whether to contniue to use VE in PE.
         self._stateText.set('Disconnected')  # Statustext of connection with cam
         # self._connectionStatusLabel = "Disconnected"
         self._cb = Checkbutton(self._frame, text=str(self._id),
@@ -33,6 +36,23 @@ class VEConfigUnit(Thread):
                                  command=self.doConnect)  # , variable=self._state, onvalue=1, offvalue=0)
         self.previewBtn = Button(self._frame, text="Preview", command=self.doPreview,bg='#424242',
                                  state=DISABLED)  # , variable = self._state, onvalue=3, offvalue=2)
+
+        # Dictionary with options
+        path = "calibValues"
+        choices = os.listdir(path)
+        self.dropVar = StringVar()
+        self.calibFilePopup = OptionMenu(self._frame, self.dropVar, *choices, command=self.setCalibFileChoice)
+        self.calibFilePopup.config(bg="#424242")
+        self.dropVar.set("Calibration file")
+        #Label(self._frame, text="Choose a dish").grid(row=1, column=1)
+        self.calibFilePopup.grid(row=2, column=1)
+
+    def setCalibFileChoice(self, value):
+        logging.info(value)
+        # First two letters/numbers of string is the new label for camera.
+        callname = value[:2]
+        print("New callname: " + callname)
+        self._VE.setCameraLabelAndParameters(callname)
     def run(self):
         # Pack everything in container
         self._cb.grid(row=0, column=0, sticky='w')
@@ -40,6 +60,8 @@ class VEConfigUnit(Thread):
         self.connectBtn.grid(row=0, column=2)
         self.previewBtn.grid(row=0, column=3)
         self.conStatusLabel.grid(row=0, column=4)
+        self.calibFilePopup.grid(row=0,column=5)
+        self.calibFilePopup.config(state="disabled")
         # return self._frame
         self._frame.grid(row=self._id, column=0)
 
@@ -68,14 +90,17 @@ class VEConfigUnit(Thread):
         6 = VE running in PoseEstimator
         7 = Failed to open cam
         8 = Remove cam from PE. Not implemented
+        9 = Failed to use in PE (i.e. cam not opened)
         :param newState:
         :return:
         '''
+        msg = "State "
         if newState is 0: # Disconnected, VE not initialised
             self.conStatusLabel.config(text="Disconnected", fg="red")
             self.connectBtn.config(text="Connect", command=self.doConnect)
             self.previewBtn.config(state="disabled")
             self.previewBtn.config(text="Preview", command=self.hidePreview)
+            self.calibFilePopup.config(state="disabled")
         elif newState is 1: # Trying to connect, creating VE
             logging.debug("State is 1")
             self.connectBtn.config(text="Connecting...", command=self.doDisconnect)
@@ -100,9 +125,10 @@ class VEConfigUnit(Thread):
                 return
         elif newState is 2: # Connected, VE created, preview is available
             self.connectBtn.config(text="Disconnect", command=self.doDisconnect)
-            self.previewBtn.config(state="normal")
+            self.previewBtn.config(state="normal", text="Preview",command=self.doPreview)
             self.conStatusLabel.config(text="Connected", fg="green")
             self._currState = 2
+            self.calibFilePopup.config(state="normal")
         elif newState is 3: # Want to preview
             self._currState = 3
         elif newState is 4: # Previewing
@@ -113,6 +139,8 @@ class VEConfigUnit(Thread):
             self.connectBtn.config(text="Connect", command=self.doConnect)
             self.previewBtn.config(state="disabled")
             self.conStatusLabel.config(text="Disconnecting...", fg="red")
+            self.setDoPreviewState(False)
+            self.calibFilePopup.config(state="disabled")
             # Disconnect and terminate VE
             if self._VE is not None:
                 self._VE.terminate()
@@ -124,19 +152,21 @@ class VEConfigUnit(Thread):
             self.connectBtn.config(text="Deactivate", command=self.removeVEFromRunningPE)
             self.previewBtn.config(state="disabled")
             self.conStatusLabel.config(text="Used in PE", fg="green")
+            self.continueRunInPE = True
+            self.calibFilePopup.config(state="disabled")
             self._VE = None # Not the responsibility of GUI anymore
 
         elif newState is 7: # Failed to open camera
             self.conStatusLabel.config(text="Failed.", fg="black")
             self.connectBtn.config(text="Retry")
             self.previewBtn.config(state="disabled")
+            self.calibFilePopup.config(state="disabled")
         elif newState is 8: # Disconnect from PE
             pass
         elif newState is 9: # Failed to use in PE (i.e. cam not opened)
             self.conStatusLabel.config(text="Failed.", fg="black")
             self.setState(0)
-
-
+            self.continueRunInPE = False
 
     def doDisconnect(self):
         '''
@@ -158,7 +188,7 @@ class VEConfigUnit(Thread):
         :return:
         """
         self.setDoPreviewState(False)
-        self.setState(0)
+        self.setState(2)
     def getFrame(self):
         """
         Get image container.
@@ -178,7 +208,8 @@ class VEConfigUnit(Thread):
         Set flag to remove the VE from the current PE running. Not implemented.
         :return:
         '''
-        pass
+        self.continueRunInPE = False
+
     def setIncludeInPEbool(self, bool):
         '''
         Set the the mark whether to include VE in PE when applied. If false, the mark is taken away.

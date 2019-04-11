@@ -316,3 +316,10 @@ class VisionEntity:
         :return: camera Id
         """
         return self._camera.getSrc()
+    def setCameraLabelAndParameters(self, callname="A1"):
+        """
+        Give camera a new 'name' and thus search for a new settingsfile for this name.
+        :param callname: New callname to camera
+        :return:
+        """
+        self._camera.setCamLabel(callname)

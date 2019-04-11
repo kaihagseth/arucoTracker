@@ -104,6 +104,7 @@ class Camera():
         npzfile = np.load(filename)
         self.camera_parameters = {'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
                              'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
+        logging.info("New camera values has been set.")
 
     def saveCameraParameters(self):
         """
@@ -147,3 +148,12 @@ class Camera():
         :return:
         """
         self._vidCap.release()
+
+    def setCamLabel(self, callname):
+        """
+        Set new label and import new camera settings from filename with accordingly
+        :param callname: New label, i.e. A2 or B9. MAX LENGTH TWO letters/numbers!
+        :return: None
+        """
+        self.camera_label = callname
+        self.loadCameraParameters()
