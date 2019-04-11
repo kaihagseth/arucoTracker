@@ -7,7 +7,7 @@ import time
 
 from PIL import ImageTk
 
-from GUI import GUIApplication
+from GUI.GUI import GUIApplication
 import re
 import threading
 

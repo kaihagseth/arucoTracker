@@ -1,19 +1,21 @@
+import logging
 import threading
 import tkinter as tk
-import logging
+from tkinter import *
+from tkinter import Menu
+from tkinter import ttk
 from tkinter.messagebox import showinfo
 
 import cv2
 import ttkthemes
-from tkinter import *
-from tkinter import Menu
-from tkinter import ttk
 from PIL import ImageTk, Image
-import GUIDataPlotting
+
+from GUI import GUIDataPlotting
+from GUI.VEConfigUnit import VEConfigUnit
+from GUI.ArucoBoardUnit import ArucoBoardUnit
+from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
-from VisionEntityClasses.VisionEntity import VisionEntity
-from VEConfigUnit import VEConfigUnit
 from exceptions import CamNotOpenedException
 
 
@@ -23,6 +25,7 @@ class GUIApplication(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+        self.arucoBoardUnits = []
         self.boardlist_pdftab = []
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
@@ -233,8 +236,10 @@ class GUIApplication(threading.Thread):
         self.page_3_frame.pack()
         # Create container for holding board list
         self.boardlist_container = Frame(self.page_3)
-        self.boardlist_container.pack(side=LEFT)
+        self.boardlist_container.config(padx='10',pady='10',bg='#424242')
+        self.boardlist_container.pack(side=BOTTOM)
         self.boardimgs = []
+        self.boardimgages = [None,None,None,None,None,None,None,None,None]
         self.page_3_label_frame = Frame(self.page_3_frame)
         self.page_3_label_frame.configure(relief='groove')
         self.page_3_label_frame.configure(borderwidth='2')
@@ -612,23 +617,12 @@ class GUIApplication(threading.Thread):
         """
         if self.userBoard is not None:
             self.__pushedBoards.append(self.userBoard)
-            self.addBoardToGUIList(self.userBoard)
+            self.addBoardWidgetToGUI(self.userBoard)
             self.addBoardButton()
-    def addBoardToGUIList(self, board):
-        id = self.userBoard.ID
-        container = Frame(self.boardlist_container, bd=5)
-        id_label = Label(container, text="ID: "+str(id))
-        id_label.grid(row=0, column=0)
-        deadspace4 = Label(container,width=20, height=10).grid(row=1,column=0)
-        self.pht = self.userBoard.getBoardImage((50, 50))
-        self.pht = cv2.cvtColor(self.pht, cv2.COLOR_BGR2RGB)
-        self.pht = Image.fromarray(self.pht)
-        self.pht = ImageTk.PhotoImage(self.pht)
-        self.img = Label(container, image=self.pht)
-        self.img.grid(row=2,column=0)
-        self.boardimgs.append(self.img)
-        container.pack()
-        self.boardlist_pdftab.append(container)
+    def addBoardWidgetToGUI(self, board):
+        ABU = ArucoBoardUnit(board, self.boardlist_container)
+        self.arucoBoardUnits.append(ABU)
+
     def saveArucoPDF(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator

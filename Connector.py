@@ -1,12 +1,19 @@
-import os
 import json
 import logging
 from logging.config import dictConfig
 import time
 from PoseEstimator import PoseEstimator
-import threading
-from GUI import GUIApplication
-from GUILogin import GUILogin
+from GUI.GUI import GUIApplication
+from GUI.GUILogin import GUILogin
+import json
+import logging
+import time
+from logging.config import dictConfig
+
+from GUI.GUI import GUIApplication
+from GUI.GUILogin import GUILogin
+from PoseEstimator import PoseEstimator
+
 
 class Connector():
     '''
