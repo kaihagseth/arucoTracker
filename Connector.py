@@ -27,7 +27,7 @@ class Connector(Thread):
         self.GUIupdaterFunction = None
         self.GUIstreamFunction = None
         self.PE = PoseEstimator()
-        self._cameraIndex = None
+        self._cameraIndex = 0
         self._boardIndex = None
         self._auto = None
         self._newBoard = None
@@ -76,6 +76,7 @@ class Connector(Thread):
             if self._newBoard:
                 self.PE.addBoard(self._newBoard)
             if runApp:
+                logging.info("Running runApp")
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
                 frame = self.PE.getPosePreviewImg(self._cameraIndex, self._boardIndex, self._auto)

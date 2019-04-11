@@ -761,21 +761,23 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
+        #return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
 
     def sendStartSignal(self):
         """
         Adds a start signal to the stop signal stack. The signal is consumed when read.
         :return: None
         """
-        self.connector.setStartCommand(True)
-        self.connector.run()
+
         if self.poseEstimationStartAllowed: # VEs are initialised
+            self.connector.setStartCommand(True)
+            self.connector.run()
             self.__start_application.append(True)
             logging.debug("Start signal sent.")
             self.poseEstimationStartDenied_label.grid_forget()
         else:
-            self.poseEstimationStartDenied_label.grid(row=1, column=0, columnspan=3)
+            showinfo("Error", "Please choose some cameras in the Config-section first.")
+            #self.poseEstimationStartDenied_label.grid(row=1, column=0, columnspan=3)
 
     def sendStopSignal(self):
         """

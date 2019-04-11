@@ -1,4 +1,5 @@
 import csv
+import inspect
 import logging
 import threading
 import time
@@ -9,7 +10,7 @@ import numpy as np
 from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
-
+import inspect
 class PoseEstimator():
     """
     Collect pose and info from all cameras, and find the best estimated pose possible.
@@ -57,7 +58,9 @@ class PoseEstimator():
         """
         for VE in VElist:
             if VE not in self.VisionEntityList: # Don't add double
+                VE.addBoards(self.getBoards())
                 self.VisionEntityList.append(VE)
+                logging.info("VE with camsource "+str(VE.getCam().getSrc())+" added.")
             else:
                 logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
     def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
@@ -130,14 +133,15 @@ class PoseEstimator():
         :param camID: OpenCV camera ID
         :return: Vision entity to be returned.
         """
+        print("Print in 'getVEbyID': Length of VE-list: "+ str(len(self.VisionEntityList)))
         for VE in self.VisionEntityList:
             cam = VE.getCam()
             if cam._src is camID:
                 wantedVE = VE
                 return wantedVE
         # If not found, log error.
-        logging.error('Camera not found on given index, VE returned None. ')
-
+        logging.error('Camera not found on given index: '+str(camID)+', VE returned None. Parent caller: ' + str(inspect.stack()[2][3]))
+#        raise Exception
     def getVisionEntityList(self):
         """
         Returns list of all Vision entities.
@@ -231,6 +235,7 @@ class PoseEstimator():
             board = boards[boardIndex]
             tracking_entity = board.getTrackingEntity()
             if tracking_entity is None:
+                logging.debug("Tracking entity is none, asking tro get VE of src 0. ")
                 vision_entity = copy.copy(self.getVEById(0))
             else:
                 vision_entity = copy.copy(tracking_entity)
@@ -260,6 +265,7 @@ class PoseEstimator():
             else:
                 vision_entity = copy.copy(self._master_entity)
         else:
+            logging.error("CamID: " + str(camID))
             vision_entity = self.getVEById(camID)
         quality = vision_entity.getCameraPoseQuality()
         return quality
