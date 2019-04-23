@@ -60,6 +60,7 @@ class Connector(Thread):
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
                     self.PE.createVisionEntities()
+
                 else:
                     # Do nothing. VEs already initialised
                     pass
@@ -67,6 +68,7 @@ class Connector(Thread):
                 #camlist = self.PE.getVisionEntityIndexes()
                 #self.UI.updateCamlist(camlist)
                 runApp = True
+                self._startCommand = False
             if self._collectGUIVEs:
                 VEsInitInGUI = True
             if self._stopCommand:
