@@ -660,18 +660,18 @@ class GUIApplication(threading.Thread):
             evec, tvec = poses[boardIndex]
             if evec is not None:
                 x, y, z = tvec
-                self.x_value.set(x)
-                self.y_value.set(y)
-                self.z_value.set(z)
+                self.x_value.set(round(x,2))
+                self.y_value.set(round(y,2))
+                self.z_value.set(round(z,2))
             else:
                 self.x_value.set(0.0)
                 self.y_value.set(0.0)
                 self.z_value.set(0.0)
             if tvec is not None:
                 roll, pitch, yaw = evec
-                self.roll_value.set(roll)
-                self.pitch_value.set(pitch)
-                self.yaw_value.set(yaw)
+                self.roll_value.set(round(roll,2))
+                self.pitch_value.set(round(pitch,2))
+                self.yaw_value.set(round(yaw,2))
             else:
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)

@@ -186,8 +186,8 @@ class PoseEstimator():
         for board in self._arucoBoards:
             try:
                 rvec, tvec = board.getRvecTvec()
-                tvec = tvec.astype(int).reshape(-1)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(int)
+                tvec = tvec.astype(float).reshape(-1)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(float)
             except (TypeError, AttributeError):
                 tvec = None
                 evec = None
@@ -234,7 +234,8 @@ class PoseEstimator():
             out_frame = vision_entity.drawAxis()
         else:
             if vision_entity is None:
-                out_frame = self.getVEById(0).getFrame()
+                # TODO: Change this default index!
+                out_frame = self.getVEById(1).getFrame()
             else:
                 out_frame = vision_entity.getFrame()
         return out_frame
