@@ -27,8 +27,8 @@ class Camera():
         self._src = src_index
         self._frame = None
         self._vidCap = cv2.VideoCapture(self._src)
-        self._vidCap.set(cv2.CAP_PROP_AUTOFOCUS, False)
-        self._vidCap.set(cv2.CAP_PROP_FOCUS, 0.0)
+        #self._vidCap.set(cv2.CAP_PROP_AUTOFOCUS, False)
+        #self._vidCap.set(cv2.CAP_PROP_FOCUS, 0.0)
         # Test
         if not self._vidCap.open(self._src):
             logging.error('Camera not opened!')
