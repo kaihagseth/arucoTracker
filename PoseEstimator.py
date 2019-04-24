@@ -14,6 +14,7 @@ import inspect
 class PoseEstimator():
     """
     Collect pose and info from all cameras, and find the best estimated pose possible.
+    #TODO: Implement merger
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera

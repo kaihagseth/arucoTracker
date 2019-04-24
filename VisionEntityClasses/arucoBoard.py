@@ -12,22 +12,20 @@ class arucoBoard:
     first_marker = 0
     nextIndex = 0
 
-    def __init__(self, board_width, board_height, marker_size, marker_gap,
-                 dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)):
+    def __init__(self, board_width=0, board_height=0, marker_size=0, marker_gap=0,
+                 dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50), arucoBoard=None):
+        self._poseQuality = 0 # How good the current estimated pose is from a scale from 0 to 1.
+        self._transformationMatrix = None # World -> Model transformation
         self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
         self.ID = arucoBoard.nextIndex
         arucoBoard.nextIndex += 1
+        if arucoBoard is not None:
+            self._board = arucoBoard
+            return
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
-        self._transformationMatrix = None # World -> Model transformation
-        self._poseQuality = 0 # How good the current estimated pose is from a scale from 0 to 1.
-        self.board_height = board_height
-        self.board_width = board_width
-        arucoBoard.first_marker = self.first_marker + (self.board_height * self.board_width)
-
-
-
+        arucoBoard.first_marker = self.first_marker + (board_height * board_width)
 
     def getGridBoardSize(self):
         return self._board.getGridSize()
@@ -123,7 +121,7 @@ class arucoBoard:
         Retrieves the Ids of this boards markers.
         :return: Ids of this boards markers.
         """
-        return np.reshape(self._board.ids, -1)
+        return copy.copy(self._board.ids)
 
     def getBoardImage(self, size):
         """
@@ -146,39 +144,6 @@ class arucoBoard:
         :return:
         """
         self._tracking_ve = ve
-
-    @staticmethod
-    def mergeBoards(main_board, sub_boards):
-        """
-        Merges a list of arucoboard to a single board. This function should be called every time a higher quality scan
-        of the boards have been done.
-        TODO: TEST ME
-        :param boards: A list of the arucoboards that should be merged.
-        :return: The merged board.
-        """
-
-        dictionary = main_board.getDictionary()
-        ids = []
-        obj_points = []
-        ids.append(main_board.getIds())
-        obj_points.append(main_board.getObjpoints())
-        for sub_board in sub_boards:        # For each board to add
-            ids.append(sub_board.getIds())  # Add ids to a list.
-            sub_board_pose = sub_board.getTransformationMatrix()
-            main_board_pose = main_board.getTransformationMatrix()
-            inv_main_board_pose = invertTransformationMatrix(main_board_pose)
-            relative_sub_board_pose = sub_board_pose * inv_main_board_pose
-            sub_board_obj_points = sub_board.getObjPoints()
-            new_board_obj_points = copy.copy(sub_board_obj_points)
-            for markeridx, marker in enumerate(sub_board_obj_points):
-                newMarker = []
-                for corneridx, corner in enumerate(marker):
-                    newCorner = transformPointHomogeneous(corner, relative_sub_board_pose)
-                    newMarker.append(newCorner)
-                obj_points.append(newMarker)
-            obj_points.append(new_board_obj_points)
-        mergedBoard = cv2.aruco.Board_create(obj_points, dictionary, ids)
-        return mergedBoard
 
     def interpolateObstructedIds(self):
         self.__corners, self.__ids, self.__rejected, recovered = cv2.aruco.refineDetectedMarkers()
