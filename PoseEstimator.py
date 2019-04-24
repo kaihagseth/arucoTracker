@@ -13,6 +13,8 @@ from VisionEntityClasses.arucoBoard import arucoBoard
 class PoseEstimator():
     """
     Collect pose and info from all cameras, and find the best estimated pose possible.
+    # TODO: _arucoboards-collection should probably be updated to a dict to fix problem with indexing after board merging
+    # TODO: and deleting becomes a thing.
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera
@@ -22,7 +24,7 @@ class PoseEstimator():
         self._writer = None
         self._log_start_time = None
         self._arucoBoards = []  # List of aruco boards to track.
-        self.createArucoBoard(3, 3, 40, 5)
+        # self.createArucoBoard(3, 3, 40, 5)
         self.worldCoordinatesIsSet = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
@@ -324,3 +326,13 @@ class PoseEstimator():
         :return: list of arucoboards
         """
         return self._arucoBoards
+
+    def mergeBoards(self, main_board_id, sub_board_id):
+        """
+        Merges two arucoboards into one.
+        :return: None
+        """
+        main_board = self._arucoBoards[main_board_id]
+        sub_board = self._arucoBoards[sub_board_id]
+        self._arucoBoards[main_board_id] = arucoBoard.mergeBoards(self._arucoBoards[main_board_id],
+                                                                  self._arucoBoards[sub_board_id])

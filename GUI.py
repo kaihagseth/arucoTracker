@@ -707,6 +707,7 @@ class GUIApplication(threading.Thread):
         startCommand = stackChecker(self.__start_application)
         stopCommand = stackChecker(self.__stop_application)
         collectGUIVEs = stackChecker(self.__collectGUIVEs)
+        boardsToMerge = stackChecker(self.__boardsToMerge)
         self.__doPreviewIndex = self.checkPreviewStatus() # -1 if none preview was requested
 #        msg = "__doPreviewIndex: ", self.__doPreviewIndex
 #        logging.debug(msg)
@@ -717,7 +718,13 @@ class GUIApplication(threading.Thread):
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
-        return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs
+        return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs, boardsToMerge
+
+    def mergeBoards(self):
+        """
+        Exports to arucoboards for merging.
+        :return:
+        """
 
     def sendStartSignal(self):
         """

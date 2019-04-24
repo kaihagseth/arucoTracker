@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import logging
+import time
+from threading import Thread
 import copy
 from fpdf import FPDF
 from VisionEntityClasses.VisionEntity import VisionEntity
@@ -167,15 +169,30 @@ class arucoBoard:
             relative_sub_board_pose = sub_board_pose * inv_main_board_pose
             sub_board_obj_points = sub_board.getObjPoints()
             new_board_obj_points = copy.copy(sub_board_obj_points)
-            for markeridx, marker in enumerate(sub_board_obj_points):
+            for marker in sub_board_obj_points:
                 newMarker = []
-                for corneridx, corner in enumerate(marker):
+                for corner in marker:
                     newCorner = transformPointHomogeneous(corner, relative_sub_board_pose)
                     newMarker.append(newCorner)
                 obj_points.append(newMarker)
             obj_points.append(new_board_obj_points)
         mergedBoard = cv2.aruco.Board_create(obj_points, dictionary, ids)
         return mergedBoard
+
+    @staticmethod
+    def checkMergeBoard(main_board, sub_board):
+        """
+        Checks if two boards are ready to be merged, and merges them if they are. Should be run as thread.
+        :param main_board:
+        :param sub_board:
+        :return:
+        """
+        while True:
+            mb = copy.copy(main_board)
+            sb = copy.copy(sub_board)
+            if mb.getTransformationMatrix is not None and sb.getTransformationMatrix is not None:
+                return arucoBoard.mergeBoards(mb, sb)
+            time.sleep(0.2)
 
     def interpolateObstructedIds(self):
         self.__corners, self.__ids, self.__rejected, recovered = cv2.aruco.refineDetectedMarkers()

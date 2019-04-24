@@ -3,9 +3,11 @@ import json
 import logging
 from logging.config import dictConfig
 import time
+import threading
 from PoseEstimator import PoseEstimator
 import threading
 from GUI import GUIApplication
+from VisionEntityClasses.arucoBoard import arucoBoard
 from GUILogin import GUILogin
 
 class Connector():
@@ -33,7 +35,7 @@ class Connector():
         time.sleep(5)
         # TODO: Find an automated way to wait for UI to initialize
         while not doAbort:
-            cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs = self.UI.readUserInputs()
+            cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs, boardsToMerge = self.UI.readUserInputs()
             if startCommand:
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
@@ -55,6 +57,10 @@ class Connector():
                 self.PE.stopThreads()
             if newBoard:
                 self.PE.addBoard(newBoard)
+            if boardsToMerge:
+                # FIXME: Find out where to put this board. Fix threading
+                logging.debug("Attempting to merge boards")
+                self.PE.mergeBoards(boardsToMerge)
             if runApp:
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()

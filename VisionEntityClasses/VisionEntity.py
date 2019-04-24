@@ -131,7 +131,7 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
-        print("This message should only pop up once or twice")
+        logging.debug("Camera pose updated")
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
@@ -223,7 +223,6 @@ class VisionEntity:
         Calculates the quality of the current pose estimation between the camera and the model
         :return: None
         """
-        # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = set(board.getIds())
@@ -241,8 +240,8 @@ class VisionEntity:
         #print("Cam index: ", self._camera.getSrc())
         CToMMatrix = self.__cameraToModelMatrices[board.ID]
         if CToMMatrix is not None:
-            z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
-            z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
+            z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get z-vector from rotation matrix
+            z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten() # get z-vector from camera (always [0 0 1])
             print("Z1: ", z1)
             print("Z2: ", z2)
             msg1 = CToMMatrix
