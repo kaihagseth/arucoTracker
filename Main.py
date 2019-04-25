@@ -1,4 +1,6 @@
 from Connector import Connector
-
-c = Connector("GUI")
-c.startApplication()
+from GUI.GUI import GUIApplication
+c = Connector()#("GUI")
+#c.run() Don't run froim here. Run from GUI.
+GUIApp = GUIApplication(connector=c)
+GUIApp.run()
