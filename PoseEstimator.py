@@ -1,4 +1,5 @@
 import csv
+import inspect
 import logging
 import threading
 import time
@@ -9,10 +10,11 @@ import numpy as np
 from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
-
+import inspect
 class PoseEstimator():
     """
     Collect pose and info from all cameras, and find the best estimated pose possible.
+    #TODO: Implement merger
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera
@@ -21,7 +23,7 @@ class PoseEstimator():
         self.threadInfoList = []  # List for reading results from VEs.
         self._writer = None
         self._log_start_time = None
-        self._arucoBoards = []  # List of aruco boards to track.
+        self._arucoBoards = dict()  # List of aruco boards to track.
         self.createArucoBoard(3, 3, 40, 5)
         self.worldCoordinatesIsSet = False
 
@@ -50,9 +52,18 @@ class PoseEstimator():
         return cam_list
 
     def setVisionEntityList(self, VElist):
+        """
+        Add VEs to the VisionEntityList.
+        :param VElist: List of new VEs to add to PoseEstimator.
+        :return: None
+        """
         for VE in VElist:
-            self.VisionEntityList.append(VE)
-
+            if VE not in self.VisionEntityList: # Don't add double
+                VE.addBoards(self.getBoards())
+                self.VisionEntityList.append(VE)
+                logging.info("VE with camsource "+str(VE.getCam().getSrc())+" added.")
+            else:
+                logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
     def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
         '''
         Find all cams connected to system.  
@@ -118,19 +129,29 @@ class PoseEstimator():
                 self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
                                        (time.time() - self._log_start_time)])
 
+    def resetExtrinsicMatrices(self):
+        '''
+        Create a new starterpoint for pose estimation.
+
+        :return: None
+        '''
+        for VE in self.VisionEntityList:
+            VE.resetExtrinsicMatrix()
+
     def getVEById(self, camID):
         """
         :param camID: OpenCV camera ID
         :return: Vision entity to be returned.
         """
+        print("Print in 'getVEbyID': Length of VE-list: "+ str(len(self.VisionEntityList)))
         for VE in self.VisionEntityList:
             cam = VE.getCam()
             if cam._src is camID:
                 wantedVE = VE
                 return wantedVE
         # If not found, log error.
-        logging.error('Camera not found on given index, VE returned None. ')
-
+        logging.error('Camera not found on given index: '+str(camID)+', VE returned None. Parent caller: ' + str(inspect.stack()[2][3]))
+#        raise Exception
     def getVisionEntityList(self):
         """
         Returns list of all Vision entities.
@@ -153,10 +174,11 @@ class PoseEstimator():
         Writes a new pose to each board in board list.
         :return: None
         """
-        for board in self._arucoBoards:
+        for _, board in self._arucoBoards.items():
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
-                model_pose = ve.getPoses()[board.ID]
+                poses = ve.getPoses()
+                model_pose = poses[board.ID]
                 # Idea: Set a flag in pose estimator when the first board is detected.
                 if (not self.worldCoordinatesIsSet) and ve.getDetectionQuality()[board.ID] >= self.QTHRESHOLD:
                     self.worldCoordinatesIsSet = True
@@ -223,6 +245,7 @@ class PoseEstimator():
             board = boards[boardIndex]
             tracking_entity = board.getTrackingEntity()
             if tracking_entity is None:
+                logging.debug("Tracking entity is none, asking tro get VE of src 0. ")
                 vision_entity = copy.copy(self.getVEById(0))
             else:
                 vision_entity = copy.copy(tracking_entity)
@@ -252,6 +275,7 @@ class PoseEstimator():
             else:
                 vision_entity = copy.copy(self._master_entity)
         else:
+            logging.error("CamID: " + str(camID))
             vision_entity = self.getVEById(camID)
         quality = vision_entity.getCameraPoseQuality()
         return quality
@@ -311,9 +335,8 @@ class PoseEstimator():
         :return: None
         """
         logging.debug("attempting to add board to vision entities")
-        index = len(self._arucoBoards)
-        board.ID = index
-        self._arucoBoards.append(board)
+        key = board.ID
+        self._arucoBoards[key] = board
         for ve in self.getVisionEntityList():
             ve.addBoards(board)
             logging.debug("board added to vision entity")

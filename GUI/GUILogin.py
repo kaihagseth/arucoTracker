@@ -4,7 +4,10 @@ from tkinter import ttk
 import ttkthemes
 import os
 import time
-from GUI import GUIApplication
+
+from PIL import ImageTk
+
+from GUI.GUI import GUIApplication
 import re
 import threading
 
@@ -166,6 +169,11 @@ class GUILogin():
         login_window.title('Login')
         login_window.geometry('300x250')
         login_window.configure(bg='#424242')
+
+        # Add NTNU-logo on login page, looking nice
+        #img = ImageTk.PhotoImage(Image.open("True1.gif"))
+        #panel = Label(login_window, image=img)
+        #panel.pack(side="bottom", fill="both", expand="yes")
         Label(login_window, text='Please enter details below to login', bg='#424242',fg='white').pack()
         Label(login_window, text='', bg='#424242').pack()
 
