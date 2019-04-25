@@ -7,17 +7,18 @@ from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
 from PIL import ImageTk, Image
-import GUIDataPlotting
 from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VEConfigUnit import VEConfigUnit
 from exceptions import CamNotOpenedException
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
+import time
+from random import randrange
 
 
 class GUIApplication(threading.Thread):
-    global length
-
     def __init__(self):
         threading.Thread.__init__(self)
 
@@ -60,7 +61,6 @@ class GUIApplication(threading.Thread):
         self.camIDInUse = 0
 
         # Set up main window.
-
         self.root = Tk()
         self.root.style = ttkthemes.ThemedStyle()
         self.root.title('Boat Pose Estimator')
@@ -217,7 +217,6 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
-        # FIXME:Numbers in field disappears when clicking mouse.
         self.page_3_frame = Frame(self.page_3)
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
@@ -304,12 +303,34 @@ class GUIApplication(threading.Thread):
         self.page_4_frame = Frame(self.page_4)
         self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
         self.page_4_frame.configure(relief='groove', borderwidth='2', background='#424242', width=565)
+        self.graph_frame = Frame(self.page_4_frame)
+        self.graph_frame.configure(background='red')
+        self.graph_frame.configure(borderwidth='2')
+        self.graph_frame.configure(relief='ridge')
+        self.graph_frame.configure(width=750)
+        self.graph_frame.configure(height=500)
+        self.graph_frame.pack()
 
-        # TODO:Improve so that we dont have to catch error for wrong index.
-        try:
-            GUIDataPlotting.createDataWindow(self.page_4_frame)
-        except IndexError:
-            logging.info('Sketchy, but OK.')
+        # Buttons in graph page
+        self.btn_frame_4 = Frame(self.page_4_frame)
+        self.btn_frame_4.pack()
+
+        self.btn_plot = tk.Button(self.btn_frame_4)
+        self.btn_plot.pack(side=LEFT)
+        self.btn_plot.configure(background='#665959')
+        self.btn_plot.configure(disabledforeground='#911515')
+        self.btn_plot.configure(foreground='#FFFFFF')
+        self.btn_plot.configure(text='Start')
+        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.setupGraph(self.graph_frame)))
+
+        self.btn_save =  tk.Button(self.btn_frame_4)
+        self.btn_save.pack(side=RIGHT)
+        self.btn_save.configure(background='#665959')
+        self.btn_save.configure(disabledforeground='#911515')
+        self.btn_save.configure(foreground='#FFFFFF')
+        self.btn_save.configure(text='Stop')
+        self.btn_save.configure(command=lambda: self.showButton(self.btn_plot))
+
 
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500)  # , orient=HORIZONTAL)
         #self.camFrameSettingSection.configure(bg='#424242')
@@ -661,8 +682,11 @@ class GUIApplication(threading.Thread):
             if evec is not None:
                 x, y, z = tvec
                 self.x_value.set(x)
+                #data_reader.x_value.set(x)
                 self.y_value.set(y)
+                #data_reader.y_value.set(y)
                 self.z_value.set(z)
+                #data_reader.z_value.set(z)
             else:
                 self.x_value.set(0.0)
                 self.y_value.set(0.0)
@@ -677,33 +701,40 @@ class GUIApplication(threading.Thread):
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
 
-    def plotGraph(self, poses, frame):
+    def setupGraph(self, frame):
         '''
-        Send position for the board to GUIDataPlotting and plot pos on graph
-        :param poses:
-        :param frame:
+        Send position for the board to the graph frame and plot pos
+        :param frame: The frame you want to plot the graph in.
         :return:
         '''
-        self.modelPoses = poses
         self.frame = frame
-        boardIndex = self.boardIndex.get()
-        if poses:
-            evec, tvec = poses[boardIndex]
-            x, y, z = tvec
-            x1 = 0
-            y1 = 0
-            z1 = 0
-            try:
-                if tvec is not None and x is not x1 and y is not y1 and z is not z1:
-                    GUIDataPlotting.plotXYZ(frame, x, y, z)
-                    x=x1
-                    y=y1
-                    z=z1
-                else:
-                    pass
-            except TypeError:
-                print('test')
+        t_data, x_data, y_data, z_data = [], [], [], []
 
+        figure = plt.figure()
+        ax = figure.subplots(3, 1, sharex=True, sharey=True)
+        line, = ax[0].plot(t_data, x_data, 'r')
+        line2, = ax[1].plot(t_data, y_data, 'c')
+        line3, = ax[2].plot(t_data, z_data, '-')
+        start_time = time.time()
+
+        def update(self, frame):
+            elapsed_time = time.time() - start_time
+            t_data.append(elapsed_time)
+            x_data.append(self.x_value)
+            y_data.append(self.y_value)
+            z_data.append(self.z_value)
+            line.set_data(t_data, x_data)
+            line2.set_data(t_data, y_data)
+            line3.set_data(t_data, z_data)
+            figure.gca().relim()
+            figure.gca().autoscale_view()
+
+        figure.suptitle('Movement')
+        ax[0].set_ylabel('X')
+        ax[1].set_ylabel('Y')
+        ax[2].set_ylabel('Z')
+        ax[2].set_xlabel('Time (s)')
+        animation = FuncAnimation(figure, update, interval=100)
 
 
     def readUserInputs(self):
@@ -854,10 +885,22 @@ class GUIApplication(threading.Thread):
 
     def endFullscreen(self, event=None):
         '''
-        End full screen
+        End full screen mode with a break return
         :param event: None
         :return: 'break'
         '''
         self.state = False
         self.root.attributes('-fullscreen', False)
         return 'break'
+
+    def hideButton(self, button):
+        '''
+        Hide the chosen button if you do not want it to be pressed until some other
+        button is pressed first.
+        :param button: The button you want to hide
+        :return: None
+        '''
+        button.lower()
+
+    def showButton(self, button):
+        button.lift()
