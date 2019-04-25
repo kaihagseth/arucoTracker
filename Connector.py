@@ -48,7 +48,7 @@ class Connector(Thread):
         '''
         logging.info("Running StartApplication loop.")
         doAbort = False
-        runApp = True
+        runApp = False
         VEsInitInGUI = True
         time.sleep(5)
         counter = 0
@@ -77,9 +77,6 @@ class Connector(Thread):
                 self.PE.stopThreads()
             if self._newBoard:
                 self.PE.addBoard(self._newBoard)
-            if self._resetExtrinsic:
-                # Reset the extrinsic matrix, meaning set new startposition for calculations.
-                pass
             if runApp:
                 logging.info("Running runApp")
                 self.PE.updateBoardPoses()
@@ -142,7 +139,6 @@ class Connector(Thread):
         self._newBoard = nb
     def setResetExtrinsic(self, reset):
         self._resetExtrinsic = reset
-        self.PE.resetExtrinsicMatrices()
     def setStartCommand(self, sc):
         self._startCommand = sc
     def setStopCommand(self, sc):
