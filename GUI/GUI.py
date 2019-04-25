@@ -607,7 +607,8 @@ class GUIApplication(threading.Thread):
             size_value = int(size_value)
             gap_value = self.gap_entry.get()
             gap_value = int(gap_value)
-            self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
+            self.userBoard = arucoBoard(board_height=length_value, width_value=width_value, marker_size=size_value,
+                                        marker_gap=gap_value)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
             self.ph = Image.fromarray(self.ph)

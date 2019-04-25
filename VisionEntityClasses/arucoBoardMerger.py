@@ -96,3 +96,10 @@ class Merger:
         for board in self.sub_boards:
             qualityList.append(board.meanTransformationMatrixFinder.getCumWeights())
         return qualityList
+
+    def getBoards(self):
+        """
+        Returns a list of all boards used as input for this merger.
+        :return: Main board followed by sub boards in a single list.
+        """
+        return [self.main_board] + self.sub_boards

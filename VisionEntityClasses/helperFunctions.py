@@ -5,7 +5,7 @@ import math
 
 def toMatrix(rvec):
     """
-    Transform rvec to matrix
+    Transform Rodriguez rotation vector to rotation matrix
     :param rvec: Rotation Vector
     :return:
     """
@@ -151,6 +151,7 @@ class IterativeMean():
 class IterativeMeanRotationFinder:
     """
     Iteratively calculates the mean weighted rotation from a continuously updated list of rotations.
+    FIXME: This function needs to use the SLERP-algorithm in order to give a correct result for the rotations.
     """
     def __init__(self):
         self.iterativeMean = IterativeMean(dataType=type(np.quaternion()))
