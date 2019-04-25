@@ -17,6 +17,9 @@ from VisionEntityClasses.arucoBoard import arucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
 from exceptions import CamNotOpenedException
 
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
+import time
 
 class GUIApplication(threading.Thread):
     global length
@@ -343,11 +346,39 @@ class GUIApplication(threading.Thread):
         self.pdf_btn.configure(bg='#424242', fg='white')
         self.pdf_btn.pack(side=LEFT)
 
-
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
         self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
         self.page_4_frame.configure(relief='groove', borderwidth='2', background='#424242', width=565)
+
+        self.graph_frame = Frame(self.page_4_frame)
+        self.graph_frame.configure(background='red')
+        self.graph_frame.configure(borderwidth='2')
+        self.graph_frame.configure(relief='ridge')
+        self.graph_frame.configure(width=750)
+        self.graph_frame.configure(height=500)
+        self.graph_frame.pack()
+
+        # Buttons in graph page
+        self.btn_frame_4 = Frame(self.page_4_frame)
+        self.btn_frame_4.pack()
+
+        self.btn_plot = tk.Button(self.btn_frame_4)
+        self.btn_plot.pack(side=LEFT)
+        self.btn_plot.configure(background='#665959')
+        self.btn_plot.configure(disabledforeground='#911515')
+        self.btn_plot.configure(foreground='#FFFFFF')
+        self.btn_plot.configure(text='Start')
+        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.setupGraph(self.graph_frame)))
+
+        self.btn_save =  tk.Button(self.btn_frame_4)
+        self.btn_save.pack(side=RIGHT)
+        self.btn_save.configure(background='#665959')
+        self.btn_save.configure(disabledforeground='#911515')
+        self.btn_save.configure(foreground='#FFFFFF')
+        self.btn_save.configure(text='Stop')
+        self.btn_save.configure(command=lambda: self.showButton(self.btn_plot))
+
 
 
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500)  # , orient=HORIZONTAL)
@@ -950,3 +981,55 @@ class GUIApplication(threading.Thread):
         self.state = False
         self.root.attributes('-fullscreen', False)
         return 'break'
+
+    def setupGraph(self, frame):
+        '''
+        Send position for the board to the graph frame and plot pos
+        :param frame: The frame you want to plot the graph in.
+        :return:
+        '''
+        t_data, x_data, y_data, z_data = [], [], [], []
+
+        figure = plt.figure()
+        ax = figure.subplots(3, 1, sharex=True, sharey=True)
+        line, = ax[0].plot(t_data, x_data, 'r')
+        line2, = ax[1].plot(t_data, y_data, 'c')
+        line3, = ax[2].plot(t_data, z_data, '-')
+        start_time = time.time()
+
+        def update(self, frame):
+            elapsed_time = time.time() - start_time
+            t_data.append(elapsed_time)
+            x_data.append(self.x_value)
+            y_data.append(self.y_value)
+            z_data.append(self.z_value)
+            line.set_data(t_data, x_data)
+            line2.set_data(t_data, y_data)
+            line3.set_data(t_data, z_data)
+            figure.gca().relim()
+            figure.gca().autoscale_view()
+
+        figure.suptitle('Movement')
+        ax[0].set_ylabel('X')
+        ax[1].set_ylabel('Y')
+        ax[2].set_ylabel('Z')
+        ax[2].set_xlabel('Time (s)')
+        animation = FuncAnimation(figure, update, interval=100)
+
+    def hideButton(self, button):
+        '''
+        Hide the chosen button if you do not want it to be pressed until some other
+        button is pressed first.
+        :param button: The button you want to hide
+        :return: None
+        '''
+        button.lower()
+
+    def showButton(self, button):
+        '''
+        Show a hidden button
+        :param button: Button you want to show
+        :return:
+        '''
+        button.lift()
+
