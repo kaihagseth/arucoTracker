@@ -60,6 +60,7 @@ class GUIApplication(threading.Thread):
         # Button lists
         self.boardButtonList = []
         self.cameraButtonList = []
+        self.cameraButtonIndexList = []
 
     def run(self):
         '''
@@ -174,7 +175,8 @@ class GUIApplication(threading.Thread):
 
         self.top = PanedWindow(self.midSection_camPaneTabMain) # Top Mid GUI
         self.top.configure(bg='#424242')
-
+        self.frame = Frame(self.top)
+        self.top.add(self.frame)
         self.midSection_camPaneTabMain.add(self.top, height=500)
         self.main_label = Label(self.top, text='Camera Views')
         self.main_label.config(height=480, bg='#424242')
@@ -184,10 +186,10 @@ class GUIApplication(threading.Thread):
         self.bottom.configure(height=20, bg='#424242')
         self.midSection_camPaneTabMain.add(self.bottom, height=50)
 
-        self.poseFontType = "Roboto"
+        self.poseFontType = "Arial"
         self.poseFontSize = 14
         self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg='#424242', fg='white',
-                                                  font=(self.poseFontType, self.poseFontSize))
+                                                  font=(self.poseFontType, self.poseFontSize,"bold"))
         self.shipPoseLabel_camPaneTabMain.grid(column=0, row=0, sticky='w')
 
         self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)  # , orient=HORIZONTAL)
@@ -204,48 +206,49 @@ class GUIApplication(threading.Thread):
         self.boardPose_quality = DoubleVar()
 
         self.DISPPLAYLABEL_WIDTH = 7
+        self.DISPPOSE_TEXTCOLOR = "White"
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
-        self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='orange',
+        self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.x_label.grid(column=0, row=0, sticky='w')
-        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg='orange',
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispX_camPaneTabMain.grid(column=1, row=0)
-        self.y_label = Label(self.dispPoseBunker_camPaneTabMain, text='Y-VALUE:', bg='orange',
+        self.y_label = Label(self.dispPoseBunker_camPaneTabMain, text='Y-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.y_label.grid(column=2, row=0)
-        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.y_value,bg='orange',
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.y_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispY_camPaneTabMain.grid(column=3, row=0)
-        self.z_label = Label(self.dispPoseBunker_camPaneTabMain, text='Z-VALUE:', bg='orange',
+        self.z_label = Label(self.dispPoseBunker_camPaneTabMain, text='Z-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.z_label.grid(column=4, row=0)
-        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='orange',
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
-        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='green',
+        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.roll_label.grid(column=0, row=1, sticky='w')
-        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='green'
-                                             ,font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
+                                             font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispRoll_camPaneTabMain.grid(column=1, row=1)
-        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='green',
+        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.pitch_label.grid(column=2, row=1)
-        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,
-                                              bg='green',font=(self.poseFontType,self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
+        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,fg=self.DISPPOSE_TEXTCOLOR,
+                                              bg='#424242',font=(self.poseFontType,self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispPitch_camPaneTabMain.grid(column=3, row=1)
-        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='green',
+        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.yaw_label.grid(column=4, row=1)
-        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='green',
+        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
                                             font=(self.poseFontType, self.poseFontSize), padx=15, pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispYaw_camPaneTabMain.grid(column=5, row=1)
         # Display the quality of board estimation
-        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality,
-                                            bg='blue',font=(self.poseFontType, self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
+        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality,fg=self.DISPPOSE_TEXTCOLOR,
+                                            bg='#424242',font=(self.poseFontType, self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.boardPoseQuality_label.grid(column=7, row=0)
-        self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg='blue',
+        self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                             font=(self.poseFontType, self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispBoardPoseQual_camPaneTabMain.grid(column=6, row=0)
 
@@ -469,7 +472,7 @@ class GUIApplication(threading.Thread):
         for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
             VECU = VEConfigUnit(i, self.selectCamIndexesFrame, self.setPreviewStatus)
-            VECU.run()
+            VECU.start()
             self.VEConfigUnits.append(VECU)
 
 
@@ -485,7 +488,7 @@ class GUIApplication(threading.Thread):
 
         #Container for preview image
         self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
-        self.imgHolder.image = None
+        #self.imgHolder.image = None
         self.imgHolder.pack()
 
 
@@ -558,7 +561,9 @@ class GUIApplication(threading.Thread):
         self.frame = None
 
     def showFindPoseStream(self):
+        pass
         try:
+            print("In GUI, line 562. Frame: \n " + str(self.frame) + "\n")
             image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
@@ -801,11 +806,11 @@ class GUIApplication(threading.Thread):
         Adds a start signal to the stop signal stack. The signal is consumed when read.
         :return: None
         """
-
         if self.poseEstimationStartAllowed: # VEs are initialised
+            logging.info("Pose Estimation is starting.")
             self.connector.setStartCommand(True)
-            self.connector.run()
-            self.__start_application.append(True)
+            self.connector.start()
+            #self.__start_application.append(True)
             logging.debug("Start signal sent.")
             self.poseEstimationStartDenied_label.grid_forget()
         else:
@@ -908,11 +913,13 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         i = len(self.boardButtonList)
-        buttonText = "Camera " + str(i)
-        button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
-                                value=i, bg='#424242', fg='orange')
-        self.cameraButtonList.append(button)
-        self.cameraButtonList[-1].pack()
+        if i not in self.cameraButtonIndexList:
+            buttonText = "Camera " + str(i)
+            button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
+                                    value=i, bg='#424242', fg='orange')
+            self.cameraButtonList.append(button)
+            self.cameraButtonIndexList.append(i)
+            self.cameraButtonList[-1].pack()
 
     def updateCamlist(self, VElist):
         """

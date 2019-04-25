@@ -128,6 +128,15 @@ class PoseEstimator():
                 self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
                                        (time.time() - self._log_start_time)])
 
+    def resetExtrinsicMatrices(self):
+        '''
+        Create a new starterpoint for pose estimation.
+
+        :return: None
+        '''
+        for VE in self.VisionEntityList:
+            VE.resetExtrinsicMatrix()
+
     def getVEById(self, camID):
         """
         :param camID: OpenCV camera ID
