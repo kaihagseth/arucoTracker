@@ -15,8 +15,6 @@ import inspect
 class PoseEstimator():
     """
     Collect pose and info from all cameras, and find the best estimated pose possible.
-    # TODO: Implement merger
-    # TODO: When merging, a
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera
@@ -68,6 +66,7 @@ class PoseEstimator():
                 logging.info("VE with camsource "+str(VE.getCam().getSrc())+" added.")
             else:
                 logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
+
     def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
         '''
         Find all cams connected to system.  
@@ -302,7 +301,6 @@ class PoseEstimator():
             vision_entity = self.getVEById(camID)
         board = self._arucoBoards[boardIndex]
         quality = board.getPoseQuality()
-
         return quality
 
     def getRawPreviewImage(self, camID):
@@ -386,3 +384,11 @@ class PoseEstimator():
             for board in boardsToRemove:
                 ve.removeBoard(board)
             ve.addBoards(newBoard)
+
+    def getMergerStatus(self, mergerID=0):
+        """
+        Returns a list of the link quality for each sub board.
+        :param mergerID: the ID of the requested merger.
+        :return:
+        """
+        return self.mergers[mergerID].getQualityList()
