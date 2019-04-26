@@ -11,11 +11,12 @@ class VEConfigUnit(Thread):
     Also holds created VE, until taken over by PoseEstimator when running PoseEstimation.
     '''
 
-    def __init__(self, camID, parent, GUI_previewImage_fx):
+    def __init__(self, camID, mainGUI, parent, GUI_previewImage_fx):
         Thread.__init__(self)
         self._id = camID  # Camera index
         self.parent = parent
         self._VE = None
+        self._mainGUI = mainGUI
         # Assign a variable to the function to call when setting preview status
         self.GUI_setPreviewImage_fx = GUI_previewImage_fx
         self._frame = Frame(self.parent,bg='#424242')  # Container for all widgets
@@ -28,8 +29,9 @@ class VEConfigUnit(Thread):
         self.continueRunInPE = False # Whether to contniue to use VE in PE.
         self._stateText.set('Disconnected')  # Statustext of connection with cam
         # self._connectionStatusLabel = "Disconnected"
-        self._cb = Checkbutton(self._frame, text=str(self._id),fg="white",
-                                  variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)  # Checkbutton
+        self._label = Label(self._frame, text="Camera " +str(self._id) +":", bg="#424242", fg="white")#, font="Arial")
+        self._cb = Checkbutton(self._frame, text="",#str(self._id),
+                            fg="black", variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)  # Checkbutton
         self.cb_string_v = []  # List for telling the status of the cam on given index
         # self.cb_string = []  # Status for each index/camera on index
         self.conStatusLabel = Label(self._frame,
@@ -57,12 +59,13 @@ class VEConfigUnit(Thread):
         self._VE.setCameraLabelAndParameters(callname)
     def run(self):
         # Pack everything in container
-        self._cb.grid(row=0, column=0, sticky='w')
-        deadspace3 = Frame(self._frame, width=20,bg='#424242').grid(row=0, column=1)
-        self.connectBtn.grid(row=0, column=2)
-        self.previewBtn.grid(row=0, column=3)
-        self.conStatusLabel.grid(row=0, column=4)
-        self.calibFilePopup.grid(row=0,column=5)
+        self._label.grid(row=0,column=0)
+        self._cb.grid(row=0, column=1, sticky='w')
+        deadspace3 = Frame(self._frame, width=20,bg='#424242').grid(row=0, column=2)
+        self.connectBtn.grid(row=0, column=3)
+        self.previewBtn.grid(row=0, column=4)
+        self.conStatusLabel.grid(row=0, column=5)
+        self.calibFilePopup.grid(row=0,column=6)
         self.calibFilePopup.config(state="disabled")
         # return self._frame
         self._frame.grid(row=self._id, column=0)
@@ -149,6 +152,7 @@ class VEConfigUnit(Thread):
                 self._VE.terminate()
                 self._VE = None
             self._currState = 0
+            self._cb.config(state="normal")
             self.setState(0)
             return
         elif newState is 6: # VE running in PoseEstimator
@@ -169,6 +173,7 @@ class VEConfigUnit(Thread):
         elif newState is 9: # Failed to use in PE (i.e. cam not opened)
             self.conStatusLabel.config(text="Failed.", fg="black")
             self.setState(0)
+            self._cb.config(state="normal")
             self.continueRunInPE = False
 
     def doDisconnect(self):
@@ -215,8 +220,9 @@ class VEConfigUnit(Thread):
         Set flag to remove the VE from the current PE running. Not implemented.
         :return:
         '''
-        self.continueRunInPE = False
-
+        #self.continueRunInPE = False
+        self._mainGUI.connector.removeVEFromPEListByIndex(self._id)
+        self.setState(0)
     def setIncludeInPEbool(self, bool):
         '''
         Set the the mark whether to include VE in PE when applied. If false, the mark is taken away.
