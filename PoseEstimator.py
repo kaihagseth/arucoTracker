@@ -10,11 +10,11 @@ import numpy as np
 from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.arucoBoard import arucoBoard
+from VisionEntityClasses.arucoBoardMerger import Merger
 import inspect
 class PoseEstimator():
     """
     Collect pose and info from all cameras, and find the best estimated pose possible.
-    #TODO: Implement merger
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera
@@ -24,8 +24,9 @@ class PoseEstimator():
         self._writer = None
         self._log_start_time = None
         self._arucoBoards = dict()  # List of aruco boards to track.
-        self.createArucoBoard(3, 3, 40, 5)
+        self.createArucoBoard(board_width=3, board_height=3, marker_size=40, marker_gap=5)
         self.worldCoordinatesIsSet = False
+        self.mergers = []
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
         """
@@ -36,7 +37,8 @@ class PoseEstimator():
         :param marker_gap: Gap between each marker in mm
         :return:
         """
-        board = arucoBoard(board_width, board_height, marker_size, marker_gap)
+        board = arucoBoard(board_width=board_width, board_height=board_height, marker_size=marker_size,
+                           marker_gap=marker_gap)
         self.addBoard(board)
 
     def createVisionEntities(self):
@@ -64,6 +66,7 @@ class PoseEstimator():
                 logging.info("VE with camsource "+str(VE.getCam().getSrc())+" added.")
             else:
                 logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
+
     def findConnectedCamIndexes(self, wantedCamIndexes=([0])):
         '''
         Find all cams connected to system.  
@@ -307,7 +310,6 @@ class PoseEstimator():
             vision_entity = self.getVEById(camID)
         board = self._arucoBoards[boardIndex]
         quality = board.getPoseQuality()
-
         return quality
 
     def getRawPreviewImage(self, camID):
@@ -341,9 +343,61 @@ class PoseEstimator():
             ve.addBoards(board)
             logging.debug("board added to vision entity")
 
+    def removeBoard(self, board):
+        """
+        Removes a board from the tracking list.
+        :param board: The board to be removed
+        :return: None
+        """
+        logging.debug("attempting to remove board from vision entities")
+        key = board.ID
+        del self._arucoBoards[key]
+        for ve in self.getVisionEntityList():
+            ve.removeBoard(board)
+            logging.debug("board added to vision entity")
+
     def getBoards(self):
         """
         returns list of aruco boards
         :return: list of arucoboards
         """
         return self._arucoBoards
+
+    def startMerge(self, main_board, sub_boards):
+        # TODO: Write function
+        # TODO: Should
+        """
+        Starts a merger that will merge several arucoboards to one.
+        :param main_board: The main board will be the reference the sub boards are connected to.
+        :param sub_boards: The boards that will be merged into the main board.
+        :return: None
+        """
+        merger = Merger(self.dictionary, main_board, sub_boards)
+        merger.startMerge()
+        self.mergers.append(merger)
+
+    def finishMerge(self, merger=None, index=None):
+        """
+        Finishes the merge process. The main and sub boards will be replaced with the merged board, and this board will
+        be tracked by this pose estimator in.
+        :param merger: The merger that should be finished.
+        :param index: The index of the merger that should be finished.
+        :return: None
+        """
+        # TODO: Write function
+        if merger is None:
+            merger = self.mergers[index]
+        newBoard = merger.finishMerge()
+        boardsToRemove = merger.getBoards()
+        for ve in self.getVisionEntityList():
+            for board in boardsToRemove:
+                ve.removeBoard(board)
+            ve.addBoards(newBoard)
+
+    def getMergerStatus(self, mergerID=0):
+        """
+        Returns a list of the link quality for each sub board.
+        :param mergerID: the ID of the requested merger.
+        :return:
+        """
+        return self.mergers[mergerID].getQualityList()
