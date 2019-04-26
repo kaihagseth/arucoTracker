@@ -11,11 +11,13 @@ class VEConfigUnit(Thread):
     Also holds created VE, until taken over by PoseEstimator when running PoseEstimation.
     '''
 
-    def __init__(self, camID, parent):
+    def __init__(self, camID, parent, GUI_previewImage_fx):
         Thread.__init__(self)
         self._id = camID  # Camera index
         self.parent = parent
         self._VE = None
+        # Assign a variable to the function to call when setting preview status
+        self.GUI_setPreviewImage_fx = GUI_previewImage_fx
         self._frame = Frame(self.parent,bg='#424242')  # Container for all widgets
         self._doPreviewState = False
         self._currState = 0
@@ -26,23 +28,23 @@ class VEConfigUnit(Thread):
         self.continueRunInPE = False # Whether to contniue to use VE in PE.
         self._stateText.set('Disconnected')  # Statustext of connection with cam
         # self._connectionStatusLabel = "Disconnected"
-        self._cb = Checkbutton(self._frame, text=str(self._id),
-                                  variable=self._cb_v, command=self.chkbox_checked, bg='#424242')  # Checkbutton
+        self._cb = Checkbutton(self._frame, text=str(self._id),fg="white",
+                                  variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)  # Checkbutton
         self.cb_string_v = []  # List for telling the status of the cam on given index
         # self.cb_string = []  # Status for each index/camera on index
         self.conStatusLabel = Label(self._frame,
-                                    text="Disconnected", fg="red",bg='#424242')
-        self.connectBtn = Button(self._frame, text="Connect",bg='#424242',
-                                 command=self.doConnect)  # , variable=self._state, onvalue=1, offvalue=0)
-        self.previewBtn = Button(self._frame, text="Preview", command=self.doPreview,bg='#424242',
-                                 state=DISABLED)  # , variable = self._state, onvalue=3, offvalue=2)
+                                    text="Disconnected", fg="red",bg='#424242',width=20)
+        self.connectBtn = Button(self._frame, text="Connect",bg='#424242',fg="white",
+                                 command=self.doConnect,width=15)  # , variable=self._state, onvalue=1, offvalue=0)
+        self.previewBtn = Button(self._frame, text="Preview", command=self.doPreview,bg='#424242',fg="white",
+                                 state=DISABLED,width=15)  # , variable = self._state, onvalue=3, offvalue=2)
 
         # Dictionary with options
         path = "calibValues"
         choices = os.listdir(path)
         self.dropVar = StringVar()
         self.calibFilePopup = OptionMenu(self._frame, self.dropVar, *choices, command=self.setCalibFileChoice)
-        self.calibFilePopup.config(bg="#424242")
+        self.calibFilePopup.config(bg="#424242",fg="white")
         self.dropVar.set("Calibration file")
         #Label(self._frame, text="Choose a dish").grid(row=1, column=1)
         self.calibFilePopup.grid(row=2, column=1)
@@ -132,6 +134,7 @@ class VEConfigUnit(Thread):
         elif newState is 3: # Want to preview
             self._currState = 3
         elif newState is 4: # Previewing
+            logging.debug("Seting state to 4. ")
             self.previewBtn.config(text="Hide preview", command=self.hidePreview)
             self._currState = 4
         elif newState is 5: # Disconnecting
@@ -180,7 +183,10 @@ class VEConfigUnit(Thread):
         Set the VESU-state to and do preview.
         :return:
         '''
+        logging.debug("Doing preview")
         self.setDoPreviewState(True)
+        # Tell GUI that you want to do a preview.
+        self.GUI_setPreviewImage_fx(self._id)
         self.setState(4)
     def hidePreview(self):
         """
@@ -188,6 +194,7 @@ class VEConfigUnit(Thread):
         :return:
         """
         self.setDoPreviewState(False)
+        self.GUI_setPreviewImage_fx(-1)
         self.setState(2)
     def getFrame(self):
         """

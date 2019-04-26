@@ -1,12 +1,11 @@
-import sys
 import tkinter as tk
-import GUI
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from tkinter import *
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import numpy as np
-import csv
+import time
 
-class dataReading:
+class dataReading():
     def __init__(self, top=None):
         '''This class configures and populates the data window.
                     top is the toplevel containing window.'''
@@ -16,13 +15,10 @@ class dataReading:
         _compcolor = '#d9d9d9'  # X11 color: 'gray85'
         _ana1color = '#d9d9d9'  # X11 color: 'gray85'
         _ana2color = '#ececec'  # Closest X11 color: 'gray92'
-        #top.geometry('600x450+650+150')
-        #top.title('Data from Camera')
-        #top.configure(background=_fgcolor)
         width = 0.95
         height = 0.2
 
-
+        # Frame configuration for the data page
         self.frame_1 = tk.Frame(top)
         self.frame_1.place(relx=0.017, rely=0.8, relheight=height, relwidth=width)
         self.frame_1.configure(relief='groove')
@@ -31,32 +27,35 @@ class dataReading:
         self.frame_1.configure(background='#424242')
         self.frame_1.configure(width=565)
 
-        self.entry_x = tk.Text(self.frame_1)
+        # Variable for plotting data
+        self.plot = False
+        self.x_value = DoubleVar()
+        self.y_value = DoubleVar()
+        self.z_value = DoubleVar()
+
+        self.entry_x = tk.Label(self.frame_1)
         self.entry_x.place(relx=0.018, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_x.configure(background='white')
         self.entry_x.configure(font=('TkTextFont', 24))
         self.entry_x.configure(foreground='black')
+        self.entry_x.configure(textvariable=self.x_value)
         self.entry_x.configure(width=54)
-        #self.entry_x.configure(textvariable=pose[0])
 
-        self.entry_y = tk.Text(self.frame_1)
+        self.entry_y = tk.Label(self.frame_1)
         self.entry_y.place(relx=0.177, rely=0.588, relheight=0.282, relwidth=0.096)
         self.entry_y.configure(background='white')
         self.entry_y.configure(font=('TkTextFont', 24))
         self.entry_y.configure(foreground='black')
+        self.entry_x.configure(textvariable=self.y_value)
         self.entry_y.configure(width=54)
 
-        self.entry_z = tk.Text(self.frame_1)
+        self.entry_z = tk.Label(self.frame_1)
         self.entry_z.place(relx=0.336, rely=0.588, relheight=0.282, relwidth=0.096)
-        self.entry_z.configure(background='white')
-        self.entry_z.configure(font=('TkTextFont', 24))
-        self.entry_z.configure(foreground='black')
-        self.entry_z.configure(highlightbackground='#d9d9d9')
-        self.entry_z.configure(highlightcolor='black')
-        self.entry_z.configure(insertbackground='black')
-        self.entry_z.configure(selectbackground='#c4c4c4')
-        self.entry_z.configure(selectforeground='black')
-        self.entry_z.configure(width=54)
+        self.entry_y.configure(background='white')
+        self.entry_y.configure(font=('TkTextFont', 24))
+        self.entry_y.configure(foreground='black')
+        self.entry_x.configure(textvariable=self.z_value)
+        self.entry_y.configure(width=54)
 
         self.entry_pitch = tk.Text(self.frame_1)
         self.entry_pitch.place(relx=0.531, rely=0.588, relheight=0.282, relwidth=0.096)
@@ -167,22 +166,29 @@ class dataReading:
         self.graph_frame.configure(width=750)
         self.graph_frame.configure(height=500)
 
-
         self.btn_plot = tk.Button(top)
         self.btn_plot.pack()
         self.btn_plot.configure(background='#665959')
         self.btn_plot.configure(disabledforeground='#911515')
         self.btn_plot.configure(foreground='#FFFFFF')
-        self.btn_plot.configure(text='Plot Data')
-        self.btn_plot.configure(command=lambda: plotXYZ(self.graph_frame,1,2,3))
+        self.btn_plot.configure(text='Start')
+        #self.btn_plot.configure(command=lambda: (self.hideButton(),plotXYZ(self.graph_frame,1,2,3)))
 
         self.btn_save =  tk.Button(top)
         self.btn_save.pack()
         self.btn_save.configure(background='#665959')
         self.btn_save.configure(disabledforeground='#911515')
         self.btn_save.configure(foreground='#FFFFFF')
-        self.btn_save.configure(text='Save Data')
+        self.btn_save.configure(text='Stop')
+        self.btn_save.configure(command=lambda: self.showButton(self))
 
+    def hideButton(self):
+        self.btn_plot.lower()
+        self.plot = True
+
+    def showButton(self, button):
+        self.btn_plot.lift()
+        self.plot = False
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -197,8 +203,7 @@ w = None
 
 def createDataWindow(root, *args, **kwargs):
     '''Starting point when module is imported by another program.'''
-    global w, w_win, rt
-    rt = root
+    global w, w_win
     frame = root
     top = dataReading(frame)
     return top
@@ -214,89 +219,35 @@ def destroy_Toplevel1():
     w = None
 
 
+def plotXYZ(box, x ,y, z):
+    t_data, x_data, y_data, z_data = [], [], [], []
+    figure = plt.figure()
+    ax = figure.subplots(3, 1, sharex=True, sharey=True)
+    line, = ax[0].plot(t_data, x_data, 'r')
+    line2, = ax[1].plot(t_data, y_data, 'c')
+    line3, = ax[2].plot(t_data, z_data, '-')
+    start_time = time.time()
 
-def plotXYZ(frame, x, y, z):
-    plot3d = frame
-    fig=plt.figure()
-    canvas = FigureCanvasTkAgg(fig, master=fig)
-    canvas.draw()
-    x_list = []
-    y_list = []
-    z_list = []
-    ax = plt.axes(projection='3d')
-    list = x_list,y_list,z_list
-    x_list = x_list.append(x)
-    y_list = y_list.append(y)
-    z_list = z_list.append(z)
-    if list >= 50:
-        x_list.pop(0)
-        x_list = x_list.append(x)
-        y_list.pop(0)
-        y_list = y_list.append(x)
-        z_list.pop(0)
-        z_list = z_list.append(x)
-    ax.plot3D(x,y,z, 'red')
-    toolbar = NavigationToolbar2Tk(canvas, plot3d)
-    toolbar.update()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    def update(frame):
+        elapsed_time = time.time() - start_time
+        t_data.append(elapsed_time)
+        x_data.append(x)
+        y_data.append(y)
+        z_data.append(z)
+        line.set_data(t_data, x_data)
+        line2.set_data(t_data, y_data)
+        line3.set_data(t_data, z_data)
+        figure.gca().relim()
+        figure.gca().autoscale_view()
 
-
-def plotGraph(frame):
-    pass
-    ''' Draw a matplotlib figure onto a Tk canvas
-    loc: location of top-left corner of figure on canvas in pixels.
-    Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
-    '''
-    global entry_x, entry_y, entry_z
-    plot3d = frame
-    fig = plt.figure()
-    #plot3d.title('Graph')
-    #fig = Figure(figsize=(3, 2), dpi=100)
-    canvas = FigureCanvasTkAgg(fig, master=plot3d)  # A tk.DrawingArea.
-    canvas.draw()
-
-    ax = plt.axes(projection='3d')
-
-    x = []
-    y = []
-    z = []
-
-    with open('logs\position_log.csv', 'r') as csv_file:
-        plots = csv.reader(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
-        for row in plots:
-            try:
-                x.append(int(row[0]))
-                y.append(int(row[1]))
-                z.append(int(row[2]))
-            except(TypeError, ValueError):
-                print('Error ignored')
-    x = np.asarray(x)
-    y = np.asarray(y)
-    z = np.asarray(z)
-    array = [x,y,z]
-    for i in array:
-
-        if x is not x:
-            x = np.asarray(x)
-        if y is not y:
-            y = np.asarray(y)
-        if z is not z:
-            z = np.asarray(z)
-        if i >= 50:
-            x.pop(0)
-            x.append(i)
-            y.pop(0)
-            y.append(i)
-            z.pop(0)
-            z.append(i)
-
-        #ax.plot3D(x[i], y[i], z[i], 'red')
-        ax.plot3D(x, y, z, 'red')
-
-    toolbar = NavigationToolbar2Tk(canvas, plot3d)
-    toolbar.update()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    figure.suptitle('Movement')
+    ax[0].set_ylabel('X')
+    ax[1].set_ylabel('Y')
+    ax[2].set_ylabel('Z')
+    ax[2].set_xlabel('Time (s)')
+    animation = FuncAnimation(figure, update, interval=200)
+    plt.show()
 
 if __name__ == '__main__':
     vp_start_gui()
-    plotXYZ()
+

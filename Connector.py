@@ -48,7 +48,7 @@ class Connector(Thread):
         '''
         logging.info("Running StartApplication loop.")
         doAbort = False
-        runApp = False
+        runApp = True
         VEsInitInGUI = True
         time.sleep(5)
         counter = 0
@@ -60,6 +60,7 @@ class Connector(Thread):
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
                     self.PE.createVisionEntities()
+
                 else:
                     # Do nothing. VEs already initialised
                     pass
@@ -67,6 +68,7 @@ class Connector(Thread):
                 #camlist = self.PE.getVisionEntityIndexes()
                 #self.UI.updateCamlist(camlist)
                 runApp = True
+                self._startCommand = False
             if self._collectGUIVEs:
                 VEsInitInGUI = True
             if self._stopCommand:
@@ -75,6 +77,9 @@ class Connector(Thread):
                 self.PE.stopThreads()
             if self._newBoard:
                 self.PE.addBoard(self._newBoard)
+            if self._resetExtrinsic:
+                # Reset the extrinsic matrix, meaning set new startposition for calculations.
+                pass
             if runApp:
                 logging.info("Running runApp")
                 self.PE.updateBoardPoses()
@@ -137,6 +142,7 @@ class Connector(Thread):
         self._newBoard = nb
     def setResetExtrinsic(self, reset):
         self._resetExtrinsic = reset
+        self.PE.resetExtrinsicMatrices()
     def setStartCommand(self, sc):
         self._startCommand = sc
     def setStopCommand(self, sc):
