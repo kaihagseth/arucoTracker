@@ -471,7 +471,7 @@ class GUIApplication(threading.Thread):
         numbCamsToShow = 5
         for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
-            VECU = VEConfigUnit(i, self.selectCamIndexesFrame, self.setPreviewStatus)
+            VECU = VEConfigUnit(i,self, self.selectCamIndexesFrame, self.setPreviewStatus)
             VECU.start()
             self.VEConfigUnits.append(VECU)
 
@@ -488,7 +488,7 @@ class GUIApplication(threading.Thread):
 
         #Container for preview image
         self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
-        #self.imgHolder.image = None
+        self.imgHolder.image = None
         self.imgHolder.pack()
 
 
@@ -511,6 +511,7 @@ class GUIApplication(threading.Thread):
                     # VE already created
                     # Include the VC
                     self.VEsToSend.append(VECU_VE)
+                    VECU.setState(6)
                 else: # VE not already made, try to make a new.
                     try:
                         index = VECU.getIndex()

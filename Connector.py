@@ -175,7 +175,13 @@ class Connector(Thread):
         to GUIApplication function!  This variable is given a function in 'setGUIupdaterFunction'"""
         self.GUIupdaterFunction(poses, frame, boardPose_quality)
 
-
+    def removeVEFromPEListByIndex(self, camID):
+        """
+        Remove from running PE.
+        :param camID: ID of cam.
+        :return:
+        """
+        self.PE.removeVEFromListByIndex(camID)
 if __name__ == '__main__':
     # logging_setup()
     l = logging.getLogger()
