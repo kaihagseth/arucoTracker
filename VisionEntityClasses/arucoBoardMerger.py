@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import time
 import threading
-from VisionEntityClasses.arucoBoard import arucoBoard
+from VisionEntityClasses.ArucoBoard import ArucoBoard
 from VisionEntityClasses.helperFunctions import *
 
 class Merger:
@@ -42,8 +42,8 @@ class Merger:
             transformed_points = sub_board.getTransformedPoints(sub_board.link_matrix)
             obj_points = np.concatenate((obj_points, transformed_points))
         self.dictionary = self.main_board.dictionary
-        self.mergedBoard = arucoBoard(arucoBoard=cv2.aruco.Board_create(obj_points, self.dictionary, ids),
-                                 dictionary=self.dictionary)
+        self.mergedBoard = ArucoBoard(arucoBoard=cv2.aruco.Board_create(obj_points, self.dictionary, ids),
+                                      dictionary=self.dictionary)
 
     def runMerge(self):
         """

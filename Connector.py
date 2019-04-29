@@ -29,7 +29,7 @@ class Connector(Thread):
         self.PE = PoseEstimator()
         self._cameraIndex = 0
         self._boardIndex = None
-        self._auto = None
+        self._auto = True
         self._newBoard = None
         self._resetExtrinsic = None
         self._startCommand = None
@@ -134,27 +134,39 @@ class Connector(Thread):
     # Set class variables:
     def setCameraIndex(self, ci):
         self._cameraIndex = ci
+
     def setBoardIndex(self, bi):
         self._boardIndex = bi
+
     def setAuto(self, auto):
         self._auto = auto
+
     def setNewBoard(self, nb):
         self._newBoard = nb
+
+    def addBoard(self, board):
+        self.PE.addBoard(board)
+
     def setResetExtrinsic(self, reset):
         self._resetExtrinsic = reset
         self.PE.resetExtrinsicMatrices()
+
     def setStartCommand(self, sc):
         self._startCommand = sc
+
     def setStopCommand(self, sc):
         self._stopCommand = sc
+
     def setCollectGUIVEs(self, var):
         self._collectGUIVEs = var
+
     def collectGUIVEs(self, VElist):
         self.PE.setVisionEntityList(VElist)
         self.setCollectGUIVEs(True) # Ready to be included
 
     def setGUIupdaterFunction(self, updaterFX):
         self.GUIupdaterFunction = updaterFX
+
     def setGUIStreamerFunction(self, streamerFX):
         self.GUIstreamFunction = streamerFX
 

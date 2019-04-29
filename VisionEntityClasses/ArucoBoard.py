@@ -7,25 +7,25 @@ from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.helperFunctions import *
 
 
-class arucoBoard:
+class ArucoBoard:
     # TODO: first_marker should only be updated when board is added to tracking list.
     first_marker = 0
     nextIndex = 0
 
     def __init__(self, board_width=0, board_height=0, marker_size=0, marker_gap=0,
-                 dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50), arucoBoard=None):
+                 dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50), board=None):
         self._poseQuality = 0 # How good the current estimated pose is from a scale from 0 to 1.
         self._transformationMatrix = None # World -> Model transformation
         self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
-        self.ID = arucoBoard.nextIndex
-        arucoBoard.nextIndex += 1
-        if arucoBoard is not None:
-            self._board = arucoBoard
+        self.ID = ArucoBoard.nextIndex
+        ArucoBoard.nextIndex += 1
+        if board is not None:
+            self._board = board
             return
         self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
-        arucoBoard.first_marker = self.first_marker + (board_height * board_width)
+        ArucoBoard.first_marker = self.first_marker + (board_height * board_width)
 
     def getGridBoardSize(self):
         return self._board.getGridSize()

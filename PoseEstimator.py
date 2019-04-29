@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from VisionEntityClasses.helperFunctions import rotationMatrixToEulerAngles
 from VisionEntityClasses.VisionEntity import VisionEntity
-from VisionEntityClasses.arucoBoard import arucoBoard
+from VisionEntityClasses.ArucoBoard import ArucoBoard
 from VisionEntityClasses.arucoBoardMerger import Merger
 import inspect
 class PoseEstimator():
@@ -37,7 +37,7 @@ class PoseEstimator():
         :param marker_gap: Gap between each marker in mm
         :return:
         """
-        board = arucoBoard(board_width=board_width, board_height=board_height, marker_size=marker_size,
+        board = ArucoBoard(board_width=board_width, board_height=board_height, marker_size=marker_size,
                            marker_gap=marker_gap)
         self.addBoard(board)
 
@@ -248,8 +248,8 @@ class PoseEstimator():
             board = boards[boardIndex]
             tracking_entity = board.getTrackingEntity()
             if tracking_entity is None:
-                logging.debug("Tracking entity is none, asking tro get VE of src 0. ")
-                vision_entity = copy.copy(self.getVEById(0))
+                logging.debug("Tracking entity is none, asking to first vision entity in vision entity list. ")
+                vision_entity = copy.copy(self.getVisionEntityList()[0])
             else:
                 vision_entity = copy.copy(tracking_entity)
         else:
@@ -260,7 +260,7 @@ class PoseEstimator():
             out_frame = vision_entity.drawAxis()
         else:
             if vision_entity is None:
-                out_frame = self.getVEById(0).getFrame()
+                out_frame = self.getVisionEntityList()[0].getFrame()
             else:
                 out_frame = vision_entity.getFrame()
         return out_frame
