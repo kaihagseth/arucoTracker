@@ -1,0 +1,9 @@
+README @ Project File: Ship Pose Estimator
+
+SYNTAX:
+'_number' means this is a field in the class, and should NOT be changed outside the class without knowing what your doing.
+
+
+Project setup:
+- All imagefiltering, blob, keypoint tracking etc should go in SingleImageAnalysis.py or classes under it.
+- All camera calibration should go in CameraGroup or Camera, or classes under these.
