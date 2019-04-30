@@ -43,7 +43,8 @@ class VisionEntity:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
-            for _,board in boards.items():
+            for board in boards.values():
+                logging.debug("Estimating pose for board "+ str(board.ID))
                 self.estimatePose(board)
         self.terminate()
 
@@ -226,16 +227,13 @@ class VisionEntity:
         # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
         w, h = board.getGridBoardSize()
         detectedBoardIds = None
-        boardIds = set(board.getIds())
+        boardIds = np.reshape(board.getIds(), -1)#set(board.getIds())
+        detectedBoardIds = np.array([])
         if self.__ids is not None:
-            detectedIds = set(np.reshape(self.__ids, -1))
-            detectedBoardIds = boardIds.intersection(detectedIds)
+            detectedIds = np.reshape(self.__ids, -1)
+            detectedBoardIds = np.intersect1d(boardIds, detectedIds)
         total_marker_count = w * h
-        if detectedBoardIds is not None:
-            visible_marker_count = len(detectedBoardIds)
-        else:
-            visible_marker_count = 0
-        self._detection_quality[board.ID] = visible_marker_count / total_marker_count
+        self._detection_quality[board.ID] = detectedBoardIds.size / total_marker_count
         return None
         #7print(self.__cameraToModelMatrix)
         #print("Cam index: ", self._camera.getSrc())

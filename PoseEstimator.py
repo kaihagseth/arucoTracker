@@ -1,3 +1,5 @@
+import threading, queue, logging
+import time
 import csv
 import inspect
 import logging
@@ -208,11 +210,11 @@ class PoseEstimator():
         """
         poses = []
         logging.debug("Length of aruco list: " +str(len(self._arucoBoards)))
-        for board in self._arucoBoards:
+        for board in self._arucoBoards.values():
             try:
                 rvec, tvec = board.getRvecTvec()
-                tvec = tvec.astype(int).reshape(-1)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(int)
+                tvec = tvec.astype(float).reshape(-1)
+                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(float)
             except (TypeError, AttributeError):
                 tvec = None
                 evec = None
