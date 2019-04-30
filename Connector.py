@@ -74,6 +74,7 @@ class Connector(Thread):
             if self._stopCommand:
                 logging.debug("stop command received")
                 runApp = False
+                doAbort = True
                 self.PE.stopThreads()
             if self._newBoard:
                 self.PE.addBoard(self._newBoard)

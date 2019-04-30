@@ -28,6 +28,7 @@ class GUIApplication(threading.Thread):
         threading.Thread.__init__(self)
         self.connector = connector
         self.arucoBoardUnits = []
+        #self.arucoBoardUnits.append(board)
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
         self.camIndexesDisplayed = [False, False, False, False, False, False] # Set corresponding index for what indexes are displayed
@@ -82,36 +83,31 @@ class GUIApplication(threading.Thread):
         self.file_menu = Menu(self.menu, tearoff=0)
 
 
-#        #Testing some Style stuff
-#        s = ttk.Style()
-#        s.theme_create("MyStyle", parent="alt",
-#                       settings={
-#                                "TNotebook":
-#                                    {"configure":
-#                                         {"tabmargins": [2, 5, 2, 0],
-#                                          "background": "#424242",
-#                                          "foreground": "red"
-#                                         }
-#                                    },
-#                                "TNotebook.Tab":
-#                                    {"configure":
-#                                         {"padding": [50, 10],
-#                                          "font": ('URW Gothic L', '11'),
-#                                          "background": "#424242",
-#                                          "foreground": "white"
-#                                         },
-#                                "TNotebook.Frame":
-#                                    {"configure":
-#                                         {"background": "#424242"}
-#                                         },
-#
-#                                    "map": {"background": [("selected", '#424242')],
-#
-#                                             "expand": [("selected", [1, 1, 1, 0])]}
-#                                   }
-#                                }
-#                       )
-#        s.theme_use("MyStyle")
+        #Testing some Style stuff
+        s = ttk.Style()
+        s.theme_create("MyStyle", parent="alt",
+                       settings={
+ #                               "Frame":
+ #                                   {"configure":
+ #                                        {"background": '#424242'
+ #                                        }
+ #
+ #                                   },
+                                "TNotebook":
+                                    {"configure":
+                                         {"tabmargins": [2, 5, 2, 0],
+                                          "background": "#424242",
+                                          "foreground": "red"
+                                         }
+                                    },
+                                "TNotebook.Tab":
+                                    {"configure":
+                                         {"padding": [50, 10],
+                                          "font": ('URW Gothic L', '11'),
+                                          "background": "#424242",
+                                          "foreground": "white"
+                                         },
+                                    "map": {"background": [("selected", "#424242")],
 
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
@@ -181,7 +177,7 @@ class GUIApplication(threading.Thread):
 
         self.top = PanedWindow(self.midSection_camPaneTabMain) # Top Mid GUI
         self.top.configure(bg='#424242')
-        self.frame = Frame(self.top)
+        self.frame = Frame(self.top, bg='#424242')
         self.top.add(self.frame)
         self.midSection_camPaneTabMain.add(self.top, height=500)
         self.main_label = Label(self.top, text='Camera Views')
@@ -262,8 +258,8 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
-        # FIXME: If you click on same field twice you can remove text from other fields.
-        self.page_3_frame = Frame(self.page_3, bg="#424242")
+        # FIXME:Numbers in field disappears when clicking mouse.
+        self.page_3_frame = Frame(self.page_3, bg='#424242')
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
         self.im = self.im.resize((300, 300), Image.ANTIALIAS)
@@ -276,9 +272,18 @@ class GUIApplication(threading.Thread):
         self.boardlist_container = Frame(self.page_3)
         self.boardlist_container.config(padx='10',pady='10',bg='#424242')
         self.boardlist_container.pack(side=BOTTOM)
+        board = arucoBoard(3, 3, 40, 5)
+        ABU = ArucoBoardUnit(board,self.boardlist_container)
+        self.arucoBoardUnits.append(ABU)
+        board1 = arucoBoard(3, 3, 40, 5)
+        ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
+        self.arucoBoardUnits.append(ABU1)
+        board2 = arucoBoard(3, 3, 40, 5)
+        ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
+        self.arucoBoardUnits.append(ABU2)
         self.boardimgs = []
         self.boardimgages = [None,None,None,None,None,None,None,None,None]
-        self.page_3_label_frame = Frame(self.page_3_frame)
+        self.page_3_label_frame = Frame(self.page_3_frame, bg='#424242')
         self.page_3_label_frame.configure(relief='groove')
         self.page_3_label_frame.configure(borderwidth='2')
 
@@ -330,7 +335,7 @@ class GUIApplication(threading.Thread):
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
-        self.btn_frame = Frame(self.page_3)
+        self.btn_frame = Frame(self.page_3, bg='#424242')
         self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
         self.pdf_btn = Button(self.btn_frame, text='Generate board',
@@ -345,6 +350,11 @@ class GUIApplication(threading.Thread):
                               command=lambda: [self.saveArucoPDF()])
         self.pdf_btn.configure(bg='#424242', fg='white')
         self.pdf_btn.pack(side=LEFT)
+        Frame(self.btn_frame, width=5,bg='#424242').pack(side=LEFT)
+        self.merge_btn = Button(self.btn_frame, text='Merge',
+                              command=lambda: [self.doMerging()])
+        self.merge_btn.configure(bg='#424242', fg='white')
+        self.merge_btn.pack(side=LEFT)
 
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
@@ -445,7 +455,7 @@ class GUIApplication(threading.Thread):
 
         # Adds board radio button to the GUI
         self.addBoardButton()
-
+        self.doMerging()
         # Start it all
         self.root.mainloop()
 
@@ -516,6 +526,101 @@ class GUIApplication(threading.Thread):
         self.imgHolder.image = None
         self.imgHolder.pack()
 
+    def doMerging(self):
+        '''
+        Create a popup window who handles merging between boards.
+        '''
+        self.merge_window = Toplevel()
+        self.merge_window.title("Merge boards")
+        self.merge_topframe = Frame(self.merge_window, bg='#424242')
+        self.merge_frame = Frame(self.merge_topframe, bg='#424242')
+        self.merge_topframe.pack()
+        self.merge_frame.pack()
+
+        self.intro_text = Text(self.merge_frame, bg='#424242', fg='white')
+        text = "This is the merger. Here you can do so several board markers acts as one, thus gives " \
+               "you much better accuracy. This because we use find the best correlation between multiple cameras and " \
+               "multiple markers to " \
+               " provide good accuracy in all directions. \n" \
+               "To start with, select the main marker. This marker MUST BE VISIBLE TO ALL OTHER MARKERS that want to " \
+               "be merged during the merging process. During the process, the main marker, and the marker(s) that gonna " \
+               "be merged, should be visible for the choosen merger camera.   "
+        self.intro_text.insert(END,text)
+        self.intro_text.grid(column=0, row=0, columnspan=2)
+        self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg='#424242',fg="white", height=5)
+        self.main_cam_label.grid(column=0,row=1)
+        boardlist = []
+        for ABU in self.arucoBoardUnits:
+            boardlist.append(ABU.id)
+            logging.debug("Board added to boardlist in merging-window. ")
+        print(self.arucoBoardUnits)
+        print(boardlist)
+        self.main_board_var = IntVar()
+        self.main_board_choice_id = 0
+        self.main_cam_choice = OptionMenu(self.merge_frame, self.main_board_var, *boardlist, command=self.setMainMergerBoard)
+        self.main_cam_choice.config(bg="#424242", fg="white", highlightbackground='#424242')
+        self.main_cam_choice.setvar("Choose")
+        self.main_cam_choice.grid(row=1,column=1)
+        self.packer = Frame(self.merge_frame, bg='#424242',width=150, height=30)
+        self.packer.grid(row=3, column=0, columnspan=2)
+        self.abort_btn = Button(self.packer, text='Abort', bg='#424242', fg='white', command=self.merge_window.destroy)
+        self.next_btn = Button(self.packer, text='Next',bg='#424242', fg='white', command=self.doMergeProcess)
+        #self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+        self.abort_btn.pack(side=LEFT,pady=10,padx=10)
+        self.next_btn.pack(side=RIGHT,pady=10,padx=10)
+
+    def doMergeProcess(self):
+        if True in self.boardsToMerge:
+            # We can go further.
+            self.merge_frame.pack_forget()
+            self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
+            self.mergeprocess_frame.pack()
+            self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
+            self.image_frame.grid(row=0,column=0)
+            self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
+            self.info_frame.grid(row=0,column=1)
+            Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+            for n, i in enumerate(self.boardsToMerge):
+                if i:
+                    #Show board.
+                    Label(self.info_frame, text=("Board "+str(n)), bg='#424242', fg='white').grid(row=n+1, column=0)
+
+        else:
+            #No boards to merge, must be an error.
+            showinfo("Error", "Please choose some boards to merge with.")
+    def setMergerBoards(self):
+        pass
+    def setMainMergerBoard(self, value):
+        logging.debug("Value: "+str(value))
+        self.child_markers_label = Label(self.merge_frame, text="Markers to merge with:", fg="white",bg='#424242')
+        self.child_markers_label.grid(row=2,column=0)
+        self.main_mergerboard = value
+        self.cb_merger_frame = Frame(self.merge_frame)
+        for widg in self.cb_merger_frame.grid_slaves():
+            widg.grid_forget()
+        self._cb_v_list = []
+        for i in range(0, 10):
+            self._cb_v = BooleanVar()  # Variable to hold state of
+            self._cb_v.set(False)
+            self._cb_v_list.append(self._cb_v)
+        self.boardsToMerge = [False, False, False, False, False, False, False, False, False, False, False]
+        self.cb_merger_frame.grid(row=2, column=1)
+        for ABU in self.arucoBoardUnits:
+            if ABU.id is not value:
+                self._cb = Checkbutton(self.cb_merger_frame, text=str(ABU.id),  # str(self._id),
+                                       fg="black", variable=self._cb_v_list[ABU.id], command=self.chkbox_checked,
+                                       bg='#424242', width=12)  # Checkbutton
+                self._cb.grid(row=ABU.id)
+
+    def chkbox_checked(self):
+        i = 0
+        for cb_v in self._cb_v_list:
+            var = cb_v.get()
+            print(i)
+            self.boardsToMerge[i] = var
+            i += 1
+        logging.info("Boards to merge "+ str(self.boardsToMerge))
+        #self.boardsToMerge[value] = True
 
     def applyCamList(self):
         '''
@@ -584,12 +689,13 @@ class GUIApplication(threading.Thread):
         self.show_video = False
 
     def hideCamBtnClicked(self):
-        self.frame = None
+        #self.frame = None
+        self.main_label.configure(image="")
 
     def showFindPoseStream(self):
         pass
         try:
-            print("In GUI, line 562. Frame: \n " + str(self.frame) + "\n")
+            #print("In GUI, line 562. Frame: \n " + str(self.frame) + "\n")
             image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)

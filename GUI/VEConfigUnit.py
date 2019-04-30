@@ -46,7 +46,7 @@ class VEConfigUnit(Thread):
         choices = os.listdir(path)
         self.dropVar = StringVar()
         self.calibFilePopup = OptionMenu(self._frame, self.dropVar, *choices, command=self.setCalibFileChoice)
-        self.calibFilePopup.config(bg="#424242",fg="white")
+        self.calibFilePopup.config(bg="#424242",fg="white",highlightbackground='#424242')
         self.dropVar.set("Calibration file")
         #Label(self._frame, text="Choose a dish").grid(row=1, column=1)
         self.calibFilePopup.grid(row=2, column=1)
