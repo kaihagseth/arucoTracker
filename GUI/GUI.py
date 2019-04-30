@@ -560,19 +560,59 @@ class GUIApplication(threading.Thread):
             self.merge_frame.pack_forget()
             self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
             self.mergeprocess_frame.pack()
+            # Add image showing the merge process, to be updated
             self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
             self.image_frame.grid(row=0,column=0)
+            self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
+            self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
+            self.panel.grid(row=0,column=0)
+
+            # Show merge quality and some options
             self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
             self.info_frame.grid(row=0,column=1)
             Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+            n = 0
+            self.mergeBoardProgressbarsList = [None, None, None, None, None, None, None, None, None]
             for n, i in enumerate(self.boardsToMerge):
                 if i:
                     #Show board.
                     Label(self.info_frame, text=("Board "+str(n)), bg='#424242', fg='white').grid(row=n+1, column=0)
+                    pb = ttk.Progressbar(self.info_frame, value=0,maximum=100,orient="horizontal",length=100,mode="determinate")
+                    pb.grid(row=n+1, column=1)
+                    self.mergeBoardProgressbarsList[n] = pb
 
+            self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
+                                    command=self.merge_window.destroy)
+            self.finish_btn = Button(self.info_frame, text='Next', bg='#424242', fg='white', command=self.mergeProcessFinished)
+            # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+            self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
+            self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
         else:
-            #No boards to merge, must be an error.
+            #No boards to merge, must be an error or user fault.
             showinfo("Error", "Please choose some boards to merge with.")
+    def mergeProcessFinished(self):
+        pass
+    def updateMergeProcessInfo(self, prevImg, qualityList):
+        '''
+        Update the merge process image and the board qualitys.
+
+        :param img: Live cv2-image of the process
+        :param quality: The merging quality. A list, where corresponding index is the board index. Not used indexes
+        should be set to -1!
+        :return: None
+        '''
+        # Set the image
+        self.merge_image = ImageTk.PhotoImage(prevImg)
+        self.panel.config(image=self.merge_image)
+
+        # Update the qualities.
+        for n, q in enumerate(qualityList):
+            if q is not -1:
+                # It's updated
+                self.mergeBoardProgressbarsList[n]["value"] = q
+            if n is 6:
+                break
+
     def setMergerBoards(self):
         pass
     def setMainMergerBoard(self, value):
