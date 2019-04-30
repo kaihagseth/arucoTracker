@@ -24,7 +24,6 @@ class PoseEstimator():
         self._writer = None
         self._log_start_time = None
         self._arucoBoards = dict()  # List of aruco boards to track.
-        self.createArucoBoard(board_width=3, board_height=3, marker_size=40, marker_gap=5)
         self.worldCoordinatesIsSet = False
         self.mergers = []
 
