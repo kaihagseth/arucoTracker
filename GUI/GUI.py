@@ -849,9 +849,14 @@ class GUIApplication(threading.Thread):
         Adds an aruco board to the pushed boards list, to make it accessible to external objects.
         :return: None
         """
-        self.connector.addBoard(self.userBoard)
-        self.addBoardWidgetToGUI(self.userBoard)
-        self.addBoardButton(self.userBoard)
+        if self.userBoard is not None:
+            # We have 'generated' the board.
+            self.connector.addBoard(self.userBoard)
+            self.addBoardWidgetToGUI(self.userBoard)
+            self.addBoardButton(self.userBoard)
+        else:
+            # Board not generated
+            showinfo('Error', "Please 'generate' the board first.")
 
     def addBoardWidgetToGUI(self, board):
         try:
