@@ -25,7 +25,7 @@ class PoseEstimator():
         self._log_start_time = None
         self._arucoBoards = dict()  # List of aruco boards to track.
         self.worldCoordinatesIsSet = False
-        self.mergers = []
+        self.merger = None
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
         """
@@ -153,7 +153,7 @@ class PoseEstimator():
                 return wantedVE
         # If not found, log error.
         logging.error('Camera not found on given index: '+str(camID)+', VE returned None. Parent caller: ' + str(inspect.stack()[2][3]))
-#        raise Exception
+
     def getVisionEntityList(self):
         """
         Returns list of all Vision entities.
@@ -363,19 +363,16 @@ class PoseEstimator():
         return self._arucoBoards
 
     def startMerge(self, main_board, sub_boards):
-        # TODO: Write function
-        # TODO: Should
         """
         Starts a merger that will merge several arucoboards to one.
         :param main_board: The main board will be the reference the sub boards are connected to.
         :param sub_boards: The boards that will be merged into the main board.
         :return: None
         """
-        merger = Merger(self.dictionary, main_board, sub_boards)
-        merger.startMerge()
-        self.mergers.append(merger)
+        self.merger = Merger(self.dictionary, main_board, sub_boards)
+        self.merger.startMerge()
 
-    def finishMerge(self, merger=None, index=None):
+    def finishMerge(self):
         """
         Finishes the merge process. The main and sub boards will be replaced with the merged board, and this board will
         be tracked by this pose estimator in.
@@ -383,20 +380,20 @@ class PoseEstimator():
         :param index: The index of the merger that should be finished.
         :return: None
         """
-        # TODO: Write function
-        if merger is None:
-            merger = self.mergers[index]
-        newBoard = merger.finishMerge()
-        boardsToRemove = merger.getBoards()
+        if self.merger is None:
+            logging.error("Attempted to finish merge while no merger was running")
+        newBoard = self.merger.finishMerge()
+        boardsToRemove = self.merger.getBoards()
         for ve in self.getVisionEntityList():
             for board in boardsToRemove:
                 ve.removeBoard(board)
             ve.addBoards(newBoard)
+        self.merger = None
 
-    def getMergerStatus(self, mergerID=0):
+    def getMergerStatus(self):
         """
         Returns a list of the link quality for each sub board.
         :param mergerID: the ID of the requested merger.
         :return:
         """
-        return self.mergers[mergerID].getQualityList()
+        return self.merger.getQualityList()
