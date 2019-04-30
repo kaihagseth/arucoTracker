@@ -86,35 +86,7 @@ class GUIApplication(threading.Thread):
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
-
-
-        #Testing some Style stuff
-        s = ttk.Style()
-        s.theme_create("MyStyle", parent="alt",
-                       settings={
- #                               "Frame":
- #                                   {"configure":
- #                                        {"background": '#424242'
- #                                        }
- #
- #                                   },
-                                "TNotebook":
-                                    {"configure":
-                                         {"tabmargins": [2, 5, 2, 0],
-                                          "background": "#424242",
-                                          "foreground": "red"
-                                         }
-                                    },
-                                "TNotebook.Tab":
-                                    {"configure":
-                                         {"padding": [50, 10],
-                                          "font": ('URW Gothic L', '11'),
-                                          "background": "#424242",
-                                          "foreground": "white"
-                                         },
-                                    "map": {"background": [("selected", "#424242")],
-
-        # Create notebook
+     # Create notebook
         self.notebook = ttk.Notebook(self.root)
 
         # Defines and places the notebook widget. Expand to cover complete window.
@@ -819,7 +791,7 @@ class GUIApplication(threading.Thread):
             size_value = int(size_value)
             gap_value = self.gap_entry.get()
             gap_value = int(gap_value)
-            self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
+            self.userBoard = ArucoBoard(length_value, width_value, size_value, gap_value)
             self.connector.PE.addBoard(self.userBoard)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
