@@ -23,7 +23,7 @@ class PoseEstimator():
         self._writer = None
         self._log_start_time = None
         self._arucoBoards = dict()  # List of aruco boards to track.
-        self.createArucoBoard(3, 3, 40, 5)
+
         self.worldCoordinatesIsSet = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
