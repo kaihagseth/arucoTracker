@@ -447,7 +447,7 @@ class GUIApplication(threading.Thread):
         self.start_btn.focus()
 
         # Adds board radio button to the GUI
-        self.addBoardButton()
+        #self.addBoardButton()
         #self.doMerging()
         # Start it all
         self.root.mainloop()
@@ -894,6 +894,7 @@ class GUIApplication(threading.Thread):
         :param frame: The frame to display in camera view.
         :return: None
         """
+        logging.info("UPDATING GUI FIELDS")
         self.modelPoses = poses
         self.frame = frame
         boardIndex = self.boardIndex.get()
@@ -904,7 +905,7 @@ class GUIApplication(threading.Thread):
 
         if poses:
             evec, tvec = poses[boardIndex]
-
+            logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
             if tvec is not None:
                 x, y, z = tvec
                 sum_x = 0.0
@@ -925,27 +926,38 @@ class GUIApplication(threading.Thread):
                     sum_y = sum_y + num
                 for num in self.z_value_list:
                     sum_z = sum_z + num
-                self.x_value.set(sum_x/len(self.x_value_list))
-                self.y_value.set(sum_y/len(self.y_value_list))
-                self.z_value.set(sum_z/len(self.z_value_list))
+                #self.x_label.config(text=str((sum_x / len(self.x_value_list))))
+                #self.y_label.config(text=str((sum_y / len(self.y_value_list))))
+                #self.y_label.config(text=str((sum_z / len(self.z_value_list))))
                 #if tvec is not None:
             #    x, y, z = tvec
-            #    self.x_value.set(x)
-            #    self.y_value.set(y)
-            #    self.z_value.set(z)
-            #else:
-            #    self.x_value.set(0.0)
-            #    self.y_value.set(0.0)
-            #    self.z_value.set(0.0)
+                self.x_value.set(sum_x / len(self.x_value_list))
+                self.y_value.set(sum_y / len(self.y_value_list))
+                self.z_value.set(sum_z / len(self.z_value_list))
+                logging.debug("Updating tvec")
+            else:
+                #self.x_label.config(text=str(0.00))
+                #self.y_label.config(text=str(0.00))
+                #self.z_label.config(text=str(0.00))
+                self.x_value.set(0.0)
+                self.y_value.set(0.0)
+                self.z_value.set(0.0)
             if evec is not None:
                 roll, pitch, yaw = evec
                 self.roll_value.set(roll)
                 self.pitch_value.set(pitch)
                 self.yaw_value.set(yaw)
+                #self.roll_label.config(text=str(roll))
+                #self.pitch_label.config(text=str(pitch))
+                #self.yaw_label.config(text=str(yaw))
             else:
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
+
+                self.roll_label.config(text=str(0.00))
+                self.pitch_label.config(text=str(0.00))
+                self.yaw_label.config(text=str(0.00))
 
     def plotGraph(self, poses, frame):
         '''

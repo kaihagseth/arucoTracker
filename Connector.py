@@ -85,6 +85,7 @@ class Connector(Thread):
                 logging.info("Running runApp")
                 self.PE.updateBoardPoses()
                 poses = self.PE.getEulerPoses()
+                logging.debug("Poses: " + str(poses))
                 frame = self.PE.getPosePreviewImg(self._cameraIndex, self._boardIndex, self._auto)
                 boardPose_quality = self.PE.getBoardPositionQuality()
                 # Get the pose(s) from all cams.
@@ -155,6 +156,7 @@ class Connector(Thread):
         self.setCollectGUIVEs(True) # Ready to be included
 
     def setGUIupdaterFunction(self, updaterFX):
+        logging.info("GUIupdaterFx IS SET!")
         self.GUIupdaterFunction = updaterFX
     def setGUIStreamerFunction(self, streamerFX):
         self.GUIstreamFunction = streamerFX
@@ -174,6 +176,7 @@ class Connector(Thread):
         """"""
         This is NOT a connector function. It's just a connector variable that keeps a reference 
         to GUIApplication function!  This variable is given a function in 'setGUIupdaterFunction'"""
+        logging.debug("Running updateFields in Connector")
         self.GUIupdaterFunction(poses, frame, boardPose_quality)
 
     def removeVEFromPEListByIndex(self, camID):
