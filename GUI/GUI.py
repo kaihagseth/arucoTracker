@@ -72,42 +72,46 @@ class GUIApplication(threading.Thread):
         self.camIDInUse = 0
 
         # Set up main window.
-
         self.root = Tk()
-        #self.root.style = ttkthemes.ThemedStyle()
+        self.root.style = ttkthemes.ThemedStyle()
         self.root.title('Boat Pose Estimator')
         self.root.geometry('1250x750')
-        #self.root.style.theme_use('black')
+        self.root.style.theme_use('black')
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
 
 
-        #Testing some Style stuff
-        s = ttk.Style()
-        s.theme_create("MyStyle", parent="alt",
-                       settings={
-                                "TNotebook":
-                                    {"configure":
-                                         {"tabmargins": [2, 5, 2, 0],
-                                          "background": "#424242",
-                                          "foreground": "red"
-                                         }
-                                    },
-                                "TNotebook.Tab":
-                                    {"configure":
-                                         {"padding": [50, 10],
-                                          "font": ('URW Gothic L', '11'),
-                                          "background": "#424242",
-                                          "foreground": "white"
-                                         },
-                                    "map": {"background": [("selected", "#424242")],
-
-                                             "expand": [("selected", [1, 1, 1, 0])]}
-                                   }
-                                }
-                       )
-        s.theme_use("MyStyle")
+#        #Testing some Style stuff
+#        s = ttk.Style()
+#        s.theme_create("MyStyle", parent="alt",
+#                       settings={
+#                                "TNotebook":
+#                                    {"configure":
+#                                         {"tabmargins": [2, 5, 2, 0],
+#                                          "background": "#424242",
+#                                          "foreground": "red"
+#                                         }
+#                                    },
+#                                "TNotebook.Tab":
+#                                    {"configure":
+#                                         {"padding": [50, 10],
+#                                          "font": ('URW Gothic L', '11'),
+#                                          "background": "#424242",
+#                                          "foreground": "white"
+#                                         },
+#                                "TNotebook.Frame":
+#                                    {"configure":
+#                                         {"background": "#424242"}
+#                                         },
+#
+#                                    "map": {"background": [("selected", '#424242')],
+#
+#                                             "expand": [("selected", [1, 1, 1, 0])]}
+#                                   }
+#                                }
+#                       )
+#        s.theme_use("MyStyle")
 
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
@@ -115,7 +119,7 @@ class GUIApplication(threading.Thread):
         # Defines and places the notebook widget. Expand to cover complete window.
         self.notebook.pack(fill=BOTH, expand=True)
 
-        # gives weight to the cells in the grid so thy don't collapse
+        # gives weight to the cells in the grid so they don't collapse
         self.rows = 0
         while self.rows < 1:
             self.root.rowconfigure(self.rows, weight=1)
@@ -258,7 +262,7 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
-        # FIXME:Numbers in field disappears when clicking mouse.
+        # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
@@ -305,20 +309,17 @@ class GUIApplication(threading.Thread):
         self.length.pack()
         self.length_entry.insert(0, 'Length')  # Add generic text
         self.length_entry.bind('<Button-1>', self.on_entry_click)  # If clicked on
-        self.length_entry.configure(foreground='gray')
         self.length_entry.pack()
         self.length_entry.config(validate='key', validatecommand=vcmd_length)
 
         self.width.pack()
         self.width_entry.insert(0, 'Width')
         self.width_entry.bind('<Button-1>', self.on_entry_click)
-        self.width_entry.configure(foreground='gray')
         self.width_entry.pack()
         self.width_entry.config(validate='key', validatecommand=vcmd_width)
 
         self.size.pack()
         self.size_entry.insert(0, 'Size')
-        self.size_entry.configure(foreground='gray')
         self.size_entry.bind('<Button-1>', self.on_entry_click)
         self.size_entry.pack()
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
@@ -326,7 +327,6 @@ class GUIApplication(threading.Thread):
         self.gap.pack()
         self.gap_entry.insert(0, 'Gap')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
-        self.gap_entry.configure(foreground='gray')
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
