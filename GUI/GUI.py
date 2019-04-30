@@ -282,15 +282,18 @@ class GUIApplication(threading.Thread):
         self.boardlist_container = Frame(self.page_3)
         self.boardlist_container.config(padx='10',pady='10',bg='#424242')
         self.boardlist_container.pack(side=BOTTOM)
-        board = arucoBoard(3, 3, 40, 5)
-        ABU = ArucoBoardUnit(board,self.boardlist_container)
-        self.arucoBoardUnits.append(ABU)
-        board1 = arucoBoard(3, 3, 40, 5)
-        ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
-        self.arucoBoardUnits.append(ABU1)
-        board2 = arucoBoard(3, 3, 40, 5)
-        ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
-        self.arucoBoardUnits.append(ABU2)
+        #board = arucoBoard(3, 3, 40, 5)
+        #ABU = ArucoBoardUnit(board,self.boardlist_container)
+        #self.arucoBoardUnits.append(ABU)
+        #board1 = arucoBoard(3, 3, 40, 5)
+        #ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
+        #self.arucoBoardUnits.append(ABU1)
+        #board2 = arucoBoard(3, 3, 40, 5)
+        #ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
+        #self.connector.PE.addBoard(board)
+        #self.connector.PE.addBoard(board1)
+        #self.connector.PE.addBoard(board2)
+        #self.arucoBoardUnits.append(ABU2)
         self.boardimgs = []
         self.boardimgages = [None,None,None,None,None,None,None,None,None]
         self.page_3_label_frame = Frame(self.page_3_frame, bg='#424242')
@@ -445,7 +448,7 @@ class GUIApplication(threading.Thread):
 
         # Adds board radio button to the GUI
         self.addBoardButton()
-        self.doMerging()
+        #self.doMerging()
         # Start it all
         self.root.mainloop()
 
@@ -802,6 +805,7 @@ class GUIApplication(threading.Thread):
             gap_value = self.gap_entry.get()
             gap_value = int(gap_value)
             self.userBoard = arucoBoard(length_value, width_value, size_value, gap_value)
+            self.connector.PE.addBoard(self.userBoard)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
             self.ph = Image.fromarray(self.ph)
