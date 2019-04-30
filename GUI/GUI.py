@@ -62,6 +62,11 @@ class GUIApplication(threading.Thread):
         self.cameraButtonList = []
         self.cameraButtonIndexList = []
 
+        # Pose data
+        self.x_value_list = []
+        self.y_value_list = []
+        self.z_value_list = []
+
     def run(self):
         '''
         Run the main application.
@@ -739,16 +744,40 @@ class GUIApplication(threading.Thread):
 
         if poses:
             evec, tvec = poses[boardIndex]
-            if evec is not None:
-                x, y, z = tvec
-                self.x_value.set(x)
-                self.y_value.set(y)
-                self.z_value.set(z)
-            else:
-                self.x_value.set(0.0)
-                self.y_value.set(0.0)
-                self.z_value.set(0.0)
+
             if tvec is not None:
+                x, y, z = tvec
+                sum_x = 0.0
+                sum_y = 0.0
+                sum_z = 0.0
+                self.x_value_list.append(x)
+                self.y_value_list.append(x)
+                self.z_value_list.append(x)
+                if len(self.x_value_list) >= 10:
+                    del self.x_value_list[0]
+                if len(self.y_value_list) >= 10:
+                    del self.z_value_list[0]
+                if len(self.z_value_list) >= 10:
+                    del self.z_value_list[0]
+                for num in self.x_value_list:
+                    sum_x = sum_x + num
+                for num in self.y_value_list:
+                    sum_y = sum_y + num
+                for num in self.z_value_list:
+                    sum_z = sum_z + num
+                self.x_value.set(sum_x/len(self.x_value_list))
+                self.y_value.set(sum_y/len(self.y_value_list))
+                self.z_value.set(sum_z/len(self.z_value_list))
+                #if tvec is not None:
+            #    x, y, z = tvec
+            #    self.x_value.set(x)
+            #    self.y_value.set(y)
+            #    self.z_value.set(z)
+            #else:
+            #    self.x_value.set(0.0)
+            #    self.y_value.set(0.0)
+            #    self.z_value.set(0.0)
+            if evec is not None:
                 roll, pitch, yaw = evec
                 self.roll_value.set(roll)
                 self.pitch_value.set(pitch)
