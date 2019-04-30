@@ -327,25 +327,25 @@ class GUIApplication(threading.Thread):
         vcmd_gap = (self.gap_entry.register(self.on_validate), '%P')
 
         self.length.pack()
-        self.length_entry.insert(0, 'Length')  # Add generic text
+        self.length_entry.insert(0, '3')  # Add generic text
         self.length_entry.bind('<Button-1>', self.on_entry_click)  # If clicked on
         self.length_entry.pack()
         self.length_entry.config(validate='key', validatecommand=vcmd_length)
 
         self.width.pack()
-        self.width_entry.insert(0, 'Width')
+        self.width_entry.insert(0, '3')
         self.width_entry.bind('<Button-1>', self.on_entry_click)
         self.width_entry.pack()
         self.width_entry.config(validate='key', validatecommand=vcmd_width)
 
         self.size.pack()
-        self.size_entry.insert(0, 'Size')
+        self.size_entry.insert(0, '40')
         self.size_entry.bind('<Button-1>', self.on_entry_click)
         self.size_entry.pack()
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
 
         self.gap.pack()
-        self.gap_entry.insert(0, 'Gap')
+        self.gap_entry.insert(0, '1')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
@@ -830,7 +830,8 @@ class GUIApplication(threading.Thread):
 
             self.userBoard = ArucoBoard(board_height=length_value, board_width=width_value, marker_size=size_value,
                                         marker_gap=gap_value)
-            self.connector.PE.addBoard(self.userBoard)
+            self.connector.setBoardIndex(0)
+            #self.connector.PE.addBoard(self.userBoard)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
             self.ph = Image.fromarray(self.ph)
@@ -850,7 +851,7 @@ class GUIApplication(threading.Thread):
         """
         self.connector.addBoard(self.userBoard)
         self.addBoardWidgetToGUI(self.userBoard)
-        self.addBoardButton()
+        self.addBoardButton(self.userBoard)
 
     def addBoardWidgetToGUI(self, board):
         try:
@@ -942,7 +943,7 @@ class GUIApplication(threading.Thread):
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:
-                    del self.z_value_list[0]
+                    del self.y_value_list[0]
                 if len(self.z_value_list) >= 10:
                     del self.z_value_list[0]
                 for num in self.x_value_list:
@@ -956,9 +957,9 @@ class GUIApplication(threading.Thread):
                 #self.y_label.config(text=str((sum_z / len(self.z_value_list))))
                 #if tvec is not None:
             #    x, y, z = tvec
-                self.x_value.set(sum_x / len(self.x_value_list))
-                self.y_value.set(sum_y / len(self.y_value_list))
-                self.z_value.set(sum_z / len(self.z_value_list))
+                self.x_value.set(round(sum_x / len(self.x_value_list),2))
+                self.y_value.set(round(sum_y / len(self.y_value_list),2))
+                self.z_value.set(round(sum_z / len(self.z_value_list),2))
                 logging.debug("Updating tvec")
             else:
                 #self.x_label.config(text=str(0.00))
@@ -969,9 +970,9 @@ class GUIApplication(threading.Thread):
                 self.z_value.set(0.0)
             if evec is not None:
                 roll, pitch, yaw = evec
-                self.roll_value.set(roll)
-                self.pitch_value.set(pitch)
-                self.yaw_value.set(yaw)
+                self.roll_value.set(round(roll,2))
+                self.pitch_value.set(round(pitch,2))
+                self.yaw_value.set(round(yaw,2))
                 #self.roll_label.config(text=str(roll))
                 #self.pitch_label.config(text=str(pitch))
                 #self.yaw_label.config(text=str(yaw))
@@ -980,9 +981,6 @@ class GUIApplication(threading.Thread):
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
 
-                self.roll_label.config(text=str(0.00))
-                self.pitch_label.config(text=str(0.00))
-                self.yaw_label.config(text=str(0.00))
 
     def plotGraph(self, poses, frame):
         '''
@@ -1142,17 +1140,19 @@ class GUIApplication(threading.Thread):
                 return VECU
         return None
 
-    def addBoardButton(self):
+    def addBoardButton(self, userBoard):
         """
         Adds a radio button to the board list in the side panel.
         :return: None
         """
         i = len(self.boardButtonList)
-        buttonText = "Board " + str(i)
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
-                                command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=i)
-        self.boardButtonList.append(button)
-        self.boardButtonList[-1].pack()
+        id = userBoard.ID
+        if len(self.boardButtonList) <= (id + 1): # If the list is longer than than the board index to add + 1, then the board is already added!
+            buttonText = "Board " + str(i)
+            button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
+                                    command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=i)
+            self.boardButtonList.append(button)
+            self.boardButtonList[-1].pack()
 
     def setBoardIndexToDisplay(self):
         #TODO: Can be called directly from radiobutton.

@@ -76,8 +76,6 @@ class Connector(Thread):
                 runApp = False
                 doAbort = True
                 self.PE.stopThreads()
-            if self._newBoard:
-                self.PE.addBoard(self._newBoard)
             if self._resetExtrinsic:
                 # Reset the extrinsic matrix, meaning set new startposition for calculations.
                 pass
