@@ -13,7 +13,7 @@ from PIL import ImageTk, Image
 from GUI.VEConfigUnit import VEConfigUnit
 from GUI.ArucoBoardUnit import ArucoBoardUnit
 from VisionEntityClasses.VisionEntity import VisionEntity
-from VisionEntityClasses.arucoBoard import arucoBoard
+from VisionEntityClasses.ArucoBoard import ArucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
 from exceptions import CamNotOpenedException
 
@@ -73,12 +73,11 @@ class GUIApplication(threading.Thread):
         self.camIDInUse = 0
 
         # Set up main window.
-
         self.root = Tk()
-        #self.root.style = ttkthemes.ThemedStyle()
+        self.root.style = ttkthemes.ThemedStyle()
         self.root.title('Boat Pose Estimator')
-        self.root.geometry('850x750')
-        #self.root.style.theme_use('black')
+        self.root.geometry('1250x750')
+        self.root.style.theme_use('black')
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
@@ -116,13 +115,14 @@ class GUIApplication(threading.Thread):
                        )
         s.theme_use("MyStyle")
 
+
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
 
         # Defines and places the notebook widget. Expand to cover complete window.
         self.notebook.pack(fill=BOTH, expand=True)
 
-        # gives weight to the cells in the grid so thy don't collapse
+        # gives weight to the cells in the grid so they don't collapse
         self.rows = 0
         while self.rows < 1:
             self.root.rowconfigure(self.rows, weight=1)
@@ -179,7 +179,7 @@ class GUIApplication(threading.Thread):
         self.left_camPaneTabMain.add(self.top_left, height=500)
         self.left_camPaneTabMain.add(self.bottom_left, height=250)
 
-        self.midSection_camPaneTabMain = PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='gray80') # Mid GUI
+        self.midSection_camPaneTabMain = PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='gray40') # Mid GUI
         self.root_cam_tab.add(self.midSection_camPaneTabMain)
 
         self.top = PanedWindow(self.midSection_camPaneTabMain) # Top Mid GUI
@@ -265,8 +265,8 @@ class GUIApplication(threading.Thread):
         self.second_label.place(relx=0.5, rely=0.02, anchor='center')
 
         # Page 3: PDF setup
-        # FIXME:Numbers in field disappears when clicking mouse.
-        self.page_3_frame = Frame(self.page_3, bg='#424242')
+        # FIXME: If you click on same field twice you can remove text from other fields.
+        self.page_3_frame = Frame(self.page_3, bg="#424242")
         # must keep a global reference to these two
         self.im = Image.open('arucoBoard.png')
         self.im = self.im.resize((300, 300), Image.ANTIALIAS)
@@ -279,13 +279,13 @@ class GUIApplication(threading.Thread):
         self.boardlist_container = Frame(self.page_3)
         self.boardlist_container.config(padx='10',pady='10',bg='#424242')
         self.boardlist_container.pack(side=BOTTOM)
-        board = arucoBoard(3, 3, 40, 5)
+        board = ArucoBoard(3, 3, 40, 5)
         ABU = ArucoBoardUnit(board,self.boardlist_container)
         self.arucoBoardUnits.append(ABU)
-        board1 = arucoBoard(3, 3, 40, 5)
+        board1 = ArucoBoard(3, 3, 40, 5)
         ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
         self.arucoBoardUnits.append(ABU1)
-        board2 = arucoBoard(3, 3, 40, 5)
+        board2 = ArucoBoard(3, 3, 40, 5)
         ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
         self.arucoBoardUnits.append(ABU2)
         self.boardimgs = []
@@ -321,20 +321,17 @@ class GUIApplication(threading.Thread):
         self.length.pack()
         self.length_entry.insert(0, 'Length')  # Add generic text
         self.length_entry.bind('<Button-1>', self.on_entry_click)  # If clicked on
-        self.length_entry.configure(foreground='gray')
         self.length_entry.pack()
         self.length_entry.config(validate='key', validatecommand=vcmd_length)
 
         self.width.pack()
         self.width_entry.insert(0, 'Width')
         self.width_entry.bind('<Button-1>', self.on_entry_click)
-        self.width_entry.configure(foreground='gray')
         self.width_entry.pack()
         self.width_entry.config(validate='key', validatecommand=vcmd_width)
 
         self.size.pack()
         self.size_entry.insert(0, 'Size')
-        self.size_entry.configure(foreground='gray')
         self.size_entry.bind('<Button-1>', self.on_entry_click)
         self.size_entry.pack()
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
@@ -342,7 +339,6 @@ class GUIApplication(threading.Thread):
         self.gap.pack()
         self.gap_entry.insert(0, 'Gap')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
-        self.gap_entry.configure(foreground='gray')
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
@@ -391,7 +387,7 @@ class GUIApplication(threading.Thread):
         self.btn_plot.configure(disabledforeground='#911515')
         self.btn_plot.configure(foreground='#FFFFFF')
         self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.setupGraph(self.graph_frame)))
+        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.setupGraph(self.graph_frame)), height=2, width=7)
 
         self.btn_save =  tk.Button(self.btn_frame_4)
         self.btn_save.pack(side=RIGHT)
@@ -399,30 +395,30 @@ class GUIApplication(threading.Thread):
         self.btn_save.configure(disabledforeground='#911515')
         self.btn_save.configure(foreground='#FFFFFF')
         self.btn_save.configure(text='Stop')
-        self.btn_save.configure(command=lambda: self.showButton(self.btn_plot))
+        self.btn_save.configure(command=lambda: self.showButton(self.btn_plot), height=2, width=7)
 
 
 
-        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500)  # , orient=HORIZONTAL)
-        #self.camFrameSettingSection.configure(bg='#424242')
-
+        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500, width=50)
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg='white',height=2,width=8,
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg='white',height=2,width=7,
                                 command=lambda: [self.sendStartSignal()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg='white',height=2,width=8,
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg='white',height=2,width=7,
                                command=lambda: [self.sendStopSignal()])
-        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,height=2,width=8,
+        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,height=2,width=6,
                                   bg='#424242', fg='white',)
         # Label to respond if button pushed before VEs have been inited
         self.poseEstimationStartDenied_label = Label(self.camFrameSettingSection,
                                                      text="Please init VEs in config tab first.", bg="#424242")
+        self.camFrameSettingSection.configure()
         self.camFrameSettingSection.pack()
         self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
 
-        self.start_btn.grid(column=0, row=0)
-        self.stop_btn.grid(column=1, row=0)
-        self.hidecam_btn.grid(column=2, row=0)
+
+        self.start_btn.grid(column=0, row=0, pady=10)
+        self.stop_btn.grid(column=1, row=0, pady=10)
+        self.hidecam_btn.grid(column=2, row=0, pady=10)
         self.availCamsLabel = Label(self.left_camPaneTabMain, text='Available cameras: ',font=("Arial", "12"))
         self.availCamsLabel.configure(bg='#424242',fg='white')
         self.availCamsLabel.pack()
@@ -783,7 +779,7 @@ class GUIApplication(threading.Thread):
             size_value = int(size_value)
             gap_value = self.gap_entry.get()
             gap_value = int(gap_value)
-            self.userBoard = arucoBoard(board_height=length_value, width_value=width_value, marker_size=size_value,
+            self.userBoard = ArucoBoard(board_height=length_value, board_width=width_value, marker_size=size_value,
                                         marker_gap=gap_value)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
@@ -802,10 +798,10 @@ class GUIApplication(threading.Thread):
         Adds an aruco board to the pushed boards list, to make it accessible to external objects.
         :return: None
         """
-        if self.userBoard is not None:
-            self.__pushedBoards.append(self.userBoard)
-            self.addBoardWidgetToGUI(self.userBoard)
-            self.addBoardButton()
+        self.connector.addBoard(self.userBoard)
+        self.addBoardWidgetToGUI(self.userBoard)
+        self.addBoardButton()
+
     def addBoardWidgetToGUI(self, board):
         try:
             ABU = ArucoBoardUnit(board, self.boardlist_container)
@@ -1046,7 +1042,7 @@ class GUIApplication(threading.Thread):
     def setBoardIndexToDisplay(self):
         #TODO: Can be called directly from radiobutton.
         boardIndex = self.boardIndex.get()
-        self.connector.setBoardIndexToDisplay(boardIndex)
+        self.connector.setBoardIndex(boardIndex)
 
     def addCameraButton(self):
         #TODO: Not used. Remove?

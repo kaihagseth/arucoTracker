@@ -303,8 +303,8 @@ class VisionEntity:
         :param boards: The board to add to tracking list.
         :return: None
         """
-        if boards is list or boards is tuple:
-            for board in boards:
+        if isinstance(boards,dict):
+            for board in boards.values():
                 self.__cameraToModelMatrices[board.ID] = None
                 self._detection_quality[board.ID] = 0
         else:
