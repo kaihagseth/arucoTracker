@@ -114,13 +114,6 @@ class GUIApplication(threading.Thread):
                                          },
                                     "map": {"background": [("selected", "#424242")],
 
-                                             "expand": [("selected", [1, 1, 1, 0])]}
-                                   }
-                                }
-                       )
-        s.theme_use("MyStyle")
-
-
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
 
@@ -365,7 +358,6 @@ class GUIApplication(threading.Thread):
                               command=lambda: [self.saveArucoPDF()])
         self.pdf_btn.configure(bg='#424242', fg='white')
         self.pdf_btn.pack(side=LEFT)
-
         Frame(self.btn_frame, width=5,bg='#424242').pack(side=LEFT)
         self.merge_btn = Button(self.btn_frame, text='Merge',
                               command=lambda: [self.doMerging()])
