@@ -76,8 +76,6 @@ class Connector(Thread):
                 runApp = False
                 doAbort = True
                 self.PE.stopThreads()
-            if self._newBoard:
-                self.PE.addBoard(self._newBoard)
             if self._resetExtrinsic:
                 # Reset the extrinsic matrix, meaning set new startposition for calculations.
                 pass
@@ -198,6 +196,24 @@ class Connector(Thread):
         :return:
         """
         self.PE.removeVEFromListByIndex(camID)
+
+    def startMerge(self, main_board, sub_boards):
+        """
+        Starts merging of boards
+        :param main_board: main board to merge
+        :param sub_boards: sub boards to merge
+        :return:
+        """
+        self.PE.startMerge(main_board, sub_boards)
+
+    def finishMerge(self):
+        """
+        Finishes merging of boards
+        :return: None
+        """
+        self.PE.finishMerge()
+
+
 if __name__ == '__main__':
     # logging_setup()
     l = logging.getLogger()
