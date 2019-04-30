@@ -65,6 +65,11 @@ class GUIApplication(threading.Thread):
         self.cameraButtonList = []
         self.cameraButtonIndexList = []
 
+        # Pose data
+        self.x_value_list = []
+        self.y_value_list = []
+        self.z_value_list = []
+
     def run(self):
         '''
         Run the main application.
@@ -279,15 +284,18 @@ class GUIApplication(threading.Thread):
         self.boardlist_container = Frame(self.page_3)
         self.boardlist_container.config(padx='10',pady='10',bg='#424242')
         self.boardlist_container.pack(side=BOTTOM)
-        board = ArucoBoard(3, 3, 40, 5)
-        ABU = ArucoBoardUnit(board,self.boardlist_container)
-        self.arucoBoardUnits.append(ABU)
-        board1 = ArucoBoard(3, 3, 40, 5)
-        ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
-        self.arucoBoardUnits.append(ABU1)
-        board2 = ArucoBoard(3, 3, 40, 5)
-        ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
-        self.arucoBoardUnits.append(ABU2)
+        #board = arucoBoard(3, 3, 40, 5)
+        #ABU = ArucoBoardUnit(board,self.boardlist_container)
+        #self.arucoBoardUnits.append(ABU)
+        #board1 = arucoBoard(3, 3, 40, 5)
+        #ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
+        #self.arucoBoardUnits.append(ABU1)
+        #board2 = arucoBoard(3, 3, 40, 5)
+        #ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
+        #self.connector.PE.addBoard(board)
+        #self.connector.PE.addBoard(board1)
+        #self.connector.PE.addBoard(board2)
+        #self.arucoBoardUnits.append(ABU2)
         self.boardimgs = []
         self.boardimgages = [None,None,None,None,None,None,None,None,None]
         self.page_3_label_frame = Frame(self.page_3_frame, bg='#424242')
@@ -463,7 +471,7 @@ class GUIApplication(threading.Thread):
 
         # Adds board radio button to the GUI
         self.addBoardButton()
-        self.doMerging()
+        #self.doMerging()
         # Start it all
         self.root.mainloop()
 
@@ -583,19 +591,59 @@ class GUIApplication(threading.Thread):
             self.merge_frame.pack_forget()
             self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
             self.mergeprocess_frame.pack()
+            # Add image showing the merge process, to be updated
             self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
             self.image_frame.grid(row=0,column=0)
+            self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
+            self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
+            self.panel.grid(row=0,column=0)
+
+            # Show merge quality and some options
             self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
             self.info_frame.grid(row=0,column=1)
             Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+            n = 0
+            self.mergeBoardProgressbarsList = [None, None, None, None, None, None, None, None, None]
             for n, i in enumerate(self.boardsToMerge):
                 if i:
                     #Show board.
                     Label(self.info_frame, text=("Board "+str(n)), bg='#424242', fg='white').grid(row=n+1, column=0)
+                    pb = ttk.Progressbar(self.info_frame, value=0,maximum=100,orient="horizontal",length=100,mode="determinate")
+                    pb.grid(row=n+1, column=1)
+                    self.mergeBoardProgressbarsList[n] = pb
 
+            self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
+                                    command=self.merge_window.destroy)
+            self.finish_btn = Button(self.info_frame, text='Next', bg='#424242', fg='white', command=self.mergeProcessFinished)
+            # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+            self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
+            self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
         else:
-            #No boards to merge, must be an error.
+            #No boards to merge, must be an error or user fault.
             showinfo("Error", "Please choose some boards to merge with.")
+    def mergeProcessFinished(self):
+        pass
+    def updateMergeProcessInfo(self, prevImg, qualityList):
+        '''
+        Update the merge process image and the board qualitys.
+
+        :param img: Live cv2-image of the process
+        :param quality: The merging quality. A list, where corresponding index is the board index. Not used indexes
+        should be set to -1!
+        :return: None
+        '''
+        # Set the image
+        self.merge_image = ImageTk.PhotoImage(prevImg)
+        self.panel.config(image=self.merge_image)
+
+        # Update the qualities.
+        for n, q in enumerate(qualityList):
+            if q is not -1:
+                # It's updated
+                self.mergeBoardProgressbarsList[n]["value"] = q
+            if n is 6:
+                break
+
     def setMergerBoards(self):
         pass
     def setMainMergerBoard(self, value):
@@ -779,8 +827,10 @@ class GUIApplication(threading.Thread):
             size_value = int(size_value)
             gap_value = self.gap_entry.get()
             gap_value = int(gap_value)
+
             self.userBoard = ArucoBoard(board_height=length_value, board_width=width_value, marker_size=size_value,
                                         marker_gap=gap_value)
+            self.connector.PE.addBoard(self.userBoard)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
             self.ph = Image.fromarray(self.ph)
@@ -879,16 +929,40 @@ class GUIApplication(threading.Thread):
 
         if poses:
             evec, tvec = poses[boardIndex]
-            if evec is not None:
-                x, y, z = tvec
-                self.x_value.set(x)
-                self.y_value.set(y)
-                self.z_value.set(z)
-            else:
-                self.x_value.set(0.0)
-                self.y_value.set(0.0)
-                self.z_value.set(0.0)
+
             if tvec is not None:
+                x, y, z = tvec
+                sum_x = 0.0
+                sum_y = 0.0
+                sum_z = 0.0
+                self.x_value_list.append(x)
+                self.y_value_list.append(x)
+                self.z_value_list.append(x)
+                if len(self.x_value_list) >= 10:
+                    del self.x_value_list[0]
+                if len(self.y_value_list) >= 10:
+                    del self.z_value_list[0]
+                if len(self.z_value_list) >= 10:
+                    del self.z_value_list[0]
+                for num in self.x_value_list:
+                    sum_x = sum_x + num
+                for num in self.y_value_list:
+                    sum_y = sum_y + num
+                for num in self.z_value_list:
+                    sum_z = sum_z + num
+                self.x_value.set(sum_x/len(self.x_value_list))
+                self.y_value.set(sum_y/len(self.y_value_list))
+                self.z_value.set(sum_z/len(self.z_value_list))
+                #if tvec is not None:
+            #    x, y, z = tvec
+            #    self.x_value.set(x)
+            #    self.y_value.set(y)
+            #    self.z_value.set(z)
+            #else:
+            #    self.x_value.set(0.0)
+            #    self.y_value.set(0.0)
+            #    self.z_value.set(0.0)
+            if evec is not None:
                 roll, pitch, yaw = evec
                 self.roll_value.set(roll)
                 self.pitch_value.set(pitch)
