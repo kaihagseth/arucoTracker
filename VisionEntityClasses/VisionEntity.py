@@ -19,10 +19,10 @@ class VisionEntity:
         self.intrinsic_matrix = None
         self._camera = Camera(src_index=cv2_index, load_camera_parameters=True)
         # cameraToModelToMatrix should be a list containing all boards
-        self.__cameraToModelMatrices = []  # Camera -> Model transformation - Should only be written to from thread!!
+        self.__cameraToModelMatrices = dict()  # Camera -> Model transformation - Should only be written to from thread!!
         self._cameraPoseMatrix = None
         self._cameraPoseQuality = 0
-        self._detection_quality = []
+        self._detection_quality = dict()
         self.runThread = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
@@ -262,7 +262,7 @@ class VisionEntity:
         """
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
-        for matrix in self.__cameraToModelMatrices:
+        for matrix in self.__cameraToModelMatrices.values():
             if matrix is not None:
                 rvec, tvec = transMatrixToRvecTvec(matrix)
                 image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
@@ -300,15 +300,23 @@ class VisionEntity:
     def addBoards(self, boards):
         """
         Extends cameraToModelMatrices list to accommodate for tracking of more boards.
+        :param boards: The board to add to tracking list.
         :return: None
         """
-        if boards is list or boards is tuple:
-            for board in boards:
-                self.__cameraToModelMatrices.append(None)
-                self._detection_quality.append(0)
+        if isinstance(boards,dict):
+            for board in boards.values():
+                self.__cameraToModelMatrices[board.ID] = None
+                self._detection_quality[board.ID] = 0
         else:
-            self.__cameraToModelMatrices.append(None)
-            self._detection_quality.append(0)
+            self.__cameraToModelMatrices[boards.ID] = None
+            self._detection_quality[boards.ID] = 0
+
+    def removeBoard(self, board):
+        """
+        Removes an aruco board from the tracker.
+        :param board: The boar to remove
+        :return: None
+        """
 
     def getCameraID(self):
         """
@@ -316,6 +324,7 @@ class VisionEntity:
         :return: camera Id
         """
         return self._camera.getSrc()
+
     def setCameraLabelAndParameters(self, callname="A1"):
         """
         Give camera a new 'name' and thus search for a new settingsfile for this name.

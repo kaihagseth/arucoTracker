@@ -1,10 +1,11 @@
 import cv2
 import numpy as np
+import quaternion
 import math
 
 def toMatrix(rvec):
     """
-    Transform rvec to matrix
+    Transform Rodriguez rotation vector to rotation matrix
     :param rvec: Rotation Vector
     :return:
     """
@@ -111,6 +112,106 @@ def transformPointHomogeneous(point, matrix):
     homogeneous_vector = homogeneous_vector / homogeneous_vector[-1]  # Perspective divide
     transformed_point = np.reshape(np.asarray(homogeneous_vector[0:-1, :]), vector.shape) # Return vector to input format
     return transformed_point
+
+def findCosineToBoard(cameraToBoardTransformation):
+    """
+    Returns the cosine of the angle between the boards plane and a camera normal vector based on the transformation
+    matrix from the camera the board. This is useful for describing the visibility of the board.
+    :param transformationMatrix:
+    :return:
+    """
+    z3 = cameraToBoardTransformation[2,2]
+    cosineToBoard = -z3
+    return cosineToBoard
+
+class IterativeMean():
+    """
+    Calculates an average sum between current and all previous inputs.
+    """
+    def __init__(self, dataType=type(int())):
+        self.cumSum = dataType()
+        self.weightCumSum = 0
+
+    def update(self, newdata, weight=1.0):
+        """
+        Updates mean and returns a new mean.
+        :param newdata: new data to input
+        :return: New mean
+        """
+        self.cumSum = np.add(self.cumSum, np.multiply(newdata, weight))
+        self.weightCumSum += weight
+
+    def get(self):
+        """
+        Returns current average
+        :return: Current average
+        """
+        return np.divide(self.cumSum, self.weightCumSum)
+
+class IterativeMeanRotationFinder:
+    """
+    Iteratively calculates the mean weighted rotation from a continuously updated list of rotations.
+    FIXME: This function needs to use the SLERP-algorithm in order to give a correct result for the rotations.
+    """
+    def __init__(self):
+        self.iterativeMean = IterativeMean(dataType=type(np.quaternion()))
+
+    def update(self, rotation, weight=1):
+        """
+        Updates mean with new data
+        :param rotation: Rotation matrix
+        :param weight: Weight of input
+        :return: None
+        """
+        q = quaternion.from_rotation_matrix(rotation)
+        qlog = np.log(q)
+        self.iterativeMean.update(qlog, weight)
+
+    def get(self):
+        """
+        Returns current mean rotation matrix.
+        :return: Mean rotation matrix
+        """
+        qlogmean = self.iterativeMean.get()
+        qmean = np.power(np.e, qlogmean)
+        return np.matrix(quaternion.as_rotation_matrix(qmean))
+
+class IterativeMeanTransformationFinder:
+    """
+    Calcualtes a mean 4x4 homogenous transformation matrix based on all previously input transformation matrices.
+    """
+    def __init__(self):
+        self.meanRotation = IterativeMeanRotationFinder()
+        self.meanTranslation = IterativeMean()
+
+    def update(self, transformationMatrix, weight):
+        """
+        Adds data to the transformationfinder.
+        :param transformationMatrix: Transformation to add to dataset.
+        :param weight: Weight of this data point
+        :return: None
+        """
+        translation = transformationMatrix[0:3, 3]
+        rotation = transformationMatrix[0:3, 0:3]
+        self.meanTranslation.update(translation, weight)
+        self.meanRotation.update(rotation, weight)
+
+    def get(self):
+        """
+        Returns the mean of the dataset.
+        :return: Mean transformation matrix of
+        """
+        meanTransformation = np.eye(4)
+        meanTransformation[0:3, 3] = self.meanTranslation.get().flatten()
+        meanTransformation[0:3, 0:3] = self.meanRotation.get()
+        return np.matrix(meanTransformation)
+
+    def getCumWeights(self):
+        """
+        Returns cumulative sum of all weights in dataset.
+        :return: Cumulative sum of all
+        """
+        return self.meanRotation.iterativeMean.weightCumSum
 
 if __name__ == '__main__':
     vector = np.array([1, 2, 3])
