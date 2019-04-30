@@ -207,6 +207,7 @@ class PoseEstimator():
         :return:list of tuples of tuple Nx2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
         """
         poses = []
+        logging.debug("Length of aruco list: " +str(len(self._arucoBoards)))
         for board in self._arucoBoards:
             try:
                 rvec, tvec = board.getRvecTvec()
@@ -340,7 +341,7 @@ class PoseEstimator():
         self._arucoBoards[key] = board
         for ve in self.getVisionEntityList():
             ve.addBoards(board)
-            logging.debug("board added to vision entity")
+            logging.debug("Board with id "+ str(key) + " added to vision entity")
 
     def removeBoard(self, board):
         """

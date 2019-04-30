@@ -10,6 +10,7 @@ import cv2
 import ttkthemes
 from PIL import ImageTk, Image
 
+from GUI import GUIDataPlotting
 from GUI.VEConfigUnit import VEConfigUnit
 from GUI.ArucoBoardUnit import ArucoBoardUnit
 from VisionEntityClasses.VisionEntity import VisionEntity
@@ -40,7 +41,7 @@ class GUIApplication(threading.Thread):
         self.connector.setGUIStreamerFunction(self.showFindPoseStream)
 
         # Fields written to by external objects. Should only be read in this object.
-        self.frame = None           # Image frame to be shown in camera window.
+        self.imageFrame = None           # Image frame to be shown in camera window.
         self.modelPoses = None      # Poses of all currently tracked objects. (Only one at the time for now)
         self.userBoard = None       # Arucoboard created by user in GUI.
 
@@ -470,7 +471,7 @@ class GUIApplication(threading.Thread):
         self.start_btn.focus()
 
         # Adds board radio button to the GUI
-        self.addBoardButton()
+        #self.addBoardButton()
         #self.doMerging()
         # Start it all
         self.root.mainloop()
@@ -646,6 +647,7 @@ class GUIApplication(threading.Thread):
 
     def setMergerBoards(self):
         pass
+
     def setMainMergerBoard(self, value):
         logging.debug("Value: "+str(value))
         self.child_markers_label = Label(self.merge_frame, text="Markers to merge with:", fg="white",bg='#424242')
@@ -752,7 +754,7 @@ class GUIApplication(threading.Thread):
         pass
         try:
             #print("In GUI, line 562. Frame: \n " + str(self.frame) + "\n")
-            image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(self.imageFrame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
             self.main_label.configure(image=image)
@@ -777,7 +779,7 @@ class GUIApplication(threading.Thread):
         Save a single frame from video feed
         :return: jpg
         '''
-        cv2.imwrite('images/frame%d.jpg' % self.counter, self.frame)
+        cv2.imwrite('images/frame%d.jpg' % self.counter, self.imageFrame)
 
     def changeCameraID(self, camid):
         print("CHANGING CAMERA ID: Camid to shift to", camid)
@@ -841,8 +843,6 @@ class GUIApplication(threading.Thread):
             self.userBoard = None
             showinfo("Error", "Please insert insert whole numbers in the boxes to create board.")
 
-
-
     def exportArucoBoard(self):
         """
         Adds an aruco board to the pushed boards list, to make it accessible to external objects.
@@ -859,6 +859,7 @@ class GUIApplication(threading.Thread):
         except cv2.error as e:
             logging.error("Can't create that many boards, need to expand dictionary!")
             logging.error(str(e))
+
     def saveArucoPDF(self):
         '''
         Return values from entry and send it to the arucoPoseEstimator
@@ -919,8 +920,9 @@ class GUIApplication(threading.Thread):
         :param frame: The frame to display in camera view.
         :return: None
         """
+        logging.info("UPDATING GUI FIELDS")
         self.modelPoses = poses
-        self.frame = frame
+        self.imageFrame = frame
         boardIndex = self.boardIndex.get()
         if boardPose_quality is not None:
             self.boardPose_quality.set(round(boardPose_quality, 2))
@@ -929,7 +931,7 @@ class GUIApplication(threading.Thread):
 
         if poses:
             evec, tvec = poses[boardIndex]
-
+            logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
             if tvec is not None:
                 x, y, z = tvec
                 sum_x = 0.0
@@ -950,27 +952,66 @@ class GUIApplication(threading.Thread):
                     sum_y = sum_y + num
                 for num in self.z_value_list:
                     sum_z = sum_z + num
-                self.x_value.set(sum_x/len(self.x_value_list))
-                self.y_value.set(sum_y/len(self.y_value_list))
-                self.z_value.set(sum_z/len(self.z_value_list))
+                #self.x_label.config(text=str((sum_x / len(self.x_value_list))))
+                #self.y_label.config(text=str((sum_y / len(self.y_value_list))))
+                #self.y_label.config(text=str((sum_z / len(self.z_value_list))))
                 #if tvec is not None:
             #    x, y, z = tvec
-            #    self.x_value.set(x)
-            #    self.y_value.set(y)
-            #    self.z_value.set(z)
-            #else:
-            #    self.x_value.set(0.0)
-            #    self.y_value.set(0.0)
-            #    self.z_value.set(0.0)
+                self.x_value.set(sum_x / len(self.x_value_list))
+                self.y_value.set(sum_y / len(self.y_value_list))
+                self.z_value.set(sum_z / len(self.z_value_list))
+                logging.debug("Updating tvec")
+            else:
+                #self.x_label.config(text=str(0.00))
+                #self.y_label.config(text=str(0.00))
+                #self.z_label.config(text=str(0.00))
+                self.x_value.set(0.0)
+                self.y_value.set(0.0)
+                self.z_value.set(0.0)
             if evec is not None:
                 roll, pitch, yaw = evec
                 self.roll_value.set(roll)
                 self.pitch_value.set(pitch)
                 self.yaw_value.set(yaw)
+                #self.roll_label.config(text=str(roll))
+                #self.pitch_label.config(text=str(pitch))
+                #self.yaw_label.config(text=str(yaw))
             else:
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
+                self.roll_label.config(text=str(0.00))
+                self.pitch_label.config(text=str(0.00))
+                self.yaw_label.config(text=str(0.00))
+
+    def plotGraph(self, poses, frame):
+        '''
+        Send position for the board to GUIDataPlotting and plot pos on graph
+        :param poses:
+        :param frame:
+        :return:
+        '''
+        self.modelPoses = poses
+        self.imageFrame = frame
+        boardIndex = self.boardIndex.get()
+        if poses:
+            evec, tvec = poses[boardIndex]
+            x, y, z = tvec
+            x1 = 0
+            y1 = 0
+            z1 = 0
+            try:
+                if tvec is not None and x is not x1 and y is not y1 and z is not z1:
+                    GUIDataPlotting.plotXYZ(frame, x, y, z)
+                    x=x1
+                    y=y1
+                    z=z1
+                else:
+                    pass
+            except TypeError:
+                print('test')
+
+
 
     def readUserInputs(self):
         # TODO: Remove, and use direct contact with connector.
