@@ -4,8 +4,10 @@ import tkinter as tk
 from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
+import matplotlib
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+matplotlib.use('TkAgg')
 from tkinter.messagebox import showinfo
-
 import cv2
 import ttkthemes
 from PIL import ImageTk, Image
@@ -86,39 +88,6 @@ class GUIApplication(threading.Thread):
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
-
-
-        #Testing some Style stuff
-        s = ttk.Style()
-        s.theme_create("MyStyle", parent="alt",
-                       settings={
- #                               "Frame":
- #                                   {"configure":
- #                                        {"background": '#424242'
- #                                        }
- #
- #                                   },
-                                "TNotebook":
-                                    {"configure":
-                                         {"tabmargins": [2, 5, 2, 0],
-                                          "background": "#424242",
-                                          "foreground": "red"
-                                         }
-                                    },
-                                "TNotebook.Tab":
-                                    {"configure":
-                                         {"padding": [50, 10],
-                                          "font": ('URW Gothic L', '11'),
-                                          "background": "#424242",
-                                          "foreground": "white"
-                                         },
-                                    "map": {"background": [("selected", "#424242")],
-
-                                             "expand": [("selected", [1, 1, 1, 0])]}
-                                   }
-                                }
-                       )
-        s.theme_use("MyStyle")
 
 
         # Create notebook
@@ -395,7 +364,7 @@ class GUIApplication(threading.Thread):
         self.btn_plot.configure(disabledforeground='#911515')
         self.btn_plot.configure(foreground='#FFFFFF')
         self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.setupGraph(self.graph_frame)), height=2, width=7)
+        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.runGraph(self.x_value, self.y_value, self.z_value, self.graph_frame)), height=2, width=7)
 
         self.btn_save =  tk.Button(self.btn_frame_4)
         self.btn_save.pack(side=RIGHT)
@@ -940,6 +909,7 @@ class GUIApplication(threading.Thread):
                 self.x_value_list.append(x)
                 self.y_value_list.append(x)
                 self.z_value_list.append(x)
+                self.runGraph(x,y,z,self.graph_frame)
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:
@@ -980,35 +950,6 @@ class GUIApplication(threading.Thread):
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
-
-
-    def plotGraph(self, poses, frame):
-        '''
-        Send position for the board to GUIDataPlotting and plot pos on graph
-        :param poses:
-        :param frame:
-        :return:
-        '''
-        self.modelPoses = poses
-        self.frame = frame
-        boardIndex = self.boardIndex.get()
-        if poses:
-            evec, tvec = poses[boardIndex]
-            x, y, z = tvec
-            x1 = 0
-            y1 = 0
-            z1 = 0
-            try:
-                if tvec is not None and x is not x1 and y is not y1 and z is not z1:
-                    GUIDataPlotting.plotXYZ(frame, x, y, z)
-                    x=x1
-                    y=y1
-                    z=z1
-                else:
-                    pass
-            except TypeError:
-                print('test')
-
 
 
     def readUserInputs(self):
@@ -1213,39 +1154,43 @@ class GUIApplication(threading.Thread):
         self.root.attributes('-fullscreen', False)
         return 'break'
 
-    def setupGraph(self, frame):
+    def runGraph(self, x, y, z,window):
         '''
-        Send position for the board to the graph frame and plot pos
-        :param frame: The frame you want to plot the graph in.
-        :return:
+        Setup for graph frame and variables needed to show x-y-z.
+        :param window: The frame you want to plot the graph in.
+        :return: None
         '''
-        t_data, x_data, y_data, z_data = [], [], [], []
+        self.t_data, self.x_data, self.y_data, self.z_data = [], [], [], []
 
-        figure = plt.figure()
-        ax = figure.subplots(3, 1, sharex=True, sharey=True)
-        line, = ax[0].plot(t_data, x_data, 'r')
-        line2, = ax[1].plot(t_data, y_data, 'c')
-        line3, = ax[2].plot(t_data, z_data, '-')
-        start_time = time.time()
+        self.figure = plt.figure()
+        self.ax = self.figure.subplots(3, 1, sharex=True, sharey=True)
+        self.line, = self.ax[0].plot(self.t_data, self.x_data, 'r')
+        self.line2, = self.ax[1].plot(self.t_data, self.y_data, 'c')
+        self.line3, = self.ax[2].plot(self.t_data, self.z_data, '-')
+        self.start_time = time.time()
 
-        def update(self, frame):
-            elapsed_time = time.time() - start_time
-            t_data.append(elapsed_time)
-            x_data.append(self.x_value)
-            y_data.append(self.y_value)
-            z_data.append(self.z_value)
-            line.set_data(t_data, x_data)
-            line2.set_data(t_data, y_data)
-            line3.set_data(t_data, z_data)
-            figure.gca().relim()
-            figure.gca().autoscale_view()
+        def update(frame):
+            elapsed_time = time.time() - self.start_time
+            self.t_data.append(elapsed_time)
+            self.x_data.append(self.x_value)
+            self.y_data.append(self.y_value)
+            self.z_data.append(self.z_value)
+            self.line.set_data(self.t_data, self.x_data)
+            self.line2.set_data(self.t_data, self.y_data)
+            self.line3.set_data(self.t_data, self.z_data)
+            self.figure.gca().relim()
+            self.figure.gca().autoscale_view()
 
-        figure.suptitle('Movement')
-        ax[0].set_ylabel('X')
-        ax[1].set_ylabel('Y')
-        ax[2].set_ylabel('Z')
-        ax[2].set_xlabel('Time (s)')
-        animation = FuncAnimation(figure, update, interval=100)
+
+        self.figure.suptitle('Movement')
+        self.ax[0].set_ylabel('X')
+        self.ax[1].set_ylabel('Y')
+        self.ax[2].set_ylabel('Z')
+        self.ax[2].set_xlabel('Time (s)')
+        self.animation = FuncAnimation(self.figure, update, interval=100)
+        plt.show()
+
+
 
     def hideButton(self, button):
         '''
