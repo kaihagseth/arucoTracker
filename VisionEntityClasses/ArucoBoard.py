@@ -31,7 +31,6 @@ class ArucoBoard:
         return self._board.getGridSize()
 
     def getMarkerCount(self):
-        print(len(self.getObjPoints()))
         return len(self.getObjPoints())
 
     def getGridBoard(self):

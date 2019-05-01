@@ -57,11 +57,11 @@ class Merger:
                 for sub_board in self.sub_boards:
                     sub_trans_matrix = sub_board.getTransformationMatrix()
                     if sub_trans_matrix is not None:
-                        link_matrix = invertTransformationMatrix(main_trans_matrix) * \
+                        sub_board.link_matrix = invertTransformationMatrix(main_trans_matrix) * \
                                                     sub_trans_matrix
-                        weight = self.mergerCostFunction([main_trans_matrix,
-                                                          sub_trans_matrix])
-                        sub_board.meanTransformationMatrixFinder.update(link_matrix, weight)
+                        #weight = self.mergerCostFunction([main_trans_matrix,
+                        #                                  sub_trans_matrix])
+                        #sub_board.meanTransformationMatrixFinder.update(link_matrix, weight) # FIXME: Is the bug here?
             if self.displayFunction:
                 self.displayFunction(self.getQualityList())
             time.sleep(.1)
@@ -85,8 +85,8 @@ class Merger:
         :return: merged board
         """
         self.running = False
-        for sub_board in self.sub_boards:
-            sub_board.link_matrix = sub_board.meanTransformationMatrixFinder.get()
+        #for sub_board in self.sub_boards:
+        #    sub_board.link_matrix = sub_board.meanTransformationMatrixFinder.get()
         self.mergeBoards()
         print("Merging completed")
         return self.merged_board

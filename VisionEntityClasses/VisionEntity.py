@@ -313,9 +313,11 @@ class VisionEntity:
     def removeBoard(self, board):
         """
         Removes an aruco board from the tracker.
-        :param board: The boar to remove
+        :param board: The board to remove
         :return: None
         """
+        del self.__cameraToModelMatrices[board.ID]
+        del self._detection_quality[board.ID]
 
     def getCameraID(self):
         """
