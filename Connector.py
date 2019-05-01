@@ -74,7 +74,7 @@ class Connector(Thread):
             if self._stopCommand:
                 logging.debug("stop command received")
                 runApp = False
-                doAbort = True
+                #doAbort = True
                 self.PE.stopThreads()
             if self._resetExtrinsic:
                 # Reset the extrinsic matrix, meaning set new startposition for calculations.
@@ -94,7 +94,7 @@ class Connector(Thread):
             else:
                 time.sleep(0.1)
 
-        print('Ended')
+
 
     def initConnectedCams(self):
         '''

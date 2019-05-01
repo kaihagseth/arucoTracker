@@ -46,6 +46,7 @@ class VisionEntity:
             for board in boards.values():
                 logging.debug("Estimating pose for board "+ str(board.ID))
                 self.estimatePose(board)
+        logging.info("Terminating thread.")
         self.terminate()
 
     def calibrateCameraWithTool(self):

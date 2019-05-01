@@ -38,7 +38,7 @@ class GUIApplication(threading.Thread):
         # Observer technique: Tell connector which function to call when updating fields.
         self.connector.setGUIupdaterFunction(self.updateGUIFields)
         self.connector.setGUIStreamerFunction(self.showFindPoseStream)
-
+        self.connectorStarted = False
         # Fields written to by external objects. Should only be read in this object.
         self.frame = None           # Image frame to be shown in camera window.
         self.modelPoses = None      # Poses of all currently tracked objects. (Only one at the time for now)
@@ -58,8 +58,8 @@ class GUIApplication(threading.Thread):
         self.show_video = False
         self.showPoseStream = False
         self.videoPanel = None
-        self.poseEstimationStartAllowed = False # Only True if we have applied some VEs to run with in configtab
-
+        self.anyCameraInitiated = False # Only True if we have applied some VEs to run with in configtab
+        self.anyBoardsInitiated = False # Only True if one or more boards are intitated.
         # Button lists
         self.boardButtonList = []
         self.cameraButtonList = []
@@ -113,7 +113,8 @@ class GUIApplication(threading.Thread):
                                           "foreground": "white"
                                          },
                                     "map": {"background": [("selected", "#424242")],
-
+                                            }}
+                       })
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
 
@@ -702,7 +703,7 @@ class GUIApplication(threading.Thread):
                         VECU.setIncludeInPEbool(False) # Deselect checkbutton
                         VECU.setState(9)
         if self.VEsToSend: # is not empty
-            self.poseEstimationStartAllowed = True
+            self.anyCameraInitiated = True
             self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
             self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
             self.updateCamlist(self.VEsToSend)
@@ -846,6 +847,7 @@ class GUIApplication(threading.Thread):
             self.connector.addBoard(self.userBoard)
             self.addBoardWidgetToGUI(self.userBoard)
             self.addBoardButton(self.userBoard)
+            self.anyBoardsInitiated = True
         else:
             # Board not generated
             showinfo('Error', "Please 'generate' the board first.")
@@ -1054,10 +1056,12 @@ class GUIApplication(threading.Thread):
         Adds a start signal to the stop signal stack. The signal is consumed when read.
         :return: None
         """
-        if self.poseEstimationStartAllowed: # VEs are initialised
+        if self.anyCameraInitiated and self.anyBoardsInitiated: # VEs are initialised
             logging.info("Pose Estimation is starting.")
             self.connector.setStartCommand(True)
-            self.connector.start()
+            if not self.connectorStarted:
+                self.connectorStarted = True
+                self.connector.start()
             #self.__start_application.append(True)
             logging.debug("Start signal sent.")
             self.poseEstimationStartDenied_label.grid_forget()

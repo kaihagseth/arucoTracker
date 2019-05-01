@@ -331,7 +331,7 @@ class PoseEstimator():
         """
         for VE in self.getVisionEntityList():
             VE.runThread = False
-        self.VisionEntityList = []
+        #self.VisionEntityList = []
 
     def addBoard(self, board):
         """
