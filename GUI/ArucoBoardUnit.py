@@ -24,10 +24,12 @@ class ArucoBoardUnit():
         self.id_label = Label(self.container, text="ID: " + str(self.id),bg='#424242',fg="white")
         self.id_label.grid(row=1, column=0)
         deadspace4 = Label(self.container, width=5, height=3,bg='#424242').grid(row=2, column=0)
+
         self.pht = board.getBoardImage((175,175))
         self.pht = cv2.cvtColor(self.pht, cv2.COLOR_BGR2RGB)
         self.pht = Image.fromarray(self.pht)
         self.pht = ImageTk.PhotoImage(self.pht)
+
         img = Label(self.container, image=self.pht,bg='#424242')
         img.grid(row=3, column=0, columnspan=3)
         self.container.grid(row=0, column=self.id)
@@ -50,3 +52,10 @@ class ArucoBoardUnit():
         self.boardIsActive = False
         self.conStatusLabel.config(text="Active", fg="green")
         self.btn.config(text="Deactivate", command=self.deactivateBoard)
+
+    def removeBoard(self):
+        """
+        Removes this board from the GUI
+        :return:None
+        """
+        self.container.grid_remove()

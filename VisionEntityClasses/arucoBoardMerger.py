@@ -15,7 +15,7 @@ class Merger:
         self.sub_boards = sub_boards
         self.running = False
         self.dictionary = dictionary
-        self.mergedBoard = None
+        self.merged_board = None
         self.displayFunction = None
 
     def mergerCostFunction(self, transformationmatrices):
@@ -42,8 +42,9 @@ class Merger:
             transformed_points = sub_board.getTransformedPoints(sub_board.link_matrix)
             obj_points = np.concatenate((obj_points, transformed_points))
         self.dictionary = self.main_board.dictionary
-        self.mergedBoard = ArucoBoard(arucoBoard=cv2.aruco.Board_create(obj_points, self.dictionary, ids),
-                                      dictionary=self.dictionary)
+        print("Merger creating mergeed board")
+        self.merged_board = ArucoBoard(board=cv2.aruco.Board_create(obj_points, self.dictionary, ids),
+                                       dictionary=self.dictionary)
 
     def runMerge(self):
         """
@@ -88,7 +89,7 @@ class Merger:
             sub_board.link_matrix = sub_board.meanTransformationMatrixFinder.get()
         self.mergeBoards()
         print("Merging completed")
-        return self.mergedBoard
+        return self.merged_board
 
     def getQualityList(self):
         """
@@ -102,10 +103,14 @@ class Merger:
 
     def getBoards(self):
         """
-        Returns a list of all boards used as input for this merger.
+        Returns all  boards used by this merger.
         :return: Main board followed by sub boards in a single list.
         """
-        return [self.main_board] + self.sub_boards
+        boards = dict()
+        boards["merged_board"] = self.merged_board
+        boards["main_board"] = self.main_board
+        boards["sub_boards"] = self.sub_boards
+        return boards
 
     def setDisplayFunction(self, dispFX):
         """

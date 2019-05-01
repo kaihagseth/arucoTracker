@@ -110,7 +110,7 @@ def transformPointHomogeneous(point, matrix):
     homogeneous_vector = np.vstack((homogeneous_vector, [[1]]))       # Add 1 to make vector homogeneous
     homogeneous_vector = matrix * homogeneous_vector                  # Transform vector
     homogeneous_vector = homogeneous_vector / homogeneous_vector[-1]  # Perspective divide
-    transformed_point = np.reshape(np.asarray(homogeneous_vector[0:-1, :]), vector.shape) # Return vector to input format
+    transformed_point = np.reshape(np.asarray(homogeneous_vector[0:-1, :]), point.shape) # Return vector to input format
     return transformed_point
 
 def findCosineToBoard(cameraToBoardTransformation):
@@ -118,7 +118,7 @@ def findCosineToBoard(cameraToBoardTransformation):
     Returns the cosine of the angle between the boards plane and a camera normal vector based on the transformation
     matrix from the camera the board. This is useful for describing the visibility of the board.
     :param transformationMatrix:
-    :return:
+    :return: the cosine of this boards angle.
     """
     z3 = cameraToBoardTransformation[2, 2]
     cosineToBoard = -z3

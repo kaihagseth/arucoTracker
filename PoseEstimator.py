@@ -105,13 +105,14 @@ class PoseEstimator():
     def writeCsvLog(self, poses):
         """
         Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
-        #TODO: rewrite to accommodate for more than one pose
+        #TODO: rewrite to accommodate for more than one pose!!
+        # FIXME: This function is not working as intended.
         :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
         :return: None
         """
         if poses:
-            for pose in poses:
+            for pose in poses.values():
                 evec, tvec = pose
         else:
             evec, tvec = None, None
@@ -208,7 +209,7 @@ class PoseEstimator():
         Returns poses from all boards. list of tuples of tuple Nx2x3
         :return:list of tuples of tuple Nx2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
         """
-        poses = []
+        poses = dict()
         logging.debug("Length of aruco list: " +str(len(self._arucoBoards)))
         for board in self._arucoBoards.values():
             try:
@@ -219,7 +220,7 @@ class PoseEstimator():
                 tvec = None
                 evec = None
             pose = evec, tvec
-            poses.append(pose)
+            poses[board.ID] = pose
         return poses
 
 
@@ -285,13 +286,14 @@ class PoseEstimator():
         quality = vision_entity.getCameraPoseQuality()
         return quality
 
-    def getBoardPositionQuality(self, boardIndex=0):
+    def getBoardPositionQuality(self, boardIndex):
         '''
         Get the quality/reliability, of the pose estimation of given board.
         :param boardIndex: Board to select
         :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
         '''
-        board = self._arucoBoards[boardIndex]
+        boards = self.getBoards()
+        board = boards[boardIndex]
         quality = board.getPoseQuality()
         return quality
 
@@ -388,15 +390,16 @@ class PoseEstimator():
         :param index: The index of the merger that should be finished.
         :return: None
         """
-        if self.merger is None:
+        print("Finishing merge in pose estimator")
+        if self.merger is None or not self.merger.running:
             logging.error("Attempted to finish merge while no merger was running")
-        newBoard = self.merger.finishMerge()
-        boardsToRemove = self.merger.getBoards()
-        for ve in self.getVisionEntityList():
-            for board in boardsToRemove:
-                ve.removeBoard(board)
-            ve.addBoards(newBoard)
-        self.merger = None
+        self.merger.finishMerge()
+        merger_boards = self.merger.getBoards()
+        boardsToRemove = [merger_boards["main_board"]] + merger_boards["sub_boards"]
+        for board in boardsToRemove:
+            self.removeBoard(board)
+        newBoard = merger_boards["merged_board"]
+        self.addBoard(newBoard)
 
     def getMergerStatus(self):
         """
@@ -405,3 +408,13 @@ class PoseEstimator():
         :return:
         """
         return self.merger.getQualityList()
+
+    def getMergerBoards(self):
+        """
+        Returns all used boards from the merger.
+        :return:
+        """
+        if self.merger is None:
+            return None
+        else:
+            return self.merger.getBoards()

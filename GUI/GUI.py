@@ -30,7 +30,7 @@ class GUIApplication(threading.Thread):
     def __init__(self, connector):
         threading.Thread.__init__(self)
         self.connector = connector
-        self.arucoBoardUnits = []
+        self.arucoBoardUnits = dict()
         #self.arucoBoardUnits.append(board)
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
@@ -64,7 +64,7 @@ class GUIApplication(threading.Thread):
         self.poseEstimationStartAllowed = False # Only True if we have applied some VEs to run with in configtab
 
         # Button lists
-        self.boardButtonList = []
+        self.boardButtons = dict()
         self.cameraButtonList = []
         self.cameraButtonIndexList = []
 
@@ -568,10 +568,7 @@ class GUIApplication(threading.Thread):
         self.intro_text.grid(column=0, row=0, columnspan=2)
         self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg='#424242',fg="white", height=5)
         self.main_cam_label.grid(column=0,row=1)
-        self.boardIDlist = set()
-        for ABU in self.arucoBoardUnits:
-            self.boardIDlist.add(ABU.id)
-            logging.debug("Board added to boardlist in merging-window. ")
+        self.boardIDlist = set(self.arucoBoardUnits.keys())
 
         self.main_board_var = IntVar()
         self.main_board_choice_id = 0
@@ -632,7 +629,37 @@ class GUIApplication(threading.Thread):
             showinfo("Error", "Please choose some boards to merge with.")
 
     def mergeProcessFinished(self):
-        pass
+        """
+        Commands connector to finish the merge process.
+        :return:
+        """
+
+        self.connector.finishMerge()
+        while self.connector.getMergerBoards() is None: # stuck
+            time.sleep(0.1)
+            print("Attempting to get merger boards")
+        mergerBoards = self.connector.getMergerBoards()
+        newBoard = mergerBoards["merged_board"]
+        oldBoards = [mergerBoards["main_board"]] + mergerBoards["sub_boards"]
+        self.boardIndex.set(newBoard.ID)
+        self.setBoardIndexToDisplay()
+
+        for board in oldBoards:
+            self.removeBoardWidgetFromGUI(board)
+            self.removeBoardButton(board.ID)
+
+        self.addBoardWidgetToGUI(newBoard)
+        self.addBoardButton(newBoard)
+
+    def exportArucoBoard(self):
+        """
+        Adds an aruco board to the pushed boards list, to make it accessible to external objects.
+        :return: None
+        """
+
+        self.connector.addBoard(self.userBoard)
+        self.addBoardWidgetToGUI(self.userBoard)
+        self.addBoardButton(self.userBoard)
 
     def updateMergeProcessInfo(self, qualityList):
         '''
@@ -648,7 +675,6 @@ class GUIApplication(threading.Thread):
         image = Image.fromarray(image)
         image = ImageTk.PhotoImage(image)
         self.panel.config(image=image)
-        print("merge quality:" + str(qualityList))
 
         # Update the qualities.
         for sub_board_index, q in zip(self.sub_board_indicies, qualityList):
@@ -669,17 +695,15 @@ class GUIApplication(threading.Thread):
         for widg in self.cb_merger_frame.grid_slaves():
             widg.grid_forget()
         self._sub_board_checkbutton_states = dict()
+        self.cb_merger_frame.grid(row=2, column=1)
         for boardID in self.available_sub_boards:
             self._sub_board_checkbutton_state = BooleanVar()  # Variable to hold state of
             self._sub_board_checkbutton_state.set(False)
-            self._sub_board_checkbutton_states[boardID]  = self._sub_board_checkbutton_state
-        self.cb_merger_frame.grid(row=2, column=1)
-        for ABU in self.arucoBoardUnits:
-            if ABU.id is not value:
-                self._cb = Checkbutton(self.cb_merger_frame, text=str(ABU.id),  # str(self._id),
-                                       fg="black", variable=self._sub_board_checkbutton_states[ABU.id],
-                                       bg='#424242', width=12)  # Checkbutton
-                self._cb.grid(row=ABU.id)
+            self._sub_board_checkbutton_states[boardID] = self._sub_board_checkbutton_state
+            self._cb = Checkbutton(self.cb_merger_frame, text=str(boardID),  # str(self._id),
+                                   fg="black", variable=self._sub_board_checkbutton_states[boardID],
+                                   bg='#424242', width=12)  # Checkbutton
+            self._cb.grid(row=boardID)
 
     def applyCamList(self):
         '''
@@ -855,12 +879,26 @@ class GUIApplication(threading.Thread):
         self.addBoardButton(self.userBoard)
 
     def addBoardWidgetToGUI(self, board):
+        """
+        Adds a board widget
+        :param board:
+        :return:
+        """
         try:
             ABU = ArucoBoardUnit(board, self.boardlist_container)
-            self.arucoBoardUnits.append(ABU)
+            self.arucoBoardUnits[board.ID] = ABU
         except cv2.error as e:
             logging.error("Can't create that many boards, need to expand dictionary!")
             logging.error(str(e))
+
+    def removeBoardWidgetFromGUI(self, board):
+        """
+        Removes board from the GUI and from the arucoboardUnits-list.
+        :param board: The board to remove from GUI.
+        :return: None
+        """
+        self.arucoBoardUnits[board.ID].removeBoard()
+        del self.arucoBoardUnits[board.ID]
 
     def saveArucoPDF(self):
         '''
@@ -932,7 +970,10 @@ class GUIApplication(threading.Thread):
             self.boardPose_quality.set(0.0)
 
         if poses:
-            evec, tvec = poses[boardIndex]
+            try:
+                evec, tvec = poses[boardIndex]
+            except KeyError:
+                return
             logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
             if tvec is not None:
                 x, y, z = tvec
@@ -1020,7 +1061,7 @@ class GUIApplication(threading.Thread):
         resetExtrinsic: Command to reset extrinsic matrices of cameras.
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
-        doPreview: Return whether to previuew a frame from a camera in the VECU GUI section.
+        doPreview: Return whether to preview a frame from a camera in the VECU GUI section.
         """
         cameraIndex = None
         boardIndex = None
@@ -1089,7 +1130,7 @@ class GUIApplication(threading.Thread):
                 if doPrev:
                     id = VECU.getIndex()
                     return id
-            
+
     def setPreviewStatus(self, index):
         '''
         Takew commands from VECU and organise so image preview is happening.
@@ -1147,34 +1188,29 @@ class GUIApplication(threading.Thread):
         Adds a radio button to the board list in the side panel.
         :return: None
         """
-        i = len(self.boardButtonList)
         id = userBoard.ID
-        if len(self.boardButtonList) <= (id + 1): # If the list is longer than than the board index to add + 1, then the board is already added!
-            buttonText = "Board " + str(i)
-            button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
-                                    command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=i)
-            self.boardButtonList.append(button)
-            self.boardButtonList[-1].pack()
+        buttonText = "Board " + str(id)
+        if id in self.boardButtons:
+            logging.error("Attemptet to add board that already existed in list.")
+            return
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
+                                    command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
+        self.boardButtons[id] = button
+        self.boardButtons[id].pack()
+
+    def removeBoardButton(self, boardID):
+        """
+        Removes a radio button from the board list in the side panel and from the board button dictionnary
+        :param boardID: Identifier of board and button that should be removed
+        :return:None
+        """
+        self.boardButtons[boardID].pack_forget()
+        del self.boardButtons[boardID]
 
     def setBoardIndexToDisplay(self):
         #TODO: Can be called directly from radiobutton.
         boardIndex = self.boardIndex.get()
         self.connector.setBoardIndex(boardIndex)
-
-    def addCameraButton(self):
-        #TODO: Not used. Remove?
-        """
-        Adds a radio button to the camera list in the side panel.
-        :return: None
-        """
-        i = len(self.boardButtonList)
-        if i not in self.cameraButtonIndexList:
-            buttonText = "Camera " + str(i)
-            button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
-                                    value=i, bg='#424242', fg='orange')
-            self.cameraButtonList.append(button)
-            self.cameraButtonIndexList.append(i)
-            self.cameraButtonList[-1].pack()
 
     def updateCamlist(self, VElist):
         """

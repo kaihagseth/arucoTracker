@@ -4,6 +4,7 @@ import exceptions as exc
 from VisionEntityClasses.Camera import Camera
 from VisionEntityClasses.helperFunctions import *
 import logging
+import copy
 
 
 class VisionEntity:
@@ -225,14 +226,13 @@ class VisionEntity:
         :return: None
         """
         # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
-        w, h = board.getGridBoardSize()
         detectedBoardIds = None
         boardIds = np.reshape(board.getIds(), -1)#set(board.getIds())
         detectedBoardIds = np.array([])
         if self.__ids is not None:
             detectedIds = np.reshape(self.__ids, -1)
             detectedBoardIds = np.intersect1d(boardIds, detectedIds)
-        total_marker_count = w * h
+        total_marker_count = board.getMarkerCount()
         self._detection_quality[board.ID] = detectedBoardIds.size / total_marker_count
         return None
         #7print(self.__cameraToModelMatrix)
@@ -260,7 +260,8 @@ class VisionEntity:
         """
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
-        for matrix in self.__cameraToModelMatrices.values():
+        matrices = list(self.__cameraToModelMatrices.values())
+        for matrix in matrices:
             if matrix is not None:
                 rvec, tvec = transMatrixToRvecTvec(matrix)
                 image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
@@ -301,7 +302,7 @@ class VisionEntity:
         :param boards: The board to add to tracking list.
         :return: None
         """
-        if isinstance(boards,dict):
+        if isinstance(boards, dict):
             for board in boards.values():
                 self.__cameraToModelMatrices[board.ID] = None
                 self._detection_quality[board.ID] = 0
