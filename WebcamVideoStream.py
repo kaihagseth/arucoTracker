@@ -1,7 +1,7 @@
 # import the necessary packages
 from threading import Thread
 import threading
-import cv2
+import cv2, logging
 
 
 class WebcamVideoStream:
@@ -19,7 +19,7 @@ class WebcamVideoStream:
     def start(self):
         # start the thread to read frames from the video stream
         Thread(target=self.update, name=self.threadname, args=()).start()
-        print(threading.current_thread().name, " starting")
+        logging.info(threading.current_thread().name, " starting")
         return self
 
     def update(self):
@@ -33,7 +33,7 @@ class WebcamVideoStream:
             (self.grabbed, self.frame) = self.stream.read()
             print(self.frame)
             if self.grabbed is False:
-                print("Not successfull capture.")
+                logging.error("Not successfull capture.")
 
     def read(self):
         # return the frame most recently read

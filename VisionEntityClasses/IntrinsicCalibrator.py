@@ -60,9 +60,9 @@ def calibCam(self, frames, showCalibration=False, cb_square_size=1):
             cv2.destroyAllWindows()
         '''Do the calibration:'''
         if not objpoints:
-            print('Objpoints is none!')
+            logging.error('Objpoints is none!')
         if not imgpoints:
-            print('Imgpoints is none!')
+            logging.error('Imgpoints is none!')
         logging.info('Starting calibration with ' + str(len(imgpoints)) + ' valid frames')
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
         h, w = img.shape[:2]
@@ -70,7 +70,7 @@ def calibCam(self, frames, showCalibration=False, cb_square_size=1):
         '''Update class with latest numbers.'''
         camera_parameters = {'mtx': mtx, 'ret': ret, 'dist': dist, 'rvecs': rvecs, 'tvecs': tvecs,
                              'newcameramtx': newcameramtx, 'roi': roi}
-        print('Calibration done')
+        logging.info('Calibration done')
         return camera_parameters
     except IndexError:
         pass#cv2.error as e:
@@ -78,8 +78,8 @@ def calibCam(self, frames, showCalibration=False, cb_square_size=1):
       #  print('MSG: ', e)
        # raise FailedCalibrationException(msg=e)
     except cv2.error as e:
-        print('OpenCV failed. ')
-        print('MSG: ', e)
+        logging.error('OpenCV failed. ')
+        logging.error('MSG: ', e)
         raise FailedCalibrationException(msg=e)
 
 
@@ -121,5 +121,5 @@ def videoCalibration(videoName, debug=False):
         ret, image = video_capture.read()
     frames = np.array(frames)[1::6]
     if debug:
-        print('Videocalibration starting with ' + str(len(frames)) + ' frames')
+        logging.debug('Videocalibration starting with ' + str(len(frames)) + ' frames')
     return calibCam(frames, debug)

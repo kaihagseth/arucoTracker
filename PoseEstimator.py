@@ -86,12 +86,11 @@ class PoseEstimator():
         '''
         logging.info('Starting runPoseEstimator()')
         for VE in self.VisionEntityList:
-            print('VE start')
+            logging.info('VE start')
             VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             logging.debug('Passing thread creation.')
-            print()
-            print('ThreadInfoList: ', self.threadInfoList)
+            logging.debug('ThreadInfoList: ', self.threadInfoList)
             th.start()
 
     def removeVEFromListByIndex(self, index):
@@ -148,7 +147,7 @@ class PoseEstimator():
         :param camID: OpenCV camera ID
         :return: Vision entity to be returned.
         """
-        print("Print in 'getVEbyID': Length of VE-list: "+ str(len(self.VisionEntityList)))
+        logging.info("Length of VE-list: "+ str(len(self.VisionEntityList)))
         for VE in self.VisionEntityList:
             cam = VE.getCam()
             if cam._src is camID:
@@ -339,7 +338,7 @@ class PoseEstimator():
         :param board: arucoboard to track
         :return: None
         """
-        logging.debug("attempting to add board to vision entities")
+        logging.debug("Attempting to add board to vision entities")
         key = board.ID
         self._arucoBoards[key] = board
         for ve in self.getVisionEntityList():
@@ -352,12 +351,12 @@ class PoseEstimator():
         :param board: The board to be removed
         :return: None
         """
-        logging.debug("attempting to remove board from vision entities")
+        logging.debug("Attempting to remove board from vision entities")
         key = board.ID
         del self._arucoBoards[key]
         for ve in self.getVisionEntityList():
             ve.removeBoard(board)
-            logging.debug("board added to vision entity")
+            logging.debug("Board removed")
 
     def getBoards(self):
         """

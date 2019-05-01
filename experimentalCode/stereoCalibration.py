@@ -1,4 +1,4 @@
-import cv2
+import cv2, logging
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -28,7 +28,7 @@ def repackCorners(board, ids):
         i = 0
         for corner in square[0]:
             corners[index + i] = corner
-            print(corners)
+            logging.info(corners)
             i += 1
     return corners
 

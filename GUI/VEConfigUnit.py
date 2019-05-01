@@ -55,7 +55,7 @@ class VEConfigUnit(Thread):
         logging.info(value)
         # First two letters/numbers of string is the new label for camera.
         callname = value[:2]
-        print("New callname: " + callname)
+        logging.info("New callname: " + callname)
         self._VE.setCameraLabelAndParameters(callname)
     def run(self):
         # Pack everything in container

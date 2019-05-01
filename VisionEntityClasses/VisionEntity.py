@@ -133,7 +133,7 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
-        print("This message should only pop up once or twice")
+        logging.info("This message should only pop up once or twice")
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
@@ -242,8 +242,8 @@ class VisionEntity:
         if CToMMatrix is not None:
             z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
             z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
-            print("Z1: ", z1)
-            print("Z2: ", z2)
+            logging.debug("Z1: ", z1)
+            logging.debug("Z2: ", z2)
             msg1 = CToMMatrix
             logging.debug(msg1)
             q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))

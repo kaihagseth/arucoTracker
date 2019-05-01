@@ -164,7 +164,7 @@ class Connector(Thread):
         self.setCollectGUIVEs(True) # Ready to be included
 
     def setGUIupdaterFunction(self, updaterFX):
-        logging.info("GUIupdaterFx IS SET!")
+        logging.info("GUIupdaterFx is set!")
         self.GUIupdaterFunction = updaterFX
 
     def setGUIStreamerFunction(self, streamerFX):
@@ -185,7 +185,7 @@ class Connector(Thread):
         """"""
         This is NOT a connector function. It's just a connector variable that keeps a reference 
         to GUIApplication function!  This variable is given a function in 'setGUIupdaterFunction'"""
-        logging.debug("Running updateFields in Connector")
+        #logging.debug("Running updateFields in Connector")
         self.GUIupdaterFunction(poses, frame, boardPose_quality)
 
     def removeVEFromPEListByIndex(self, camID):

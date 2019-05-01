@@ -625,8 +625,12 @@ class GUIApplication(threading.Thread):
             showinfo("Error", "Please choose some boards to merge with.")
 
     def mergeProcessFinished(self):
-        pass
-
+        '''
+        Finish up the merge-window, store the values, change the mergeview etc.
+        :return: None
+        '''
+        # Close the window.
+        self.merge_window.destroy()
     def updateMergeProcessInfo(self, qualityList):
         '''
         Update the merge process image and the board qualitys.
@@ -776,8 +780,8 @@ class GUIApplication(threading.Thread):
         cv2.imwrite('images/frame%d.jpg' % self.counter, self.imageFrame)
 
     def changeCameraID(self, camid):
-        print("CHANGING CAMERA ID: Camid to shift to", camid)
-        print("Previous camid: ", self.camIDInUse)
+        logging.info("CHANGING CAMERA ID: Camid to shift to", camid)
+        logging.info("Previous camid: ", self.camIDInUse)
         self.camIDInUse = camid
 
     def doAbortApp(self):
@@ -921,7 +925,6 @@ class GUIApplication(threading.Thread):
         :param frame: The frame to display in camera view.
         :return: None
         """
-        logging.info("UPDATING GUI FIELDS")
         self.modelPoses = poses
         self.imageFrame = frame
         boardIndex = self.boardIndex.get()
@@ -932,7 +935,7 @@ class GUIApplication(threading.Thread):
 
         if poses:
             evec, tvec = poses[boardIndex]
-            logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
+            #logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
             if tvec is not None:
                 x, y, z = tvec
                 sum_x = 0.0
@@ -961,7 +964,7 @@ class GUIApplication(threading.Thread):
                 self.x_value.set(round(sum_x / len(self.x_value_list),2))
                 self.y_value.set(round(sum_y / len(self.y_value_list),2))
                 self.z_value.set(round(sum_z / len(self.z_value_list),2))
-                logging.debug("Updating tvec")
+                #logging.debug("Updating tvec")
             else:
                 #self.x_label.config(text=str(0.00))
                 #self.y_label.config(text=str(0.00))
@@ -1045,7 +1048,6 @@ class GUIApplication(threading.Thread):
 #        logging.debug(msg)
         if self.__doPreviewIndex is not -1 and self.__doPreviewIndex is not None:
             #Activate thread for showing prev image TODO: Use threading
-            print("Inside")
             self.showPreviewImage(self.__doPreviewIndex)
         elif self.imgHolder.image is not None:
             self.imgHolder.configure(image='')
@@ -1116,7 +1118,7 @@ class GUIApplication(threading.Thread):
         :param index: Index of cam to preview
         :return: None
         '''
-        print("Index to preview:", index)
+        logging.debug("Index to preview:", index)
         if index is not -1 and index is not None:
             try:
                 VECU = self.getVECUByIndex(index)
