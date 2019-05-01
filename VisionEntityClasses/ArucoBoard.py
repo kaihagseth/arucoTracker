@@ -40,13 +40,6 @@ class ArucoBoard:
         """
         return transMatrixToRvecTvec(self._transformationMatrix)
 
-    def getTransformationMatrix(self):
-        """
-        Retuns board pose transformation matrix
-        :return: board pose transformation matrix
-        """
-        return self._transformationMatrix
-
     def updateBoardPose(self):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
@@ -155,3 +148,10 @@ class ArucoBoard:
         points
         """
         return copy.copy(self._board.objPoints)
+
+    def getTransformationMatrix(self):
+        """
+        Returns a copy of this boards transformation matrix
+        :return: A homogenous transformation matrix describing this boards relation to world
+        """
+        return  copy.copy(self._transformationMatrix)

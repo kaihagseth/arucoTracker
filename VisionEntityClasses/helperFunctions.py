@@ -120,7 +120,7 @@ def findCosineToBoard(cameraToBoardTransformation):
     :param transformationMatrix:
     :return:
     """
-    z3 = cameraToBoardTransformation[2,2]
+    z3 = cameraToBoardTransformation[2, 2]
     cosineToBoard = -z3
     return cosineToBoard
 
