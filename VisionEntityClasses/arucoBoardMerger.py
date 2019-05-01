@@ -11,12 +11,12 @@ class Merger:
     each of the sub boards.
     """
     def __init__(self, dictionary, main_board=None, sub_boards=None):
-        print("Merger initializing")
         self.main_board = main_board
         self.sub_boards = sub_boards
         self.running = False
         self.dictionary = dictionary
         self.mergedBoard = None
+        self.displayFunction = None
 
     def mergerCostFunction(self, transformationmatrices):
         """
@@ -27,7 +27,7 @@ class Merger:
         minCos = 0
         for matrix in transformationmatrices:
             minCos = min(minCos, findCosineToBoard(matrix))
-        weight = np.power(10, minCos*10)
+        weight = np.power(10, minCos)
         return weight
 
     def mergeBoards(self):
@@ -51,14 +51,18 @@ class Merger:
         :return: None
         """
         while self.running:
-            if self.main_board.transformationMatrix is not None:
+            main_trans_matrix = self.main_board.getTransformationMatrix()
+            if main_trans_matrix is not None:
                 for sub_board in self.sub_boards:
-                    if sub_board.transformationMatrix is not None:
-                        link_matrix = invertTransformationMatrix(self.main_board.transformationMatrix) * \
-                                                    sub_board.transformationMatrix
-                        weight = self.mergerCostFunction([self.main_board.transformationMatrix,
-                                                          sub_board.transformationMatrix])
+                    sub_trans_matrix = sub_board.getTransformationMatrix()
+                    if sub_trans_matrix is not None:
+                        link_matrix = invertTransformationMatrix(main_trans_matrix) * \
+                                                    sub_trans_matrix
+                        weight = self.mergerCostFunction([main_trans_matrix,
+                                                          sub_trans_matrix])
                         sub_board.meanTransformationMatrixFinder.update(link_matrix, weight)
+            if self.displayFunction:
+                self.displayFunction(self.getQualityList())
             time.sleep(.1)
 
     def startMerge(self):
@@ -71,7 +75,6 @@ class Merger:
             sub_board.link_matrix = None
             sub_board.meanTransformationMatrixFinder = IterativeMeanTransformationFinder()
         self.running = True
-        print("Starting merger thread")
         th = threading.Thread(target=self.runMerge)
         th.start()
 
@@ -103,3 +106,11 @@ class Merger:
         :return: Main board followed by sub boards in a single list.
         """
         return [self.main_board] + self.sub_boards
+
+    def setDisplayFunction(self, dispFX):
+        """
+        Sets the display function to use for diplaying this mergers quality list.
+        :param dispFX:
+        :return: None
+        """
+        self.displayFunction = dispFX

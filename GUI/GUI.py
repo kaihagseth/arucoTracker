@@ -8,6 +8,8 @@ from tkinter.messagebox import showinfo
 
 import cv2
 import ttkthemes
+import copy
+import itertools
 from PIL import ImageTk, Image
 
 from GUI import GUIDataPlotting
@@ -545,7 +547,7 @@ class GUIApplication(threading.Thread):
 
     def doMerging(self):
         '''
-        Create a popup window who handles merging between boards.
+        Create a popup window who handles mergingbetween boards.
         '''
         self.merge_window = Toplevel()
         self.merge_window.title("Merge boards")
@@ -566,18 +568,17 @@ class GUIApplication(threading.Thread):
         self.intro_text.grid(column=0, row=0, columnspan=2)
         self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg='#424242',fg="white", height=5)
         self.main_cam_label.grid(column=0,row=1)
-        boardlist = []
+        self.boardIDlist = set()
         for ABU in self.arucoBoardUnits:
-            boardlist.append(ABU.id)
+            self.boardIDlist.add(ABU.id)
             logging.debug("Board added to boardlist in merging-window. ")
-        print(self.arucoBoardUnits)
-        print(boardlist)
+
         self.main_board_var = IntVar()
         self.main_board_choice_id = 0
-        self.main_cam_choice = OptionMenu(self.merge_frame, self.main_board_var, *boardlist, command=self.setMainMergerBoard)
-        self.main_cam_choice.config(bg="#424242", fg="white", highlightbackground='#424242')
-        self.main_cam_choice.setvar("Choose")
-        self.main_cam_choice.grid(row=1,column=1)
+        self.main_board_choice = OptionMenu(self.merge_frame, self.main_board_var, *self.boardIDlist, command=self.setMainMergerBoard)
+        self.main_board_choice.config(bg="#424242", fg="white", highlightbackground='#424242')
+        self.main_board_choice.setvar("Choose")
+        self.main_board_choice.grid(row=1, column=1)
         self.packer = Frame(self.merge_frame, bg='#424242',width=150, height=30)
         self.packer.grid(row=3, column=0, columnspan=2)
         self.abort_btn = Button(self.packer, text='Abort', bg='#424242', fg='white', command=self.merge_window.destroy)
@@ -587,7 +588,16 @@ class GUIApplication(threading.Thread):
         self.next_btn.pack(side=RIGHT,pady=10,padx=10)
 
     def doMergeProcess(self):
-        if True in self.boardsToMerge:
+        """
+
+        :return:
+        """
+        displayFX = self.updateMergeProcessInfo
+        main_board_index = self.main_board_var.get()
+        self.sub_board_indicies = list(itertools.compress(self.available_sub_boards, self._sub_board_checkbutton_states))
+
+        self.connector.startMerge(main_board_index, self.sub_board_indicies, displayFX)
+        if True in self._sub_board_checkbutton_states:
             # We can go further.
             self.merge_frame.pack_forget()
             self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
@@ -603,28 +613,28 @@ class GUIApplication(threading.Thread):
             self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
             self.info_frame.grid(row=0,column=1)
             Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+            self.mergeBoardProgressbarsList = dict()
             n = 0
-            self.mergeBoardProgressbarsList = [None, None, None, None, None, None, None, None, None]
-            for n, i in enumerate(self.boardsToMerge):
-                if i:
-                    #Show board.
-                    Label(self.info_frame, text=("Board "+str(n)), bg='#424242', fg='white').grid(row=n+1, column=0)
-                    pb = ttk.Progressbar(self.info_frame, value=0,maximum=100,orient="horizontal",length=100,mode="determinate")
-                    pb.grid(row=n+1, column=1)
-                    self.mergeBoardProgressbarsList[n] = pb
-
+            for n, board_index in enumerate(self.sub_board_indicies):
+                Label(self.info_frame, text=("Board " + str(board_index)), bg='#424242', fg='white').grid(row=n + 1, column=0)
+                pb = ttk.Progressbar(self.info_frame, value=0, maximum=100, orient="horizontal", length=100,
+                                     mode="determinate")
+                pb.grid(row=n + 1, column=1)
+                self.mergeBoardProgressbarsList[board_index] = pb
             self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
                                     command=self.merge_window.destroy)
-            self.finish_btn = Button(self.info_frame, text='Next', bg='#424242', fg='white', command=self.mergeProcessFinished)
+            self.finish_btn = Button(self.info_frame, text='Finish', bg='#424242', fg='white', command=self.mergeProcessFinished)
             # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
             self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
             self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
         else:
             #No boards to merge, must be an error or user fault.
             showinfo("Error", "Please choose some boards to merge with.")
+
     def mergeProcessFinished(self):
         pass
-    def updateMergeProcessInfo(self, prevImg, qualityList):
+
+    def updateMergeProcessInfo(self, qualityList):
         '''
         Update the merge process image and the board qualitys.
 
@@ -634,21 +644,23 @@ class GUIApplication(threading.Thread):
         :return: None
         '''
         # Set the image
-        self.merge_image = ImageTk.PhotoImage(prevImg)
-        self.panel.config(image=self.merge_image)
+        image = cv2.cvtColor(self.imageFrame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+        image = ImageTk.PhotoImage(image)
+        self.panel.config(image=image)
+        print("merge quality:" + str(qualityList))
 
         # Update the qualities.
-        for n, q in enumerate(qualityList):
-            if q is not -1:
-                # It's updated
-                self.mergeBoardProgressbarsList[n]["value"] = q
-            if n is 6:
-                break
+        for sub_board_index, q in zip(self.sub_board_indicies, qualityList):
+            pb = self.mergeBoardProgressbarsList[sub_board_index]
+            pb.config(value=q)
 
     def setMergerBoards(self):
         pass
 
     def setMainMergerBoard(self, value):
+        self.available_sub_boards = copy.copy(self.boardIDlist)
+        self.available_sub_boards.remove(self.main_board_var.get())
         logging.debug("Value: "+str(value))
         self.child_markers_label = Label(self.merge_frame, text="Markers to merge with:", fg="white",bg='#424242')
         self.child_markers_label.grid(row=2,column=0)
@@ -656,29 +668,18 @@ class GUIApplication(threading.Thread):
         self.cb_merger_frame = Frame(self.merge_frame)
         for widg in self.cb_merger_frame.grid_slaves():
             widg.grid_forget()
-        self._cb_v_list = []
-        for i in range(0, 10):
-            self._cb_v = BooleanVar()  # Variable to hold state of
-            self._cb_v.set(False)
-            self._cb_v_list.append(self._cb_v)
-        self.boardsToMerge = [False, False, False, False, False, False, False, False, False, False, False]
+        self._sub_board_checkbutton_states = dict()
+        for boardID in self.available_sub_boards:
+            self._sub_board_checkbutton_state = BooleanVar()  # Variable to hold state of
+            self._sub_board_checkbutton_state.set(False)
+            self._sub_board_checkbutton_states[boardID]  = self._sub_board_checkbutton_state
         self.cb_merger_frame.grid(row=2, column=1)
         for ABU in self.arucoBoardUnits:
             if ABU.id is not value:
                 self._cb = Checkbutton(self.cb_merger_frame, text=str(ABU.id),  # str(self._id),
-                                       fg="black", variable=self._cb_v_list[ABU.id], command=self.chkbox_checked,
+                                       fg="black", variable=self._sub_board_checkbutton_states[ABU.id],
                                        bg='#424242', width=12)  # Checkbutton
                 self._cb.grid(row=ABU.id)
-
-    def chkbox_checked(self):
-        i = 0
-        for cb_v in self._cb_v_list:
-            var = cb_v.get()
-            print(i)
-            self.boardsToMerge[i] = var
-            i += 1
-        logging.info("Boards to merge "+ str(self.boardsToMerge))
-        #self.boardsToMerge[value] = True
 
     def applyCamList(self):
         '''
@@ -1088,6 +1089,7 @@ class GUIApplication(threading.Thread):
                 if doPrev:
                     id = VECU.getIndex()
                     return id
+            
     def setPreviewStatus(self, index):
         '''
         Takew commands from VECU and organise so image preview is happening.
