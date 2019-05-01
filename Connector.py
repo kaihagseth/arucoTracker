@@ -60,7 +60,6 @@ class Connector(Thread):
                 logging.debug("startCommand received")
                 if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
                     self.PE.createVisionEntities()
-
                 else:
                     # Do nothing. VEs already initialised
                     pass
@@ -197,14 +196,15 @@ class Connector(Thread):
         """
         self.PE.removeVEFromListByIndex(camID)
 
-    def startMerge(self, main_board, sub_boards):
+    def startMerge(self, main_board_index, sub_boards_index, displayFx):
         """
         Starts merging of boards
         :param main_board: main board to merge
         :param sub_boards: sub boards to merge
+        :param displayFx: the function used to display board quality in UI
         :return:
         """
-        self.PE.startMerge(main_board, sub_boards)
+        self.PE.startMerge(main_board_index, sub_boards_index, displayFx)
 
     def finishMerge(self):
         """
@@ -212,7 +212,6 @@ class Connector(Thread):
         :return: None
         """
         self.PE.finishMerge()
-
 
 if __name__ == '__main__':
     # logging_setup()

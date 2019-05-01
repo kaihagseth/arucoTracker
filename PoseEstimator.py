@@ -365,15 +365,20 @@ class PoseEstimator():
         """
         return self._arucoBoards
 
-    def startMerge(self, main_board, sub_boards):
+    def startMerge(self, main_board_index, sub_boards_indeces, displayFx):
         """
         Starts a merger that will merge several arucoboards to one.
         :param main_board: The main board will be the reference the sub boards are connected to.
         :param sub_boards: The boards that will be merged into the main board.
         :return: None
         """
+        main_board = self.getBoards()[main_board_index]
+        sub_boards = []
+        for index in sub_boards_indeces:
+            sub_boards.append(self.getBoards()[index])
         self.merger = Merger(self.dictionary, main_board, sub_boards)
         self.merger.startMerge()
+        self.merger.setDisplayFunction(displayFx)
 
     def finishMerge(self):
         """
