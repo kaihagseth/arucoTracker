@@ -599,6 +599,7 @@ class GUIApplication(threading.Thread):
         except AssertionError as err:
             self.showErrorBox(err)
             return
+
         while self.connector.getMergerBoards() is None:
             time.sleep(0.1)
         mergerBoards = self.connector.getMergerBoards()
@@ -606,7 +607,7 @@ class GUIApplication(threading.Thread):
         oldBoards = [mergerBoards["main_board"]] + mergerBoards["sub_boards"]
         self.boardIndex.set(newBoard.ID)
         self.setBoardIndexToDisplay()
-
+        self.merge_window.destroy()
         for board in oldBoards:
             self.removeBoardWidgetFromGUI(board)
             self.removeBoardButton(board.ID)
@@ -637,7 +638,8 @@ class GUIApplication(threading.Thread):
         image = cv2.cvtColor(self.imageFrame, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         image = ImageTk.PhotoImage(image)
-        self.panel.config(image=image)
+        self.panel.configure(image=image)
+        self.panel.image = image
 
         # Update the qualities.
         for sub_board_index, q in zip(self.sub_board_indicies, qualityList):
@@ -937,9 +939,9 @@ class GUIApplication(threading.Thread):
             except KeyError:
                 return
             logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
+
             if tvec is not None:
                 x, y, z = tvec
-
                 sum_x = 0.0
                 sum_y = 0.0
                 sum_z = 0.0
@@ -949,7 +951,6 @@ class GUIApplication(threading.Thread):
                 self.x_value_list.append(x)
                 self.y_value_list.append(y)
                 self.z_value_list.append(z)
-                self.runGraph(x,y,z,self.graph_frame)
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:

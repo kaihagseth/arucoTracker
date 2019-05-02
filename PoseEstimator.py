@@ -190,9 +190,13 @@ class PoseEstimator():
                     board.setFirstBoardPosition(ve)
                     board.setTrackingEntity(ve)
             board.setTrackingEntity(self.chooseMasterCam(board))
-            tracking_entity = copy.copy(board.getTrackingEntity()) # FIXME: Remove copy if it did not fix crash
-            if tracking_entity is not None and tracking_entity.getPoses() is not None:
-                board.updateBoardPose()
+            tracking_entity = board.getTrackingEntity() # FIXME: Remove copy if it did not fix crash
+            if tracking_entity:
+                te_poses = copy.copy(tracking_entity.getPoses())
+                board.updateBoardPose(te_poses[board.ID])
+            else:
+                board.updateBoardPose(None)
+
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if tracking_entity is None:

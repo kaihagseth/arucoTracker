@@ -43,18 +43,22 @@ class ArucoBoard:
         """
         return transMatrixToRvecTvec(self._transformationMatrix)
 
-    def updateBoardPose(self):
+    def updateBoardPose(self, camera_to_model_transformation):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
         # FIXME: Sometimes causes crashes when ve loses sight of board?
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID]
-        world_to_camera_transformation = self._tracking_ve.getCameraPose()
-        world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
-        self._transformationMatrix = world_to_model_transformation
-        self.setPoseQuality(self.calculatePoseQuality())
+        if camera_to_model_transformation is None:
+            self._transformationMatrix = None
+            self.setPoseQuality(0)
+            return
+        else:
+            world_to_camera_transformation = self._tracking_ve.getCameraPose()
+            world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
+            self._transformationMatrix = world_to_model_transformation
+            self.setPoseQuality(self.calculatePoseQuality())
 
     def setFirstBoardPosition(self, ve):
         """

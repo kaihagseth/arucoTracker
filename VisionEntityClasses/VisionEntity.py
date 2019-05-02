@@ -44,9 +44,12 @@ class VisionEntity:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
-            for board in boards.values():
-                logging.debug("Estimating pose for board "+ str(board.ID))
-                self.estimatePose(board)
+            try:
+                for board in boards.values():
+                    self.estimatePose(board)
+            except RuntimeError as err:
+                logging.error(err)
+                pass
         self.terminate()
 
     def calibrateCameraWithTool(self):
@@ -261,14 +264,14 @@ class VisionEntity:
         Returns pose from private fields.
         :return: Transformation matrix from camera to model
         """
-        return self.__cameraToModelMatrices
+        return copy.copy(self.__cameraToModelMatrices)
 
     def getCameraPose(self):
         """
         Returns homogenous camera extrinsic matrix
         :return: Rotation and translation vectors for cameras pose.
         """
-        return self._cameraPoseMatrix
+        return copy.copy(self._cameraPoseMatrix)
 
     def getCornerDetectionAttributes(self):
         """
