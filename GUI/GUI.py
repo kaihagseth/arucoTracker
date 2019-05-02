@@ -4,7 +4,8 @@ import tkinter as tk
 from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
-from tkinter.messagebox import showinfo
+import traceback
+from tkinter.messagebox import showinfo, showerror
 
 import cv2
 import ttkthemes
@@ -549,6 +550,13 @@ class GUIApplication(threading.Thread):
         '''
         Create a popup window who handles mergingbetween boards.
         '''
+        try:
+            self.boardIDlist = set(self.arucoBoardUnits.keys())
+            assert (len(self.boardIDlist) > 1), "You need at least 2 boards in order to initialize a merge"
+            assert self.imageFrame is not None, "Camera feed needs to be running before merging."
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
         self.merge_window = Toplevel()
         self.merge_window.title("Merge boards")
         self.merge_topframe = Frame(self.merge_window, bg='#424242')
@@ -568,7 +576,6 @@ class GUIApplication(threading.Thread):
         self.intro_text.grid(column=0, row=0, columnspan=2)
         self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg='#424242',fg="white", height=5)
         self.main_cam_label.grid(column=0,row=1)
-        self.boardIDlist = set(self.arucoBoardUnits.keys())
 
         self.main_board_var = IntVar()
         self.main_board_choice_id = 0
@@ -586,58 +593,60 @@ class GUIApplication(threading.Thread):
 
     def doMergeProcess(self):
         """
-
-        :return:
+        Opens the merge window and starts the merging process
+        :return: None
         """
+        check_button_states = self.getCheckButtonList(self._sub_board_checkbutton_states)
+        try:
+            assert True in check_button_states.values(), "Please select at least one board to merge with."
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
         displayFX = self.updateMergeProcessInfo
         main_board_index = self.main_board_var.get()
-        self.sub_board_indicies = list(itertools.compress(self.available_sub_boards, self._sub_board_checkbutton_states))
-
+        self.sub_board_indicies = [ key for key in self.available_sub_boards if check_button_states[key]]
         self.connector.startMerge(main_board_index, self.sub_board_indicies, displayFX)
-        if True in self._sub_board_checkbutton_states:
-            # We can go further.
-            self.merge_frame.pack_forget()
-            self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
-            self.mergeprocess_frame.pack()
-            # Add image showing the merge process, to be updated
-            self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
-            self.image_frame.grid(row=0,column=0)
-            self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
-            self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
-            self.panel.grid(row=0,column=0)
+        self.merge_frame.pack_forget()
+        self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
+        self.mergeprocess_frame.pack()
+        # Add image showing the merge process, to be updated
+        self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
+        self.image_frame.grid(row=0,column=0)
+        self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
+        self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
+        self.panel.grid(row=0,column=0)
 
-            # Show merge quality and some options
-            self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
-            self.info_frame.grid(row=0,column=1)
-            Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
-            self.mergeBoardProgressbarsList = dict()
-            n = 0
-            for n, board_index in enumerate(self.sub_board_indicies):
-                Label(self.info_frame, text=("Board " + str(board_index)), bg='#424242', fg='white').grid(row=n + 1, column=0)
-                pb = ttk.Progressbar(self.info_frame, value=0, maximum=100, orient="horizontal", length=100,
-                                     mode="determinate")
-                pb.grid(row=n + 1, column=1)
-                self.mergeBoardProgressbarsList[board_index] = pb
-            self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
-                                    command=self.merge_window.destroy)
-            self.finish_btn = Button(self.info_frame, text='Finish', bg='#424242', fg='white', command=self.mergeProcessFinished)
-            # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
-            self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
-            self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
-        else:
-            #No boards to merge, must be an error or user fault.
-            showinfo("Error", "Please choose some boards to merge with.")
+        # Show merge quality and some options
+        self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
+        self.info_frame.grid(row=0,column=1)
+        Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+        self.mergeBoardProgressbarsList = dict()
+        n = 0
+        for n, board_index in enumerate(self.sub_board_indicies):
+            Label(self.info_frame, text=("Board " + str(board_index)), bg='#424242', fg='white').grid(row=n + 1, column=0)
+            pb = ttk.Progressbar(self.info_frame, value=0, maximum=1, orient="horizontal", length=100,
+                                 mode="determinate")
+            pb.grid(row=n + 1, column=1)
+            self.mergeBoardProgressbarsList[board_index] = pb
+        self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
+                                command=self.merge_window.destroy)
+        self.finish_btn = Button(self.info_frame, text='Finish', bg='#424242', fg='white', command=self.mergeProcessFinished)
+        # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+        self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
+        self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
 
     def mergeProcessFinished(self):
         """
         Commands connector to finish the merge process.
         :return:
         """
-
-        self.connector.finishMerge()
-        while self.connector.getMergerBoards() is None: # stuck
+        try:
+            self.connector.finishMerge() #TODO: Check that all sub boards has a quality attached to it.
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
+        while self.connector.getMergerBoards() is None:
             time.sleep(0.1)
-            print("Attempting to get merger boards")
         mergerBoards = self.connector.getMergerBoards()
         newBoard = mergerBoards["merged_board"]
         oldBoards = [mergerBoards["main_board"]] + mergerBoards["sub_boards"]
@@ -741,7 +750,6 @@ class GUIApplication(threading.Thread):
             self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
             self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
             self.updateCamlist(self.VEsToSend)
-        #self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
 
     def setCameraIndex(self):
         cameraIndex = self.__displayedCameraIndex.get()
@@ -1301,4 +1309,24 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         button.lift()
+
+    def showErrorBox(self, err):
+        """
+        Displays an error in a pop up box
+        :param args: The traceback to the error to display
+        :return: None
+        """
+        print(err)
+        showerror(title='Error', message=err)
+
+    def getCheckButtonList(self, varList):
+        """
+        Takes a list of tkinter Var-variables and creates a new list of the datatype stored
+        :param list: the list to get
+        :return: A list of output variables
+        """
+        outputList = dict()
+        for key, var in varList.items():
+            outputList[key] = var.get()
+        return outputList
 

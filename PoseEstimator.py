@@ -19,7 +19,7 @@ class PoseEstimator():
     Collect pose and info from all cameras, and find the best estimated pose possible.
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-    QTHRESHOLD = 1  # How good the quality of the first frame has to be in order to be set as the first camera
+    QTHRESHOLD = 0.8  # How good the quality of the first frame has to be in order to be set as the first camera
     def __init__(self):
         self.VisionEntityList = []  # List for holding VEs
         self.threadInfoList = []  # List for reading results from VEs.
@@ -190,7 +190,7 @@ class PoseEstimator():
                     board.setFirstBoardPosition(ve)
                     board.setTrackingEntity(ve)
             board.setTrackingEntity(self.chooseMasterCam(board))
-            tracking_entity = board.getTrackingEntity()
+            tracking_entity = copy.copy(board.getTrackingEntity()) # FIXME: Remove copy if it did not fix crash
             if tracking_entity is not None and tracking_entity.getPoses() is not None:
                 board.updateBoardPose()
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
@@ -210,7 +210,7 @@ class PoseEstimator():
         :return:list of tuples of tuple Nx2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
         """
         poses = dict()
-        logging.debug("Length of aruco list: " +str(len(self._arucoBoards)))
+        logging.debug("Length of aruco list: " + str(len(self._arucoBoards)))
         for board in self._arucoBoards.values():
             try:
                 rvec, tvec = board.getRvecTvec()
@@ -391,8 +391,7 @@ class PoseEstimator():
         :return: None
         """
         print("Finishing merge in pose estimator")
-        if self.merger is None or not self.merger.running:
-            logging.error("Attempted to finish merge while no merger was running")
+        assert not self.merger is None or not self.merger.running, "Attempted to finish merge while no merger was running"
         self.merger.finishMerge()
         merger_boards = self.merger.getBoards()
         boardsToRemove = [merger_boards["main_board"]] + merger_boards["sub_boards"]

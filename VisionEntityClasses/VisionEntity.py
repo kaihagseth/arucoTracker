@@ -212,44 +212,32 @@ class VisionEntity:
     def estimatePose(self, board):
         """
         Estimates pose and saves pose to object field
-        :param board: Board yo estimate
+        :param board: Board to estimate
         :return: None
         """
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                     self.intrinsic_matrix, self.getDistortionCoefficients())
-        self.setModelPoseQuality(board)
         self.__cameraToModelMatrices[board.ID] = rvecTvecToTransMatrix(rvec, tvec)
+        self.setModelPoseQuality(board)
+
 
     def setModelPoseQuality(self, board):
         """
         Calculates the quality of the current pose estimation between the camera and the model
         :return: None
         """
-        # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
-        detectedBoardIds = None
-        boardIds = np.reshape(board.getIds(), -1)#set(board.getIds())
+        boardIds = np.reshape(board.getIds(), -1)
         detectedBoardIds = np.array([])
         if self.__ids is not None:
             detectedIds = np.reshape(self.__ids, -1)
             detectedBoardIds = np.intersect1d(boardIds, detectedIds)
         total_marker_count = board.getMarkerCount()
-        self._detection_quality[board.ID] = detectedBoardIds.size / total_marker_count
-        return None
-        #7print(self.__cameraToModelMatrix)
-        #print("Cam index: ", self._camera.getSrc())
-        CToMMatrix = self.__cameraToModelMatrices[board.ID]
-        if CToMMatrix is not None:
-            z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
-            z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
-            print("Z1: ", z1)
-            print("Z2: ", z2)
-            msg1 = CToMMatrix
-            logging.debug(msg1)
-            q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
-            msg = "Q: ", q
-            logging.debug(msg)
-        else:
-            logging.error("__cameraToModelMatrix not set.")
+        try:
+            self._detection_quality[board.ID] = (detectedBoardIds.size / total_marker_count) * \
+                                                findCosineToBoard(self.__cameraToModelMatrices[board.ID])
+        except TypeError:
+            self._detection_quality[board.ID] = 0
+
 
     def drawAxis(self):
         """
