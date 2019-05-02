@@ -353,13 +353,13 @@ class GUIApplication(threading.Thread):
         self.btn_plot.pack(side=LEFT)
         self.btn_plot.configure(background='#665959',disabledforeground='#911515',foreground='#FFFFFF')
         self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.runGraph(),self.hideButton(self.btn_plot)), height=2, width=7)
+        self.btn_plot.configure(command=lambda: (self.runGraph()), height=2, width=7)
 
         self.stop_pressed = False
         self.btn_save =  tk.Button(self.btn_frame_4)
         self.btn_save.pack(side=RIGHT)
         self.btn_save.configure(foreground='#FFFFFF', text='Stop',disabledforeground='#911515',background='#665959')
-        self.btn_save.configure(command=lambda: self.showButton(self.btn_plot), height=2, width=7)
+        self.btn_save.configure(command=lambda: (self.pauseGraph()),height=2, width=7)
 
 
 
@@ -899,7 +899,6 @@ class GUIApplication(threading.Thread):
                 self.x_value_list.append(x)
                 self.y_value_list.append(y)
                 self.z_value_list.append(z)
-                self.runGraph(x,y,z,self.graph_frame)
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:
@@ -1159,9 +1158,14 @@ class GUIApplication(threading.Thread):
         def update(frame):
             elapsed_time = time.time() - start_time
             t_data.append(elapsed_time)
-            x_data.append(self.x_graph)
-            y_data.append(self.y_graph)
-            z_data.append(self.z_graph)
+            if self.x_graph and self.y_graph and self.z_graph is not None:
+                x_data.append(self.x_graph)
+                y_data.append(self.y_graph)
+                z_data.append(self.z_graph)
+            else:
+                x_data.append(0.0)
+                y_data.append(0.0)
+                z_data.append(0.0)
             line.set_data(t_data, x_data)
             line2.set_data(t_data, y_data)
             line3.set_data(t_data, z_data)
@@ -1173,16 +1177,17 @@ class GUIApplication(threading.Thread):
         self.ax[1].set_ylabel('Y')
         self.ax[2].set_ylabel('Z')
         self.ax[2].set_xlabel('Time (s)')
-        self.animation = FuncAnimation(figure, update, interval=100)
+        self.animation = FuncAnimation(figure, update, interval=10)
 
-        def _pause(self,event):
-            if self.stop_pressed:
-                self.animation.event_source.stop()
-                self.stop_pressed = False
-            else:
-                self.animation.event_source.start()
-                self.stop_pressed = True
         plt.show()
+
+    def pauseGraph(self):
+        if self.stop_pressed:
+            self.animation.event_source.stop()
+            self.stop_pressed = False
+        else:
+            self.animation.event_source.start()
+            self.stop_pressed = True
 
     def hideButton(self, button):
         '''
