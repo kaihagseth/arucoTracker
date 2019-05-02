@@ -256,18 +256,6 @@ class GUIApplication(threading.Thread):
         self.boardlist_container = Frame(self.page_3)
         self.boardlist_container.config(padx='10',pady='10',bg='#424242')
         self.boardlist_container.pack(side=BOTTOM)
-        #board = arucoBoard(3, 3, 40, 5)
-        #ABU = ArucoBoardUnit(board,self.boardlist_container)
-        #self.arucoBoardUnits.append(ABU)
-        #board1 = arucoBoard(3, 3, 40, 5)
-        #ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
-        #self.arucoBoardUnits.append(ABU1)
-        #board2 = arucoBoard(3, 3, 40, 5)
-        #ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
-        #self.connector.PE.addBoard(board)
-        #self.connector.PE.addBoard(board1)
-        #self.connector.PE.addBoard(board2)
-        #self.arucoBoardUnits.append(ABU2)
         self.boardimgs = []
         self.boardimgages = [None,None,None,None,None,None,None,None,None]
         self.page_3_label_frame = Frame(self.page_3_frame, bg='#424242')
@@ -360,21 +348,17 @@ class GUIApplication(threading.Thread):
         # Buttons in graph page
         self.btn_frame_4 = Frame(self.page_4_frame)
         self.btn_frame_4.pack()
-
+        self.start_pressed = False
         self.btn_plot = tk.Button(self.btn_frame_4)
         self.btn_plot.pack(side=LEFT)
-        self.btn_plot.configure(background='#665959')
-        self.btn_plot.configure(disabledforeground='#911515')
-        self.btn_plot.configure(foreground='#FFFFFF')
+        self.btn_plot.configure(background='#665959',disabledforeground='#911515',foreground='#FFFFFF')
         self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.runGraph(self.x_value, self.y_value, self.z_value, self.graph_frame)), height=2, width=7)
+        self.btn_plot.configure(command=lambda: (self.runGraph(),self.hideButton(self.btn_plot)), height=2, width=7)
 
+        self.stop_pressed = False
         self.btn_save =  tk.Button(self.btn_frame_4)
         self.btn_save.pack(side=RIGHT)
-        self.btn_save.configure(background='#665959')
-        self.btn_save.configure(disabledforeground='#911515')
-        self.btn_save.configure(foreground='#FFFFFF')
-        self.btn_save.configure(text='Stop')
+        self.btn_save.configure(foreground='#FFFFFF', text='Stop',disabledforeground='#911515',background='#665959')
         self.btn_save.configure(command=lambda: self.showButton(self.btn_plot), height=2, width=7)
 
 
@@ -905,13 +889,16 @@ class GUIApplication(threading.Thread):
             logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
             if tvec is not None:
                 x, y, z = tvec
+
                 sum_x = 0.0
                 sum_y = 0.0
                 sum_z = 0.0
+                self.x_graph = x
+                self.y_graph = y
+                self.z_graph = z
                 self.x_value_list.append(x)
                 self.y_value_list.append(x)
                 self.z_value_list.append(x)
-                self.runGraph(x,y,z,self.graph_frame)
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:
@@ -924,19 +911,12 @@ class GUIApplication(threading.Thread):
                     sum_y = sum_y + num
                 for num in self.z_value_list:
                     sum_z = sum_z + num
-                #self.x_label.config(text=str((sum_x / len(self.x_value_list))))
-                #self.y_label.config(text=str((sum_y / len(self.y_value_list))))
-                #self.y_label.config(text=str((sum_z / len(self.z_value_list))))
-                #if tvec is not None:
-            #    x, y, z = tvec
+
                 self.x_value.set(round(sum_x / len(self.x_value_list),2))
                 self.y_value.set(round(sum_y / len(self.y_value_list),2))
                 self.z_value.set(round(sum_z / len(self.z_value_list),2))
                 logging.debug("Updating tvec")
             else:
-                #self.x_label.config(text=str(0.00))
-                #self.y_label.config(text=str(0.00))
-                #self.z_label.config(text=str(0.00))
                 self.x_value.set(0.0)
                 self.y_value.set(0.0)
                 self.z_value.set(0.0)
@@ -945,13 +925,11 @@ class GUIApplication(threading.Thread):
                 self.roll_value.set(round(roll,2))
                 self.pitch_value.set(round(pitch,2))
                 self.yaw_value.set(round(yaw,2))
-                #self.roll_label.config(text=str(roll))
-                #self.pitch_label.config(text=str(pitch))
-                #self.yaw_label.config(text=str(yaw))
             else:
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
+
 
 
     def readUserInputs(self):
@@ -1157,43 +1135,53 @@ class GUIApplication(threading.Thread):
         self.root.attributes('-fullscreen', False)
         return 'break'
 
-    def runGraph(self, x, y, z,window):
+    def runGraph(self):
         '''
         Setup for graph frame and variables needed to show x-y-z.
         :param window: The frame you want to plot the graph in.
         :return: None
         '''
-        self.t_data, self.x_data, self.y_data, self.z_data = [], [], [], []
+        #if self.x_graph or self.y_graph or self.z_graph is None:
+        #    graph_x = 0.0
+        #    graph_y = 0.0
+        #    graph_z = 0.0
+        #else:
+        t_data, x_data, y_data, z_data = [], [], [], []
 
-        self.figure = plt.figure()
-        self.ax = self.figure.subplots(3, 1, sharex=True, sharey=True)
-        self.line, = self.ax[0].plot(self.t_data, self.x_data, 'r')
-        self.line2, = self.ax[1].plot(self.t_data, self.y_data, 'c')
-        self.line3, = self.ax[2].plot(self.t_data, self.z_data, '-')
-        self.start_time = time.time()
+        figure = plt.figure()
+        self.ax = figure.subplots(3, 1, sharex=True, sharey=True)
+        line, = self.ax[0].plot(t_data, x_data, 'r')
+        line2, = self.ax[1].plot(t_data, y_data, 'c')
+        line3, = self.ax[2].plot(t_data, z_data, '-')
+        start_time = time.time()
 
         def update(frame):
-            elapsed_time = time.time() - self.start_time
-            self.t_data.append(elapsed_time)
-            self.x_data.append(self.x_value)
-            self.y_data.append(self.y_value)
-            self.z_data.append(self.z_value)
-            self.line.set_data(self.t_data, self.x_data)
-            self.line2.set_data(self.t_data, self.y_data)
-            self.line3.set_data(self.t_data, self.z_data)
-            self.figure.gca().relim()
-            self.figure.gca().autoscale_view()
+            elapsed_time = time.time() - start_time
+            t_data.append(elapsed_time)
+            x_data.append(self.x_graph)
+            y_data.append(self.y_graph)
+            z_data.append(self.z_graph)
+            line.set_data(t_data, x_data)
+            line2.set_data(t_data, y_data)
+            line3.set_data(t_data, z_data)
+            figure.gca().relim()
+            figure.gca().autoscale_view()
 
-
-        self.figure.suptitle('Movement')
+        figure.suptitle('Movement')
         self.ax[0].set_ylabel('X')
         self.ax[1].set_ylabel('Y')
         self.ax[2].set_ylabel('Z')
         self.ax[2].set_xlabel('Time (s)')
-        self.animation = FuncAnimation(self.figure, update, interval=100)
+        self.animation = FuncAnimation(figure, update, interval=100)
+
+        def _pause(self,event):
+            if self.stop_pressed:
+                self.animation.event_source.stop()
+                self.stop_pressed = False
+            else:
+                self.animation.event_source.start()
+                self.stop_pressed = True
         plt.show()
-
-
 
     def hideButton(self, button):
         '''
@@ -1203,6 +1191,7 @@ class GUIApplication(threading.Thread):
         :return: None
         '''
         button.lower()
+        self.stop_pressed = True
 
     def showButton(self, button):
         '''
@@ -1211,4 +1200,9 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         button.lift()
+        self.stop_pressed = False
+
+    def plotGraphPressed(self):
+        self.start_pressed = True
+
 
