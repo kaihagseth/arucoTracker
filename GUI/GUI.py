@@ -897,8 +897,9 @@ class GUIApplication(threading.Thread):
                 self.y_graph = y
                 self.z_graph = z
                 self.x_value_list.append(x)
-                self.y_value_list.append(x)
-                self.z_value_list.append(x)
+                self.y_value_list.append(y)
+                self.z_value_list.append(z)
+                self.runGraph(x,y,z,self.graph_frame)
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:
