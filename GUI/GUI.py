@@ -982,49 +982,6 @@ class GUIApplication(threading.Thread):
                 self.pitch_value.set(0.0)
                 self.yaw_value.set(0.0)
 
-
-
-    def readUserInputs(self):
-        # TODO: Remove, and use direct contact with connector.
-        """
-        Exports all user commands relevant outside of the GUI
-        :return: camID: index of selected camera. negative if auto. newBoard: arucoboard created and pushed from GUI
-        resetExtrinsic: Command to reset extrinsic matrices of cameras.
-        startCommand: Command to start PoseEstimator
-        stopCommand: Command to stop PoseEstimator
-        doPreview: Return whether to preview a frame from a camera in the VECU GUI section.
-        """
-        cameraIndex = None
-        boardIndex = None
-        try:
-            cameraIndex = self.__displayedCameraIndex.get()
-            boardIndex = self.boardIndex.get()
-        except AttributeError as e:
-            # Don't crash if __displayedCameraIndex not initialised, but set a safe value instead.
-            cameraIndex = 5
-            boardIndex = 0
-        if cameraIndex < 0:
-            auto = True
-            self.connector.setAuto(True)
-        else:
-            self.connector.setAuto(False)
-        newBoard = stackChecker(self.__pushedBoards)
-        resetExtrinsic = stackChecker(self.__resetBoardPosition)
-        startCommand = stackChecker(self.__start_application)
-        stopCommand = stackChecker(self.__stop_application)
-        collectGUIVEs = stackChecker(self.__collectGUIVEs)
-        self.__doPreviewIndex = self.checkPreviewStatus() # -1 if none preview was requested
-#        msg = "__doPreviewIndex: ", self.__doPreviewIndex
-#        logging.debug(msg)
-        if self.__doPreviewIndex is not -1 and self.__doPreviewIndex is not None:
-            #Activate thread for showing prev image TODO: Use threading
-            print("Inside")
-            self.showPreviewImage(self.__doPreviewIndex)
-        elif self.imgHolder.image is not None:
-            self.imgHolder.configure(image='')
-            self.imgHolder.image = None
-        #return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
-
     def sendStartSignal(self):
         """
         Adds a start signal to the stop signal stack. The signal is consumed when read.
@@ -1264,12 +1221,9 @@ class GUIApplication(threading.Thread):
 
     def getCheckButtonList(self, varList):
         """
-        Takes a list of tkinter Var-variables and creates a new list of the datatype stored
+        Takes a dict of tkinter Var-variables and creates a new dict of the datatype stored
         :param list: the list to get
         :return: A list of output variables
         """
-        outputList = dict()
-        for key, var in varList.items():
-            outputList[key] = var.get()
-        return outputList
+        return {key: value.get() for key, value in varList.items()}
 
