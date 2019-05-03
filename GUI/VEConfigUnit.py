@@ -145,7 +145,14 @@ class VEConfigUnit(Thread):
         if not len(buttonsToUpdate) == 0: # Only try if found buttons
             for btn in buttonsToUpdate:
                 if text is not None:
-                    btn.configure(text=text)
+                    try:
+                        btn.configure(text=text)
+                    except TclError as e:
+                        logging.error(str(e))
+                    try:
+                        btn.configure(textvariable=text)
+                    except TclError as e:
+                        logging.error(str(e))
                 if state is not None:
                     btn.configure(state=state)
                 if command is not None:

@@ -82,6 +82,7 @@ class GUIApplication(threading.Thread):
         self.calibCam_statusFrame = None
         self.maincalib_window = None
         self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+        self.calibConnectionFrame = None
 
     def run(self):
         '''
@@ -561,9 +562,12 @@ class GUIApplication(threading.Thread):
         vecuToCalib = self.getVEConfigUnitById(value)
         if vecuToCalib is not None:
             state = vecuToCalib.getState()
-            connectionFrame = vecuToCalib.getCalibConnectionFrame()
+            if self.calibConnectionFrame is not None:
+                self.calibConnectionFrame.grid_remove()
+            self.calibConnectionFrame = vecuToCalib.getCalibConnectionFrame()
             logging.debug('Correct connection_frame is given.')
-            connectionFrame.grid(row=2,column=0)
+            if self.calibConnectionFrame is not None:
+                self.calibConnectionFrame.grid(row=2,column=0)
 #        self.calibCam_statusFrame.grid(row=3,column=3)
 
         #self.doCalibration()
