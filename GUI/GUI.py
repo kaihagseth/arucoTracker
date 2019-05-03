@@ -61,6 +61,7 @@ class GUIApplication(threading.Thread):
         self.show_video = False
         self.showPoseStream = False
         self.videoPanel = None
+        self.poseEstimationIsRunning = False
         self.anyCameraInitiated = False # Only True if we have applied some VEs to run with in configtab
         self.anyBoardsInitiated = False # Only True if one or more boards are intitated.
         # Button lists
@@ -89,7 +90,7 @@ class GUIApplication(threading.Thread):
         # Create menu
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
-
+        self.setup_menu = Menu(self.menu, tearoff=0)
 
         #Testing some Style stuff
         s = ttk.Style()
@@ -158,6 +159,11 @@ class GUIApplication(threading.Thread):
         self.edit_menu.add_command(label='Copy', command=None)
         self.edit_menu.add_command(label='Paste', command=None)
         self.menu.add_cascade(label='Edit', menu=self.edit_menu)
+
+        self.setup_menu.add_command(label='Calibrate cameras', command=self.launchCalibrationWindow)
+        #self.setup_menu.add_command(label='Copy', command=None)
+        #self.setup_menu.add_command(label='Paste', command=None)
+        self.menu.add_cascade(label='Setup', menu=self.setup_menu)
 
         # Configure setup
         self.root.config(menu=self.menu)
@@ -263,9 +269,14 @@ class GUIApplication(threading.Thread):
                                             font=(self.poseFontType, self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispBoardPoseQual_camPaneTabMain.grid(column=6, row=0)
 
-        self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
-        self.second_label.place(relx=0.5, rely=0.02, anchor='center')
-
+        # Setup calibration page:
+        self.setupCalibrationPage()
+        #self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
+        #self.second_label.place(relx=0.5, rely=0.02, anchor='center')
+        #self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
+        #self.start_btn.grid(column=0, row=0, pady=10)
+        #self.stop_btn.grid(column=1, row=0, pady=10)
+        #self.hidecam_btn.grid(column=2, row=0, pady=10)
         # Page 3: PDF setup
         # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
@@ -412,24 +423,19 @@ class GUIApplication(threading.Thread):
                                command=lambda: [self.sendStopSignal()])
         self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,height=2,width=6,
                                   bg='#424242', fg='white',)
+        self.start_btn.grid(column=0, row=0, pady=10)
+        self.stop_btn.grid(column=1, row=0, pady=10)
+        self.hidecam_btn.grid(column=2, row=0, pady=10)
         # Label to respond if button pushed before VEs have been inited
         self.poseEstimationStartDenied_label = Label(self.camFrameSettingSection,
                                                      text="Please init VEs in config tab first.", bg="#424242")
         self.camFrameSettingSection.configure()
         self.camFrameSettingSection.pack()
-        self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
 
-
-        self.start_btn.grid(column=0, row=0, pady=10)
-        self.stop_btn.grid(column=1, row=0, pady=10)
-        self.hidecam_btn.grid(column=2, row=0, pady=10)
         self.availCamsLabel = Label(self.left_camPaneTabMain, text='Available cameras: ',font=("Arial", "12"))
         self.availCamsLabel.configure(bg='#424242',fg='white')
         self.availCamsLabel.pack()
 
-        self.calibrate_btn.grid(column=1, row=1)
-        self.calibrate_btn.grid_rowconfigure(1, weight=1)
-        self.calibrate_btn.grid_columnconfigure(1, weight=1)
         self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show. negatives means auto.
         self.__displayedCameraIndex.set(-1)
 
@@ -469,6 +475,7 @@ class GUIApplication(threading.Thread):
         #self.addBoardButton()
         #self.doMerging()
         # Start it all
+        self.launchCalibrationWindow()
         self.root.mainloop()
 
         # Configuration setup
@@ -515,8 +522,8 @@ class GUIApplication(threading.Thread):
         self.rightSection_configPaneTabMain.configure(borderwidth='2')
 
         ''' Create VEConfigUnits that controls all  '''
-        numbCamsToShow = 5
-        for i in range(0,numbCamsToShow+1): # Create VEConfigUnits
+        self.numbCamsToShow = 5
+        for i in range(0,self.numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
             VECU = VEConfigUnit(i,self, self.selectCamIndexesFrame, self.setPreviewStatus)
             VECU.start()
@@ -537,6 +544,49 @@ class GUIApplication(threading.Thread):
         self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
         self.imgHolder.image = None
         self.imgHolder.pack()
+    def setupCalibrationPage(self):
+        mainframe_cabtab = Frame(self.page_2, width=1000, height=1000)
+        mainframe_cabtab.pack()
+
+    def launchCalibrationWindow(self):
+        self.allowToCalibrate = False
+        if not self.poseEstimationIsRunning: # Can't calibrate while running.
+            self.allowToCalibrate = True
+        if self.allowToCalibrate:
+            self.maincalib_window = Toplevel()
+            self.maincalib_window.title("Calibrate cameras")
+            self.mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+            self.mainFrame.pack()
+            self.selectCamToCalib_label = Label(self.mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg='#424242', fg='white')
+            self.selectCamToCalib_label.grid(row=1,column=0, columnspan=2)
+            self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg='#424242', fg="white")
+            self.previewButton_calibPage.grid(row=3, column=0)
+            self.connectButton_calibPage = Button(self.mainFrame, text="Connect",  state='disabled', bg='#424242', fg="white")
+            self.connectButton_calibPage.grid(row=2, column=0)
+            self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg='#424242', fg="white")
+            self.connectStateLabel_calibPage.grid(row=2, column=1)
+            self.camToCalib_var = IntVar()
+            self.camToCalib_var.set(0)
+            calibCamToList = []
+            for i,n in enumerate(range(self.numbCamsToShow)):
+                calibCamToList.append(i)
+            self.possibleCamsToCalibOption = OptionMenu(self.mainFrame, self.camToCalib_var, *calibCamToList, command=self.setCamToCalib)
+            self.possibleCamsToCalibOption.grid(row=1,column=3)
+
+    def setCamToCalib(self, value):
+        self.camIndexToCalibrate = value
+        vecuToCalib = -1
+        self.getVEConfigUnitById(value)
+
+
+        #self.doCalibration()
+    def getVEConfigUnitById(self, ID):
+        vecu = None
+        for VECU in self.VEConfigUnits:
+            if VECU.getIndex():
+               return VECU
+        logging.error("No VECU found on given index.")
+        return vecu
 
     def doMerging(self):
         '''
