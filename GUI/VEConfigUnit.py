@@ -10,23 +10,34 @@ class VEConfigUnit(Thread):
     Class for holding choices regarding cam and VE in config tab GUI.
     Also holds created VE, until taken over by PoseEstimator when running PoseEstimation.
     '''
+    #TODO: Change to be more like a VE-holder, than a GUI Widget.
 
-    def __init__(self, camID, mainGUI, parent, GUI_previewImage_fx):
+
+    def __init__(self, camID, mainGUI, setupTabParent, calibTabParent, GUI_previewImage_fx):
         Thread.__init__(self)
         self._id = camID  # Camera index
-        self.parent = parent
+        self.setupTabParent = setupTabParent
+        self.calibTabParent = calibTabParent
         self._VE = None
         self._mainGUI = mainGUI
         # Assign a variable to the function to call when setting preview status
         self.GUI_setPreviewImage_fx = GUI_previewImage_fx
-        self._frame = Frame(self.parent,bg='#424242')  # Container for all widgets
+        self._frame = Frame(self.setupTabParent, bg='#424242')  # Container for all widgets
         self._doPreviewState = False
         self._currState = 0
         self._cb_v = BooleanVar()  # Variable to hold state of
         self._cb_v.set(False)
         self._state = IntVar()
         self._stateText = StringVar()
-        self.continueRunInPE = False # Whether to contniue to use VE in PE.
+        self.continueRunInPE = False # Whether to continue to use VE in PE.
+        self.connectionButtons = []
+        self.previewButtons = []
+        self.conStatusLabels = []
+        self.createSetupBox()
+        self.createCalibWidgets()
+
+
+    def createSetupBox(self):
         self._stateText.set('Disconnected')  # Statustext of connection with cam
         # self._connectionStatusLabel = "Disconnected"
         self._label = Label(self._frame, text="Camera " +str(self._id) +":", bg="#424242", fg="white")#, font="Arial")
@@ -34,13 +45,6 @@ class VEConfigUnit(Thread):
                             fg="black", variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)  # Checkbutton
         self.cb_string_v = []  # List for telling the status of the cam on given index
         # self.cb_string = []  # Status for each index/camera on index
-        self.conStatusLabel = Label(self._frame,
-                                    text="Disconnected", fg="red",bg='#424242',width=20)
-        self.connectBtn = Button(self._frame, text="Connect",bg='#424242',fg="white",
-                                 command=self.doConnect,width=15)  # , variable=self._state, onvalue=1, offvalue=0)
-        self.previewBtn = Button(self._frame, text="Preview", command=self.doPreview,bg='#424242',fg="white",
-                                 state=DISABLED,width=15)  # , variable = self._state, onvalue=3, offvalue=2)
-
         # Dictionary with options
         path = "calibValues"
         choices = os.listdir(path)
@@ -50,6 +54,104 @@ class VEConfigUnit(Thread):
         self.dropVar.set("Calibration file")
         #Label(self._frame, text="Choose a dish").grid(row=1, column=1)
         self.calibFilePopup.grid(row=2, column=1)
+        self.setupConnectBtn = self.createConnectBtn(self._frame)
+        self.setupPreviewBtn = self.createPreviewBtn(self._frame)
+        self.setupConStatusLabel = self.createConStatusLabel(self._frame)
+
+
+    def run(self):
+        # Pack everything in container
+        self._label.grid(row=0, column=0)
+        self._cb.grid(row=0, column=1, sticky='w')
+        deadspace3 = Frame(self._frame, width=20, bg='#424242').grid(row=0, column=2)
+        self.setupConnectBtn.grid(row=0, column=3)
+        self.setupPreviewBtn.grid(row=0, column=4)
+        self.setupConStatusLabel.grid(row=0, column=5)
+        self.calibFilePopup.grid(row=0, column=6)
+        self.calibFilePopup.config(state="disabled")
+        # return self._frame
+        self._frame.grid(row=self._id, column=0)
+
+    def createConStatusLabel(self, parent):
+        conStatusLabel = Label(parent, text="Disconnected", fg="red", bg='#424242', width=20)
+        self.conStatusLabels.append(conStatusLabel)
+        return conStatusLabel
+    def doConfigStatusLabel(self, text=None,fg=None,bg=None,font=None,state=None):
+        '''
+        Update all labelsd that wants to know the connection status.
+        :param text:
+        :param fg:
+        :param bg:
+        :param font:
+        :param state:
+        :return:
+        '''
+        for lbl in self.conStatusLabels:
+            if text is not None:
+                lbl.configure(text=text)
+            if state is not None:
+                lbl.configure(state=state)
+            if fg is not None:
+                lbl.configure(fg=fg)
+
+    def createConnectBtn(self, parent):
+        '''
+        Create a genereiv button for connecting to and from. The button is added to a list.
+        :param parent: Mother widget for the button
+        :return: The created button
+        '''
+        connectBtn = Button(parent, text="Connect", bg='#424242', fg="white",
+                                      command=self.doConnect,
+                                      width=15)  # , variable=self._state, onvalue=1, offvalue=0)
+        self.connectionButtons.append(connectBtn)
+        return connectBtn
+
+    def createPreviewBtn(self, parent):
+        previewBtn = Button(parent, text="Preview", command=self.doPreview, bg='#424242', fg="white",
+                                      state=DISABLED, width=15)  # , variable = self._state, onvalue=3, offvalue=2)
+        self.previewButtons.append(previewBtn)
+        return previewBtn
+
+    def createCalibWidgets(self):
+        self.calibFrame = Frame(self.calibTabParent)
+        self.calibConnectBtn = self.createConnectBtn(self.calibFrame)
+        self.calibPreviewBtn = self.createPreviewBtn(self.calibFrame)
+        self.calibConStatusLabel = self.createConStatusLabel(self.calibFrame)
+        self.calibConnectBtn.grid(row=0, column=0)
+        self.calibConStatusLabel.grid(row=0, column=1)
+        self.calibPreviewBtn.grid(row=0, column=2)
+
+    def getCalibConnectionFrame(self):
+        return self.calibFrame
+
+    def configButtons(self,buttonType, text=None,state=None, command=None, fg=None):
+        '''
+        Function for updating several buttons.  Which ones is decided by the buttonType-string.
+        :param buttonType:
+        :param text:
+        :param state: 'NORMAL' , 'ACTIVE' or 'DISABLED'.
+        :param newCommand:
+        :return:
+        '''
+        buttonsToUpdate = []
+        if buttonType == 'connect':
+            buttonsToUpdate.extend(self.connectionButtons)
+        elif buttonType == 'preview':
+            buttonsToUpdate.extend(self.previewButtons)
+        else:
+            logging.error('Type not found. ')
+            return None
+        #print(buttonsToUpdate)
+        if not len(buttonsToUpdate) == 0: # Only try if found buttons
+            for btn in buttonsToUpdate:
+                if text is not None:
+                    btn.configure(text=text)
+                if state is not None:
+                    btn.configure(state=state)
+                if command is not None:
+                    btn.configure(command=command)
+                if fg is not None:
+                    btn.configure(fg=fg)
 
     def setCalibFileChoice(self, value):
         logging.info(value)
@@ -57,18 +159,7 @@ class VEConfigUnit(Thread):
         callname = value[:2]
         logging.info("New callname: " + callname)
         self._VE.setCameraLabelAndParameters(callname)
-    def run(self):
-        # Pack everything in container
-        self._label.grid(row=0,column=0)
-        self._cb.grid(row=0, column=1, sticky='w')
-        deadspace3 = Frame(self._frame, width=20,bg='#424242').grid(row=0, column=2)
-        self.connectBtn.grid(row=0, column=3)
-        self.previewBtn.grid(row=0, column=4)
-        self.conStatusLabel.grid(row=0, column=5)
-        self.calibFilePopup.grid(row=0,column=6)
-        self.calibFilePopup.config(state="disabled")
-        # return self._frame
-        self._frame.grid(row=self._id, column=0)
+
 
     def chkbox_checked(self):
         pass
@@ -101,16 +192,16 @@ class VEConfigUnit(Thread):
         '''
         msg = "State "
         if newState is 0: # Disconnected, VE not initialised
-            self.conStatusLabel.config(text="Disconnected", fg="red")
-            self.connectBtn.config(text="Connect", command=self.doConnect)
-            self.previewBtn.config(state="disabled")
-            self.previewBtn.config(text="Preview", command=self.hidePreview)
-            self.calibFilePopup.config(state="disabled")
+            self.doConfigStatusLabel(text="Disconnected", fg="red")
+            self.configButtons(buttonType="connect",text="Connect", command=self.doConnect)
+            self.configButtons(buttonType="preview",state="disabled")
+            self.configButtons(buttonType="preview",text="Preview", command=self.hidePreview)
+            self.doConfigStatusLabel(state="disabled")
         elif newState is 1: # Trying to connect, creating VE
             logging.debug("State is 1")
-            self.connectBtn.config(text="Connecting...", command=self.doDisconnect)
-            self.previewBtn.config(state="normal")
-            self.conStatusLabel.config(text="Connecting...", fg="black")
+            self.configButtons(buttonType="connect",text="Connecting...", command=self.doDisconnect)
+            self.configButtons(buttonType="preview",state='normal')
+            self.doConfigStatusLabel(text="Connecting...", fg="black")
             try:
                 self._VE = VisionEntity(self._id)
                 self._currState = 1
@@ -129,22 +220,22 @@ class VEConfigUnit(Thread):
                 self.setState(7)
                 return
         elif newState is 2: # Connected, VE created, preview is available
-            self.connectBtn.config(text="Disconnect", command=self.doDisconnect)
-            self.previewBtn.config(state="normal", text="Preview",command=self.doPreview)
-            self.conStatusLabel.config(text="Connected", fg="green")
+            self.configButtons(buttonType="connect", text="Disconnect", command=self.doDisconnect)
+            self.configButtons(buttonType="preview",state="normal", text="Preview", command=self.doPreview)
+            self.doConfigStatusLabel(text="Connected", fg="green")
             self._currState = 2
             self.calibFilePopup.config(state="normal")
         elif newState is 3: # Want to preview
             self._currState = 3
         elif newState is 4: # Previewing
-            logging.debug("Seting state to 4. ")
-            self.previewBtn.config(text="Hide preview", command=self.hidePreview)
+            logging.debug("Setting state to 4. ")
+            self.configButtons(buttonType="preview",text="Hide preview", command=self.hidePreview)
             self._currState = 4
         elif newState is 5: # Disconnecting
             self._currState = 5
-            self.connectBtn.config(text="Connect", command=self.doConnect)
-            self.previewBtn.config(state="disabled")
-            self.conStatusLabel.config(text="Disconnecting...", fg="red")
+            self.configButtons(buttonType="connect",text="Connect", command=self.doConnect)
+            self.configButtons(buttonType="preview",state="disabled")
+            self.doConfigStatusLabel(text="Disconnecting...", fg="red")
             self.setDoPreviewState(False)
             self.calibFilePopup.config(state="disabled")
             # Disconnect and terminate VE
@@ -156,22 +247,22 @@ class VEConfigUnit(Thread):
             self.setState(0)
             return
         elif newState is 6: # VE running in PoseEstimator
-            self.connectBtn.config(text="Deactivate", command=self.removeVEFromRunningPE)
-            self.previewBtn.config(state="disabled")
-            self.conStatusLabel.config(text="Used in PE", fg="green")
+            self.configButtons(buttonType="connect",text="Deactivate", command=self.removeVEFromRunningPE)
+            self.configButtons(buttonType="preview",state="disabled")
+            self.doConfigStatusLabel(text="Used in PE", fg="green")
             self.continueRunInPE = True
             self.calibFilePopup.config(state="disabled")
             self._VE = None # Not the responsibility of GUI anymore
 
         elif newState is 7: # Failed to open camera
-            self.conStatusLabel.config(text="Failed.", fg="black")
-            self.connectBtn.config(text="Retry")
-            self.previewBtn.config(state="disabled")
+            self.doConfigStatusLabel(text="Failed.", fg="black")
+            self.configButtons(buttonType="connect",text="Retry")
+            self.configButtons(buttonType="preview", state="disabled")
             self.calibFilePopup.config(state="disabled")
         elif newState is 8: # Disconnect from PE
             pass
         elif newState is 9: # Failed to use in PE (i.e. cam not opened)
-            self.conStatusLabel.config(text="Failed.", fg="black")
+            self.doConfigStatusLabel(text="Failed.", fg="black")
             self.setState(0)
             self._cb.config(state="normal")
             self.continueRunInPE = False
@@ -247,3 +338,6 @@ class VEConfigUnit(Thread):
 
     def getDoPreviewState(self):
         return self._doPreviewState
+
+    def getState(self):
+        return self._state

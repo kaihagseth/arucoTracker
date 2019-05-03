@@ -78,6 +78,11 @@ class GUIApplication(threading.Thread):
         self.y_value_list = []
         self.z_value_list = []
 
+        # Some GUI frames (containers)
+        self.calibCam_statusFrame = None
+        self.maincalib_window = None
+        self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+
     def run(self):
         '''
         Run the main application.
@@ -259,12 +264,15 @@ class GUIApplication(threading.Thread):
         # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
         # must keep a global reference to these two
-        self.im = Image.open('arucoBoard.png')
-        self.im = self.im.resize((300, 300), Image.ANTIALIAS)
-        self.ph = ImageTk.PhotoImage(self.im)
-        # Need to use ph for tkinter to understand
-        self.btn_img = Label(self.page_3_frame, image=self.ph)
-        self.btn_img.pack(side=RIGHT)
+        try:
+            self.im = Image.open('arucoBoard.png')
+            self.im = self.im.resize((300, 300), Image.ANTIALIAS)
+            self.ph = ImageTk.PhotoImage(self.im)
+            # Need to use ph for tkinter to understand
+            self.btn_img = Label(self.page_3_frame,  image=self.ph)
+            self.btn_img.pack(side=RIGHT)
+        except TclError as e:
+            logging.error(str(e))
         self.page_3_frame.pack()
         # Create container for holding board list
         self.boardlist_container = Frame(self.page_3)
@@ -422,6 +430,8 @@ class GUIApplication(threading.Thread):
         # Bool to check if it is full screen or not
         self.state = False
 
+
+
         # Makes full screen possible by pressing F11 and change back by pressing F11 or escape
         self.root.bind('<F11>', self.toggleFullscreen)
         self.root.bind('<Escape>', self.endFullscreen)
@@ -438,7 +448,6 @@ class GUIApplication(threading.Thread):
         #self.addBoardButton()
         #self.doMerging()
         # Start it all
-        self.launchCalibrationWindow()
         self.root.mainloop()
 
         # Configuration setup
@@ -488,7 +497,7 @@ class GUIApplication(threading.Thread):
         self.numbCamsToShow = 5
         for i in range(0,self.numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
-            VECU = VEConfigUnit(i,self, self.selectCamIndexesFrame, self.setPreviewStatus)
+            VECU = VEConfigUnit(i,self, self.selectCamIndexesFrame, self.calibCam_statusFrame, self.setPreviewStatus)
             VECU.start()
             self.VEConfigUnits.append(VECU)
 
@@ -518,29 +527,44 @@ class GUIApplication(threading.Thread):
         if self.allowToCalibrate:
             self.maincalib_window = Toplevel()
             self.maincalib_window.title("Calibrate cameras")
-            self.mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
-            self.mainFrame.pack()
-            self.selectCamToCalib_label = Label(self.mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg='#424242', fg='white')
+            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+            self.prepareCalib_mainFrame.pack()
+            self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg='#424242', fg='white')
             self.selectCamToCalib_label.grid(row=1,column=0, columnspan=2)
-            self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg='#424242', fg="white")
-            self.previewButton_calibPage.grid(row=3, column=0)
-            self.connectButton_calibPage = Button(self.mainFrame, text="Connect",  state='disabled', bg='#424242', fg="white")
-            self.connectButton_calibPage.grid(row=2, column=0)
-            self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg='#424242', fg="white")
-            self.connectStateLabel_calibPage.grid(row=2, column=1)
+            #self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg='#424242', fg="white")
+            #self.previewButton_calibPage.grid(row=3, column=0)
+            #self.connectButton_calibPage = Button(self.mainFrame, text="Connect",  state='disabled', bg='#424242', fg="white")
+            #self.connectButton_calibPage.grid(row=2, column=0)
+            #self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg='#424242', fg="white")
+            #self.connectStateLabel_calibPage.grid(row=2, column=1)
+            self.calibCam_statusFrame = Frame(self.prepareCalib_mainFrame)
+            self.calibCam_statusFrame.grid(row=2,column=0)
             self.camToCalib_var = IntVar()
             self.camToCalib_var.set(0)
             calibCamToList = []
             for i,n in enumerate(range(self.numbCamsToShow)):
                 calibCamToList.append(i)
-            self.possibleCamsToCalibOption = OptionMenu(self.mainFrame, self.camToCalib_var, *calibCamToList, command=self.setCamToCalib)
+            self.possibleCamsToCalibOption = OptionMenu(self.prepareCalib_mainFrame, self.camToCalib_var, *calibCamToList, command=self.setCamToCalib)
             self.possibleCamsToCalibOption.grid(row=1,column=3)
 
-    def setCamToCalib(self, value):
-        self.camIndexToCalibrate = value
-        vecuToCalib = -1
-        self.getVEConfigUnitById(value)
 
+    def setCamToCalib(self, value):
+        '''
+        We have choosen a value, and want to display connection options and status for the camera.
+        :param value: The choosen camera index.
+        :return:
+        '''
+        logging.info('Selected cam with value: ' + str(self.camToCalib_var.get()))
+        self.camIndexToCalibrate = self.camToCalib_var.get()
+        vecuToCalib = None
+        connectionFrame = None
+        vecuToCalib = self.getVEConfigUnitById(value)
+        if vecuToCalib is not None:
+            state = vecuToCalib.getState()
+            connectionFrame = vecuToCalib.getCalibConnectionFrame()
+            logging.debug('Correct connection_frame is given.')
+            connectionFrame.grid(row=2,column=0)
+#        self.calibCam_statusFrame.grid(row=3,column=3)
 
         #self.doCalibration()
     def getVEConfigUnitById(self, ID):
