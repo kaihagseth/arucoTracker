@@ -2,7 +2,6 @@ import logging
 import cv2
 import numpy as np
 from VisionEntityClasses import IntrinsicCalibrator as ic
-from WebcamVideoStream import WebcamVideoStream
 from exceptions import CamNotOpenedException
 
 class Camera():

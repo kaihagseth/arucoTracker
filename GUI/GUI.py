@@ -198,13 +198,13 @@ class GUIApplication(threading.Thread):
         self.y_label = Label(self.dispPoseBunker_camPaneTabMain, text='Y-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.y_label.grid(column=2, row=0)
-        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.self.translation_values[1],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.translation_values[1],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispY_camPaneTabMain.grid(column=3, row=0)
         self.z_label = Label(self.dispPoseBunker_camPaneTabMain, text='Z-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.z_label.grid(column=4, row=0)
-        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.self.translation_values[1],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.translation_values[2],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
         self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
@@ -734,6 +734,7 @@ class GUIApplication(threading.Thread):
         Displays a frame in the main window of the GUI.
         :return:
         """
+        logging.debug("attempting to display frame in main window")
         try:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
@@ -878,6 +879,14 @@ class GUIApplication(threading.Thread):
         """
         raise NotImplementedError
 
+    def displayQualityInTrackingWindow(self, quality):
+        """
+        Displays the board quality in tracking window
+        :param quality:
+        :return: None
+        """
+        self.boardPose_quality.set(quality)
+
     def displayPoseInTrackingWindow(self, pose):
         """
         Displays a pose in tracking window.
@@ -898,7 +907,7 @@ class GUIApplication(threading.Thread):
             for rot, value in zip(evec, self.rotation_values):
                 value.set(round(rot, 2))
         else:
-            for rot, value in zip(evec, self.rotation_values):
+            for value in self.rotation_values:
                 value.set(0.0)
 
     def plotGraph(self, poses, frame):
@@ -937,7 +946,8 @@ class GUIApplication(threading.Thread):
             logging.debug("Attempting to start pose estimation from GUI")
             assert self.anyCameraInitiated and self.anyBoardsInitiated, "No cameras initialized. " \
                                                                         "Please initialize camera in config-section"
-            self.connector.startPoseEstimation()
+            self.connector.startPoseEstimation(self.displayFrameInMainWindow, self.displayPoseInTrackingWindow,
+                                               self.displayQualityInTrackingWindow)
         except AssertionError as err:
             self.showErrorBox(err)
 
@@ -1040,7 +1050,6 @@ class GUIApplication(threading.Thread):
     def setBoardIndexToDisplay(self):
         boardIndex = self.boardIndex.get()
         self.connector.setBoardIndex(boardIndex)
-        self.connector.updateDisplayFunctions(self.displayFrameInMainWindow())
 
     def updateCamlist(self, VElist):
         """

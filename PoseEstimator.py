@@ -33,6 +33,9 @@ class PoseEstimator():
         self.trackedBoardIndex = None # Tells which board is being tracked.
         self.qualityDisplayFX = None # Function used to display quality of a chosen board
         self.poseDisplayFX = None # Function used to display pose of a chosen board
+        self.logging = False
+        self.running = False
+        self.runThread = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
         """
@@ -83,19 +86,22 @@ class PoseEstimator():
                 logging.info(msg)
         return wantedCamIndexes
 
-    def initialize(self):
+    def initialize(self, imageDisplayFX=None, poseDisplayFX=None, qualityDisplayFX=None):
         '''
         Start Vision Entity threads for pose estimation.
         :return: None
         '''
         logging.debug('Initializing pose estimator')
+        self.imageDisplayFX = imageDisplayFX
+        self.poseDisplayFX = poseDisplayFX
+        self.qualityDisplayFX = qualityDisplayFX
+        self.runThread = True
         for VE in self.VisionEntityList:
-            logging.info('VE start')
             VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
-            logging.debug('Passing thread creation.')
             th.start()
-        th = threading.Thread(target=self.runPoseEstimationLoop())
+            logging.debug('Vision entity created.')
+        th = threading.Thread(target=self.runPoseEstimationLoop)
         th.start()
 
     def runPoseEstimationLoop(self):
@@ -108,10 +114,8 @@ class PoseEstimator():
                 self.displayQuality()
             if self.logging:
                 self.writeCsvLog()
-            if self.autoTrackedBoardIndex is not None:
+            if self.autoTracking:
                 self.autoTrack()
-        self.terminate()
-        self.running = False
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -125,7 +129,7 @@ class PoseEstimator():
     def writeCsvLog(self, poses):
         """
         Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
-        #TODO: rewrite to accommodate for more than one pose!!
+        # TODO: rewrite to accommodate for more than one pose!!
         # FIXME: This function is not working as intended.
         :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
@@ -212,7 +216,6 @@ class PoseEstimator():
                 board.updateBoardPose(te_poses[board.ID])
             else:
                 board.updateBoardPose(None)
-
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if tracking_entity is None:
@@ -224,25 +227,21 @@ class PoseEstimator():
                         ve.setCameraPose(board)
                         ve.setCameraPoseQuality(potentialCameraPoseQuality)
 
-    def getEulerPoses(self):
+    def getEulerPose(self, boardID):
         """
-        Returns poses from all boards. list of tuples of tuple Nx2x3
-        :return:list of tuples of tuple Nx2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
+        Returns a pose expressed in translation and euler angles from selected board.
+        :return:list of tuples of tuple 2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
         """
-        poses = dict()
-        logging.debug("Length of aruco list: " + str(len(self._arucoBoards)))
-        for board in self._arucoBoards.values():
-            try:
-                rvec, tvec = board.getRvecTvec()
-                tvec = tvec.astype(float).reshape(-1)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(float)
-            except (TypeError, AttributeError):
-                tvec = None
-                evec = None
-            pose = evec, tvec
-            poses[board.ID] = pose
-        return poses
-
+        board = self.getBoards()[boardID]
+        try:
+            rvec, tvec = board.getRvecTvec()
+            tvec = tvec.astype(float).reshape(-1)
+            evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(float)
+        except (TypeError, AttributeError):
+            tvec = None
+            evec = None
+        pose = evec, tvec
+        return pose
 
     def chooseMasterCam(self, board):
         """
@@ -292,6 +291,7 @@ class PoseEstimator():
         Stops the pose estimator
         :return:
         """
+        self.runThread = False
         self.stopThreads()
         ves = self.getVisionEntityList()
         while True in veStatuses:
@@ -403,7 +403,7 @@ class PoseEstimator():
         Selects a route for the display function based on a selected board and this boards tracking entity.
         :return: None
         """
-        board = self.getBoards()[self.autoTrackedBoardIndex]
+        board = self.getBoards()[self.trackedBoardIndex]
         ve = board.getTrackingEntity()
         if ve is not None:
             self.routeDisplayFunction(ve.getCameraID)
@@ -424,7 +424,7 @@ class PoseEstimator():
         Displays a pose in the selected pose display function
         :return: None
         """
-        self.poseDisplayFX(self.getEulerPoses(self.trackedBoardIndex))
+        self.poseDisplayFX(self.getEulerPose(self.trackedBoardIndex))
 
     def displayQuality(self):
         """
@@ -432,3 +432,11 @@ class PoseEstimator():
         :return: None
         """
         self.qualityDisplayFX(self.getBoards()[self.trackedBoardIndex].getPoseQuality())
+
+    def setAutoTracker(self, autoTrackingStatus):
+        """
+        Sets the auto tracking status for this pose estimator
+        :param autoTrackingStatus: Boolean describing of autotracking is active or not.
+        :return: None
+        """
+        self.autoTracking = autoTrackingStatus

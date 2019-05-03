@@ -35,21 +35,26 @@ class Connector(Thread):
     def run(self):
         self.startApplication()
 
-    def startApplication(self):
+    def startApplication(self, qualityDisplayFX, imageDisplayFX, poseDisplayFX):
         '''
         Start the UI, and communicate continuous with the GUI while loop is running in separate threads.
         '''
-        self.PE.startPoseEstimation()
+        self.PE.initialize(qualityDisplayFX=qualityDisplayFX, imageDisplayFX=imageDisplayFX, poseDisplayFX=poseDisplayFX)
 
-    def updateDisplayFunctions(self, dispFX):
-        self.PE.routeDisplayFunction(self._cameraIndex, self._boardIndex, self._auto, dispFX)
 
-    def startPoseEstimation(self):
+    def setBoardIndex(self, bi):
+        """
+        Tells PoseEstimator which board to track.
+        :return: None
+        """
+        self.PE.trackedBoardIndex = bi
+
+    def startPoseEstimation(self, imageDisplayFX, poseDisplayFX, qualityDisplayFX):
         """
         Starts the pose estimator.
         :return: None
         """
-        self.PE.runPoseEstimator()
+        self.PE.initialize(imageDisplayFX=imageDisplayFX, poseDisplayFX=poseDisplayFX, qualityDisplayFX=qualityDisplayFX)
 
     def stopPoseEstimation(self):
         """
@@ -88,17 +93,10 @@ class Connector(Thread):
     # Set class variables:
     def setCameraIndex(self, ci):
         if ci == -1:
-            self.PE.setAutoTracking(True)
+            self.PE.setAutoTracker(True)
         else:
             self.PE.routeDisplayFunction(ci)
             self.PE.setAutoTracker(False)
-
-
-    def setBoardIndex(self, bi):
-        self.PE.trackedBoardIndex = bi
-
-    def setNewBoard(self, nb):
-        self._newBoard = nb
 
     def addBoard(self, board):
         self.PE.addBoard(board)
@@ -107,8 +105,6 @@ class Connector(Thread):
         self._resetExtrinsic = reset
         self.PE.resetExtrinsicMatrices()
 
-    def setStartCommand(self, sc):
-        self._startCommand = sc
 
     def setStopCommand(self, sc):
         self._stopCommand = sc

@@ -52,8 +52,8 @@ class VisionEntity:
             except RuntimeError as err:
                 logging.error(err)
                 continue
-            if self.dispFx:
-                self.dispFx(self.drawAxis())
+            if self.displayFX:
+                self.displayFX(self.drawAxis())
         self.terminate()
         self.running = False
 
@@ -330,7 +330,7 @@ class VisionEntity:
         """
         self._camera.setCamLabel(callname)
 
-    def setDisplayFX(self, displayFX):
+    def setDisplayFunction(self, displayFX):
         """
         Sets the display function for this object.
         :param displayFX: The function to display
