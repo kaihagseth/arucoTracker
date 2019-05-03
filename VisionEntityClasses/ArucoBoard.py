@@ -19,16 +19,19 @@ class ArucoBoard:
         self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
         self.ID = ArucoBoard.nextIndex
         ArucoBoard.nextIndex += 1
+        self.dictionary = dictionary
         if board is not None:
             self._board = board
             return
-        self.dictionary = dictionary
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
         ArucoBoard.first_marker = self.first_marker + (board_height * board_width)
 
     def getGridBoardSize(self):
         return self._board.getGridSize()
+
+    def getMarkerCount(self):
+        return len(self.getObjPoints())
 
     def getGridBoard(self):
         return self._board
@@ -40,18 +43,22 @@ class ArucoBoard:
         """
         return transMatrixToRvecTvec(self._transformationMatrix)
 
-    def updateBoardPose(self):
+    def updateBoardPose(self, camera_to_model_transformation):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
         # FIXME: Sometimes causes crashes when ve loses sight of board?
         :param cam: The camera spotting the board.
         :return:
         """
-        camera_to_model_transformation = self._tracking_ve.getPoses()[self.ID]
-        world_to_camera_transformation = self._tracking_ve.getCameraPose()
-        world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
-        self._transformationMatrix = world_to_model_transformation
-        self.setPoseQuality(self.calculatePoseQuality())
+        if camera_to_model_transformation is None:
+            self._transformationMatrix = None
+            self.setPoseQuality(0)
+            return
+        else:
+            world_to_camera_transformation = self._tracking_ve.getCameraPose()
+            world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
+            self._transformationMatrix = world_to_model_transformation
+            self.setPoseQuality(self.calculatePoseQuality())
 
     def setFirstBoardPosition(self, ve):
         """
@@ -121,7 +128,12 @@ class ArucoBoard:
         :param size: Size of drawn image in pixels
         :return: cv2 image array of board.
         """
-        return self._board.draw(size)
+        if isinstance(self._board, cv2.aruco_GridBoard):
+            return self._board.draw(size)
+        elif isinstance(self._board, cv2.aruco_Board):
+            return np.zeros((size[0], size[0], 3), np.uint8)
+        else:
+            return None
 
     def getTrackingEntity(self):
         """
@@ -154,4 +166,16 @@ class ArucoBoard:
         Returns a copy of this boards transformation matrix
         :return: A homogenous transformation matrix describing this boards relation to world
         """
-        return  copy.copy(self._transformationMatrix)
+        return copy.copy(self._transformationMatrix)
+
+    def getTransformedPoints(self, transformationMatrix):
+        """
+        Returns a transformed object point list from this board.
+        :return: This boards transformed object points.
+        """
+        objpoints = np.array(self.getObjPoints())
+        transformed_points = np.zeros(objpoints.shape, dtype=np.float32)
+        for i, marker in enumerate(objpoints):
+            for j, corner in enumerate(marker):
+                transformed_points[i][j] = transformPointHomogeneous(corner, transformationMatrix)
+        return transformed_points

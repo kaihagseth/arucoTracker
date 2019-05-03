@@ -15,20 +15,17 @@ class Merger:
         self.sub_boards = sub_boards
         self.running = False
         self.dictionary = dictionary
-        self.mergedBoard = None
+        self.merged_board = None
         self.displayFunction = None
 
-    def mergerCostFunction(self, transformationmatrices):
+    @staticmethod
+    def mergerCostFunction(main_board, sub_board):
         """
-        Calculates a weight for a set of transformation-matrices based on the angle of the board as seen from the camera.
-        This function is logarithmic in order to preserve the strongest measurements and discard the weakest.
+        The over all  quality of the link is decided by the minimum quality of the two compared boards
         :return: Board quality weight.
         """
-        minCos = 0
-        for matrix in transformationmatrices:
-            minCos = min(minCos, findCosineToBoard(matrix))
-        weight = np.power(10, minCos)
-        return weight
+        link_quality = min(main_board.getPoseQuality(), sub_board.getPoseQuality())
+        return link_quality
 
     def mergeBoards(self):
         """
@@ -39,11 +36,15 @@ class Merger:
         obj_points = self.main_board.getObjPoints()
         for sub_board in self.sub_boards:
             ids = np.concatenate((ids, sub_board.getIds()))
+            assert (sub_board.link_matrix is not None), "Can't finish merging boards before all sub boards has" \
+                                                        " at least one reference to main board"
+
             transformed_points = sub_board.getTransformedPoints(sub_board.link_matrix)
             obj_points = np.concatenate((obj_points, transformed_points))
         self.dictionary = self.main_board.dictionary
-        self.mergedBoard = ArucoBoard(arucoBoard=cv2.aruco.Board_create(obj_points, self.dictionary, ids),
-                                      dictionary=self.dictionary)
+        print("Merger creating merged board")
+        self.merged_board = ArucoBoard(board=cv2.aruco.Board_create(obj_points, self.dictionary, ids),
+                                       dictionary=self.dictionary)
 
     def runMerge(self):
         """
@@ -55,12 +56,13 @@ class Merger:
             if main_trans_matrix is not None:
                 for sub_board in self.sub_boards:
                     sub_trans_matrix = sub_board.getTransformationMatrix()
-                    if sub_trans_matrix is not None:
-                        link_matrix = invertTransformationMatrix(main_trans_matrix) * \
+                    potential_link_quality = self.mergerCostFunction(self.main_board, sub_board)
+                    print("potential link quality" + str(potential_link_quality))
+                    if sub_board.link_quality < potential_link_quality:
+                        print("link quality updated, new quality: " + str(potential_link_quality))
+                        sub_board.link_quality = potential_link_quality
+                        sub_board.link_matrix = invertTransformationMatrix(main_trans_matrix) * \
                                                     sub_trans_matrix
-                        weight = self.mergerCostFunction([main_trans_matrix,
-                                                          sub_trans_matrix])
-                        sub_board.meanTransformationMatrixFinder.update(link_matrix, weight)
             if self.displayFunction:
                 self.displayFunction(self.getQualityList())
             time.sleep(.1)
@@ -84,11 +86,11 @@ class Merger:
         :return: merged board
         """
         self.running = False
-        for sub_board in self.sub_boards:
-            sub_board.link_matrix = sub_board.meanTransformationMatrixFinder.get()
+        #for sub_board in self.sub_boards:
+        #    sub_board.link_matrix = sub_board.meanTransformationMatrixFinder.get()
         self.mergeBoards()
         print("Merging completed")
-        return self.mergedBoard
+        return self.merged_board
 
     def getQualityList(self):
         """
@@ -97,15 +99,19 @@ class Merger:
         """
         qualityList = []
         for board in self.sub_boards:
-            qualityList.append(board.meanTransformationMatrixFinder.getCumWeights())
+            qualityList.append(board.link_quality)
         return qualityList
 
     def getBoards(self):
         """
-        Returns a list of all boards used as input for this merger.
+        Returns all  boards used by this merger.
         :return: Main board followed by sub boards in a single list.
         """
-        return [self.main_board] + self.sub_boards
+        boards = dict()
+        boards["merged_board"] = self.merged_board
+        boards["main_board"] = self.main_board
+        boards["sub_boards"] = self.sub_boards
+        return boards
 
     def setDisplayFunction(self, dispFX):
         """

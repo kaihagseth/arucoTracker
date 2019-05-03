@@ -4,6 +4,7 @@ import exceptions as exc
 from VisionEntityClasses.Camera import Camera
 from VisionEntityClasses.helperFunctions import *
 import logging
+import copy
 
 
 class VisionEntity:
@@ -43,10 +44,12 @@ class VisionEntity:
             self.grabFrame()
             self.retrieveFrame()
             self.detectMarkers(dictionary)
-            for board in boards.values():
-                logging.debug("Estimating pose for board "+ str(board.ID))
-                self.estimatePose(board)
-        logging.info("Terminating thread.")
+            try:
+                for board in boards.values():
+                    self.estimatePose(board)
+            except RuntimeError as err:
+                logging.error(err)
+                pass
         self.terminate()
 
     def calibrateCameraWithTool(self):
@@ -212,45 +215,32 @@ class VisionEntity:
     def estimatePose(self, board):
         """
         Estimates pose and saves pose to object field
-        :param board: Board yo estimate
+        :param board: Board to estimate
         :return: None
         """
         _, rvec, tvec = cv2.aruco.estimatePoseBoard(self.__corners, self.__ids, board.getGridBoard(),
                                                     self.intrinsic_matrix, self.getDistortionCoefficients())
-        self.setModelPoseQuality(board)
         self.__cameraToModelMatrices[board.ID] = rvecTvecToTransMatrix(rvec, tvec)
+        self.setModelPoseQuality(board)
+
 
     def setModelPoseQuality(self, board):
         """
         Calculates the quality of the current pose estimation between the camera and the model
         :return: None
         """
-        # Checks if the list is long enough to accomodate for the new board index. Extends it if not.
-        w, h = board.getGridBoardSize()
-        detectedBoardIds = None
-        boardIds = np.reshape(board.getIds(), -1)#set(board.getIds())
+        boardIds = np.reshape(board.getIds(), -1)
         detectedBoardIds = np.array([])
         if self.__ids is not None:
             detectedIds = np.reshape(self.__ids, -1)
             detectedBoardIds = np.intersect1d(boardIds, detectedIds)
-        total_marker_count = w * h
-        self._detection_quality[board.ID] = detectedBoardIds.size / total_marker_count
-        return None
-        #7print(self.__cameraToModelMatrix)
-        #print("Cam index: ", self._camera.getSrc())
-        CToMMatrix = self.__cameraToModelMatrices[board.ID]
-        if CToMMatrix is not None:
-            z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
-            z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
-            logging.debug("Z1: ", z1)
-            logging.debug("Z2: ", z2)
-            msg1 = CToMMatrix
-            logging.debug(msg1)
-            q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
-            msg = "Q: ", q
-            logging.debug(msg)
-        else:
-            logging.error("__cameraToModelMatrix not set.")
+        total_marker_count = board.getMarkerCount()
+        try:
+            self._detection_quality[board.ID] = (detectedBoardIds.size / total_marker_count) * \
+                                                findCosineToBoard(self.__cameraToModelMatrices[board.ID])
+        except TypeError:
+            self._detection_quality[board.ID] = 0
+
 
     def drawAxis(self):
         """
@@ -261,7 +251,8 @@ class VisionEntity:
         """
         image = self.getFrame()
         image = cv2.aruco.drawDetectedMarkers(image, self.__corners, self.__ids)
-        for matrix in self.__cameraToModelMatrices.values():
+        matrices = list(self.__cameraToModelMatrices.values())
+        for matrix in matrices:
             if matrix is not None:
                 rvec, tvec = transMatrixToRvecTvec(matrix)
                 image = cv2.aruco.drawAxis(image, self.intrinsic_matrix, self._camera.getDistortionCoefficients(),
@@ -273,14 +264,14 @@ class VisionEntity:
         Returns pose from private fields.
         :return: Transformation matrix from camera to model
         """
-        return self.__cameraToModelMatrices
+        return copy.copy(self.__cameraToModelMatrices)
 
     def getCameraPose(self):
         """
         Returns homogenous camera extrinsic matrix
         :return: Rotation and translation vectors for cameras pose.
         """
-        return self._cameraPoseMatrix
+        return copy.copy(self._cameraPoseMatrix)
 
     def getCornerDetectionAttributes(self):
         """
@@ -302,7 +293,7 @@ class VisionEntity:
         :param boards: The board to add to tracking list.
         :return: None
         """
-        if isinstance(boards,dict):
+        if isinstance(boards, dict):
             for board in boards.values():
                 self.__cameraToModelMatrices[board.ID] = None
                 self._detection_quality[board.ID] = 0
@@ -313,9 +304,11 @@ class VisionEntity:
     def removeBoard(self, board):
         """
         Removes an aruco board from the tracker.
-        :param board: The boar to remove
+        :param board: The board to remove
         :return: None
         """
+        del self.__cameraToModelMatrices[board.ID]
+        del self._detection_quality[board.ID]
 
     def getCameraID(self):
         """

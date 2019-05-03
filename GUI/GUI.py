@@ -4,8 +4,12 @@ import tkinter as tk
 from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
-from tkinter.messagebox import showinfo
+import traceback
+from tkinter.messagebox import showinfo, showerror
 
+import matplotlib
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+matplotlib.use('TkAgg')
 import cv2
 import ttkthemes
 import copy
@@ -30,7 +34,7 @@ class GUIApplication(threading.Thread):
     def __init__(self, connector):
         threading.Thread.__init__(self)
         self.connector = connector
-        self.arucoBoardUnits = []
+        self.arucoBoardUnits = dict()
         #self.arucoBoardUnits.append(board)
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
@@ -65,7 +69,7 @@ class GUIApplication(threading.Thread):
         self.anyCameraInitiated = False # Only True if we have applied some VEs to run with in configtab
         self.anyBoardsInitiated = False # Only True if one or more boards are intitated.
         # Button lists
-        self.boardButtonList = []
+        self.boardButtons = dict()
         self.cameraButtonList = []
         self.cameraButtonIndexList = []
 
@@ -92,33 +96,7 @@ class GUIApplication(threading.Thread):
         self.file_menu = Menu(self.menu, tearoff=0)
         self.setup_menu = Menu(self.menu, tearoff=0)
 
-        #Testing some Style stuff
-        s = ttk.Style()
-        s.theme_create("MyStyle", parent="alt",
-                       settings={
- #                               "Frame":
- #                                   {"configure":
- #                                        {"background": '#424242'
- #                                        }
- #
- #                                   },
-                                "TNotebook":
-                                    {"configure":
-                                         {"tabmargins": [2, 5, 2, 0],
-                                          "background": "#424242",
-                                          "foreground": "red"
-                                         }
-                                    },
-                                "TNotebook.Tab":
-                                    {"configure":
-                                         {"padding": [50, 10],
-                                          "font": ('URW Gothic L', '11'),
-                                          "background": "#424242",
-                                          "foreground": "white"
-                                         },
-                                    "map": {"background": [("selected", "#424242")],
-                                            }}
-                       })
+
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
 
@@ -292,18 +270,6 @@ class GUIApplication(threading.Thread):
         self.boardlist_container = Frame(self.page_3)
         self.boardlist_container.config(padx='10',pady='10',bg='#424242')
         self.boardlist_container.pack(side=BOTTOM)
-        #board = arucoBoard(3, 3, 40, 5)
-        #ABU = ArucoBoardUnit(board,self.boardlist_container)
-        #self.arucoBoardUnits.append(ABU)
-        #board1 = arucoBoard(3, 3, 40, 5)
-        #ABU1 = ArucoBoardUnit(board1, self.boardlist_container)
-        #self.arucoBoardUnits.append(ABU1)
-        #board2 = arucoBoard(3, 3, 40, 5)
-        #ABU2 = ArucoBoardUnit(board2, self.boardlist_container)
-        #self.connector.PE.addBoard(board)
-        #self.connector.PE.addBoard(board1)
-        #self.connector.PE.addBoard(board2)
-        #self.arucoBoardUnits.append(ABU2)
         self.boardimgs = []
         self.boardimgages = [None,None,None,None,None,None,None,None,None]
         self.page_3_label_frame = Frame(self.page_3_frame, bg='#424242')
@@ -373,6 +339,7 @@ class GUIApplication(threading.Thread):
                               command=lambda: [self.saveArucoPDF()])
         self.pdf_btn.configure(bg='#424242', fg='white')
         self.pdf_btn.pack(side=LEFT)
+
         Frame(self.btn_frame, width=5,bg='#424242').pack(side=LEFT)
         self.merge_btn = Button(self.btn_frame, text='Merge',
                               command=lambda: [self.doMerging()])
@@ -395,21 +362,17 @@ class GUIApplication(threading.Thread):
         # Buttons in graph page
         self.btn_frame_4 = Frame(self.page_4_frame)
         self.btn_frame_4.pack()
-
+        self.start_pressed = False
         self.btn_plot = tk.Button(self.btn_frame_4)
         self.btn_plot.pack(side=LEFT)
-        self.btn_plot.configure(background='#665959')
-        self.btn_plot.configure(disabledforeground='#911515')
-        self.btn_plot.configure(foreground='#FFFFFF')
+        self.btn_plot.configure(background='#665959',disabledforeground='#911515',foreground='#FFFFFF')
         self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.hideButton(self.btn_plot),self.setupGraph(self.graph_frame)), height=2, width=7)
+        self.btn_plot.configure(command=lambda: (self.runGraph(),self.hideButton(self.btn_plot)), height=2, width=7)
 
+        self.stop_pressed = False
         self.btn_save =  tk.Button(self.btn_frame_4)
         self.btn_save.pack(side=RIGHT)
-        self.btn_save.configure(background='#665959')
-        self.btn_save.configure(disabledforeground='#911515')
-        self.btn_save.configure(foreground='#FFFFFF')
-        self.btn_save.configure(text='Stop')
+        self.btn_save.configure(foreground='#FFFFFF', text='Stop',disabledforeground='#911515',background='#665959')
         self.btn_save.configure(command=lambda: self.showButton(self.btn_plot), height=2, width=7)
 
 
@@ -592,6 +555,13 @@ class GUIApplication(threading.Thread):
         '''
         Create a popup window who handles mergingbetween boards.
         '''
+        try:
+            self.boardIDlist = set(self.arucoBoardUnits.keys())
+            assert (len(self.boardIDlist) > 1), "You need at least 2 boards in order to initialize a merge"
+            assert self.imageFrame is not None, "Camera feed needs to be running before merging."
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
         self.merge_window = Toplevel()
         self.merge_window.title("Merge boards")
         self.merge_topframe = Frame(self.merge_window, bg='#424242')
@@ -611,10 +581,6 @@ class GUIApplication(threading.Thread):
         self.intro_text.grid(column=0, row=0, columnspan=2)
         self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg='#424242',fg="white", height=5)
         self.main_cam_label.grid(column=0,row=1)
-        self.boardIDlist = set()
-        for ABU in self.arucoBoardUnits:
-            self.boardIDlist.add(ABU.id)
-            logging.debug("Board added to boardlist in merging-window. ")
 
         self.main_board_var = IntVar()
         self.main_board_choice_id = 0
@@ -632,55 +598,84 @@ class GUIApplication(threading.Thread):
 
     def doMergeProcess(self):
         """
-
-        :return:
+        Opens the merge window and starts the merging process
+        :return: None
         """
+        check_button_states = self.getCheckButtonList(self._sub_board_checkbutton_states)
+        try:
+            assert True in check_button_states.values(), "Please select at least one board to merge with."
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
         displayFX = self.updateMergeProcessInfo
         main_board_index = self.main_board_var.get()
-        self.sub_board_indicies = list(itertools.compress(self.available_sub_boards, self._sub_board_checkbutton_states))
-
+        self.sub_board_indicies = [ key for key in self.available_sub_boards if check_button_states[key]]
         self.connector.startMerge(main_board_index, self.sub_board_indicies, displayFX)
-        if True in self._sub_board_checkbutton_states:
-            # We can go further.
-            self.merge_frame.pack_forget()
-            self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
-            self.mergeprocess_frame.pack()
-            # Add image showing the merge process, to be updated
-            self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
-            self.image_frame.grid(row=0,column=0)
-            self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
-            self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
-            self.panel.grid(row=0,column=0)
+        self.merge_frame.pack_forget()
+        self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
+        self.mergeprocess_frame.pack()
+        # Add image showing the merge process, to be updated
+        self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
+        self.image_frame.grid(row=0,column=0)
+        self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
+        self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
+        self.panel.grid(row=0,column=0)
 
-            # Show merge quality and some options
-            self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
-            self.info_frame.grid(row=0,column=1)
-            Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
-            self.mergeBoardProgressbarsList = dict()
-            n = 0
-            for n, board_index in enumerate(self.sub_board_indicies):
-                Label(self.info_frame, text=("Board " + str(board_index)), bg='#424242', fg='white').grid(row=n + 1, column=0)
-                pb = ttk.Progressbar(self.info_frame, value=0, maximum=100, orient="horizontal", length=100,
-                                     mode="determinate")
-                pb.grid(row=n + 1, column=1)
-                self.mergeBoardProgressbarsList[board_index] = pb
-            self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
-                                    command=self.merge_window.destroy)
-            self.finish_btn = Button(self.info_frame, text='Finish', bg='#424242', fg='white', command=self.mergeProcessFinished)
-            # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
-            self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
-            self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
-        else:
-            #No boards to merge, must be an error or user fault.
-            showinfo("Error", "Please choose some boards to merge with.")
+        # Show merge quality and some options
+        self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
+        self.info_frame.grid(row=0,column=1)
+        Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+        self.mergeBoardProgressbarsList = dict()
+        n = 0
+        for n, board_index in enumerate(self.sub_board_indicies):
+            Label(self.info_frame, text=("Board " + str(board_index)), bg='#424242', fg='white').grid(row=n + 1, column=0)
+            pb = ttk.Progressbar(self.info_frame, value=0, maximum=1, orient="horizontal", length=100,
+                                 mode="determinate")
+            pb.grid(row=n + 1, column=1)
+            self.mergeBoardProgressbarsList[board_index] = pb
+        self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
+                                command=self.merge_window.destroy)
+        self.finish_btn = Button(self.info_frame, text='Finish', bg='#424242', fg='white', command=self.mergeProcessFinished)
+        # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+        self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
+        self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
 
     def mergeProcessFinished(self):
-        '''
-        Finish up the merge-window, store the values, change the mergeview etc.
-        :return: None
-        '''
-        # Close the window.
+        """
+        Commands connector to finish the merge process.
+        :return:
+        """
+        try:
+            self.connector.finishMerge() #TODO: Check that all sub boards has a quality attached to it.
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
+
+        while self.connector.getMergerBoards() is None:
+            time.sleep(0.1)
+        mergerBoards = self.connector.getMergerBoards()
+        newBoard = mergerBoards["merged_board"]
+        oldBoards = [mergerBoards["main_board"]] + mergerBoards["sub_boards"]
+        self.boardIndex.set(newBoard.ID)
+        self.setBoardIndexToDisplay()
         self.merge_window.destroy()
+        for board in oldBoards:
+            self.removeBoardWidgetFromGUI(board)
+            self.removeBoardButton(board.ID)
+
+        self.addBoardWidgetToGUI(newBoard)
+        self.addBoardButton(newBoard)
+
+    def exportArucoBoard(self):
+        """
+        Adds an aruco board to the pushed boards list, to make it accessible to external objects.
+        :return: None
+        """
+
+        self.connector.addBoard(self.userBoard)
+        self.addBoardWidgetToGUI(self.userBoard)
+        self.addBoardButton(self.userBoard)
+
     def updateMergeProcessInfo(self, qualityList):
         '''
         Update the merge process image and the board qualitys.
@@ -694,8 +689,8 @@ class GUIApplication(threading.Thread):
         image = cv2.cvtColor(self.imageFrame, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         image = ImageTk.PhotoImage(image)
-        self.panel.config(image=image)
-        print("merge quality:" + str(qualityList))
+        self.panel.configure(image=image)
+        self.panel.image = image
 
         # Update the qualities.
         for sub_board_index, q in zip(self.sub_board_indicies, qualityList):
@@ -716,17 +711,15 @@ class GUIApplication(threading.Thread):
         for widg in self.cb_merger_frame.grid_slaves():
             widg.grid_forget()
         self._sub_board_checkbutton_states = dict()
+        self.cb_merger_frame.grid(row=2, column=1)
         for boardID in self.available_sub_boards:
             self._sub_board_checkbutton_state = BooleanVar()  # Variable to hold state of
             self._sub_board_checkbutton_state.set(False)
-            self._sub_board_checkbutton_states[boardID]  = self._sub_board_checkbutton_state
-        self.cb_merger_frame.grid(row=2, column=1)
-        for ABU in self.arucoBoardUnits:
-            if ABU.id is not value:
-                self._cb = Checkbutton(self.cb_merger_frame, text=str(ABU.id),  # str(self._id),
-                                       fg="black", variable=self._sub_board_checkbutton_states[ABU.id],
-                                       bg='#424242', width=12)  # Checkbutton
-                self._cb.grid(row=ABU.id)
+            self._sub_board_checkbutton_states[boardID] = self._sub_board_checkbutton_state
+            self._cb = Checkbutton(self.cb_merger_frame, text=str(boardID),  # str(self._id),
+                                   fg="black", variable=self._sub_board_checkbutton_states[boardID],
+                                   bg='#424242', width=12)  # Checkbutton
+            self._cb.grid(row=boardID)
 
     def applyCamList(self):
         '''
@@ -764,7 +757,6 @@ class GUIApplication(threading.Thread):
             self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
             self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
             self.updateCamlist(self.VEsToSend)
-        #self.__collectGUIVEs.append(True) # Set flag: PE now picks up.
 
     def setCameraIndex(self):
         cameraIndex = self.__displayedCameraIndex.get()
@@ -908,12 +900,26 @@ class GUIApplication(threading.Thread):
             showinfo('Error', "Please 'generate' the board first.")
 
     def addBoardWidgetToGUI(self, board):
+        """
+        Adds a board widget
+        :param board:
+        :return:
+        """
         try:
             ABU = ArucoBoardUnit(board, self.boardlist_container)
-            self.arucoBoardUnits.append(ABU)
+            self.arucoBoardUnits[board.ID] = ABU
         except cv2.error as e:
             logging.error("Can't create that many boards, need to expand dictionary!")
             logging.error(str(e))
+
+    def removeBoardWidgetFromGUI(self, board):
+        """
+        Removes board from the GUI and from the arucoboardUnits-list.
+        :param board: The board to remove from GUI.
+        :return: None
+        """
+        self.arucoBoardUnits[board.ID].removeBoard()
+        del self.arucoBoardUnits[board.ID]
 
     def saveArucoPDF(self):
         '''
@@ -984,16 +990,23 @@ class GUIApplication(threading.Thread):
             self.boardPose_quality.set(0.0)
 
         if poses:
-            evec, tvec = poses[boardIndex]
-            #logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
+            try:
+                evec, tvec = poses[boardIndex]
+            except KeyError:
+                return
+            logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
+
             if tvec is not None:
                 x, y, z = tvec
                 sum_x = 0.0
                 sum_y = 0.0
                 sum_z = 0.0
+                self.x_graph = x
+                self.y_graph = y
+                self.z_graph = z
                 self.x_value_list.append(x)
-                self.y_value_list.append(x)
-                self.z_value_list.append(x)
+                self.y_value_list.append(y)
+                self.z_value_list.append(z)
                 if len(self.x_value_list) >= 10:
                     del self.x_value_list[0]
                 if len(self.y_value_list) >= 10:
@@ -1006,19 +1019,12 @@ class GUIApplication(threading.Thread):
                     sum_y = sum_y + num
                 for num in self.z_value_list:
                     sum_z = sum_z + num
-                #self.x_label.config(text=str((sum_x / len(self.x_value_list))))
-                #self.y_label.config(text=str((sum_y / len(self.y_value_list))))
-                #self.y_label.config(text=str((sum_z / len(self.z_value_list))))
-                #if tvec is not None:
-            #    x, y, z = tvec
+
                 self.x_value.set(round(sum_x / len(self.x_value_list),2))
                 self.y_value.set(round(sum_y / len(self.y_value_list),2))
                 self.z_value.set(round(sum_z / len(self.z_value_list),2))
                 #logging.debug("Updating tvec")
             else:
-                #self.x_label.config(text=str(0.00))
-                #self.y_label.config(text=str(0.00))
-                #self.z_label.config(text=str(0.00))
                 self.x_value.set(0.0)
                 self.y_value.set(0.0)
                 self.z_value.set(0.0)
@@ -1027,9 +1033,6 @@ class GUIApplication(threading.Thread):
                 self.roll_value.set(round(roll,2))
                 self.pitch_value.set(round(pitch,2))
                 self.yaw_value.set(round(yaw,2))
-                #self.roll_label.config(text=str(roll))
-                #self.pitch_label.config(text=str(pitch))
-                #self.yaw_label.config(text=str(yaw))
             else:
                 self.roll_value.set(0.0)
                 self.pitch_value.set(0.0)
@@ -1062,8 +1065,6 @@ class GUIApplication(threading.Thread):
             except TypeError:
                 print('test')
 
-
-
     def readUserInputs(self):
         # TODO: Remove, and use direct contact with connector.
         """
@@ -1072,7 +1073,7 @@ class GUIApplication(threading.Thread):
         resetExtrinsic: Command to reset extrinsic matrices of cameras.
         startCommand: Command to start PoseEstimator
         stopCommand: Command to stop PoseEstimator
-        doPreview: Return whether to previuew a frame from a camera in the VECU GUI section.
+        doPreview: Return whether to preview a frame from a camera in the VECU GUI section.
         """
         cameraIndex = None
         boardIndex = None
@@ -1142,7 +1143,7 @@ class GUIApplication(threading.Thread):
                 if doPrev:
                     id = VECU.getIndex()
                     return id
-            
+
     def setPreviewStatus(self, index):
         '''
         Takew commands from VECU and organise so image preview is happening.
@@ -1200,34 +1201,29 @@ class GUIApplication(threading.Thread):
         Adds a radio button to the board list in the side panel.
         :return: None
         """
-        i = len(self.boardButtonList)
         id = userBoard.ID
-        if len(self.boardButtonList) <= (id + 1): # If the list is longer than than the board index to add + 1, then the board is already added!
-            buttonText = "Board " + str(i)
-            button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
-                                    command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=i)
-            self.boardButtonList.append(button)
-            self.boardButtonList[-1].pack()
+        buttonText = "Board " + str(id)
+        if id in self.boardButtons:
+            logging.error("Attemptet to add board that already existed in list.")
+            return
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
+                                    command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
+        self.boardButtons[id] = button
+        self.boardButtons[id].pack()
+
+    def removeBoardButton(self, boardID):
+        """
+        Removes a radio button from the board list in the side panel and from the board button dictionnary
+        :param boardID: Identifier of board and button that should be removed
+        :return:None
+        """
+        self.boardButtons[boardID].pack_forget()
+        del self.boardButtons[boardID]
 
     def setBoardIndexToDisplay(self):
         #TODO: Can be called directly from radiobutton.
         boardIndex = self.boardIndex.get()
         self.connector.setBoardIndex(boardIndex)
-
-    def addCameraButton(self):
-        #TODO: Not used. Remove?
-        """
-        Adds a radio button to the camera list in the side panel.
-        :return: None
-        """
-        i = len(self.boardButtonList)
-        if i not in self.cameraButtonIndexList:
-            buttonText = "Camera " + str(i)
-            button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5, variable=self.__displayedCameraIndex,
-                                    value=i, bg='#424242', fg='orange')
-            self.cameraButtonList.append(button)
-            self.cameraButtonIndexList.append(i)
-            self.cameraButtonList[-1].pack()
 
     def updateCamlist(self, VElist):
         """
@@ -1268,27 +1264,32 @@ class GUIApplication(threading.Thread):
         self.root.attributes('-fullscreen', False)
         return 'break'
 
-    def setupGraph(self, frame):
+    def runGraph(self):
         '''
-        Send position for the board to the graph frame and plot pos
-        :param frame: The frame you want to plot the graph in.
-        :return:
+        Setup for graph frame and variables needed to show x-y-z.
+        :param window: The frame you want to plot the graph in.
+        :return: None
         '''
+        #if self.x_graph or self.y_graph or self.z_graph is None:
+        #    graph_x = 0.0
+        #    graph_y = 0.0
+        #    graph_z = 0.0
+        #else:
         t_data, x_data, y_data, z_data = [], [], [], []
 
         figure = plt.figure()
-        ax = figure.subplots(3, 1, sharex=True, sharey=True)
-        line, = ax[0].plot(t_data, x_data, 'r')
-        line2, = ax[1].plot(t_data, y_data, 'c')
-        line3, = ax[2].plot(t_data, z_data, '-')
+        self.ax = figure.subplots(3, 1, sharex=True, sharey=True)
+        line, = self.ax[0].plot(t_data, x_data, 'r')
+        line2, = self.ax[1].plot(t_data, y_data, 'c')
+        line3, = self.ax[2].plot(t_data, z_data, '-')
         start_time = time.time()
 
-        def update(self, frame):
+        def update(frame):
             elapsed_time = time.time() - start_time
             t_data.append(elapsed_time)
-            x_data.append(self.x_value)
-            y_data.append(self.y_value)
-            z_data.append(self.z_value)
+            x_data.append(self.x_graph)
+            y_data.append(self.y_graph)
+            z_data.append(self.z_graph)
             line.set_data(t_data, x_data)
             line2.set_data(t_data, y_data)
             line3.set_data(t_data, z_data)
@@ -1296,11 +1297,20 @@ class GUIApplication(threading.Thread):
             figure.gca().autoscale_view()
 
         figure.suptitle('Movement')
-        ax[0].set_ylabel('X')
-        ax[1].set_ylabel('Y')
-        ax[2].set_ylabel('Z')
-        ax[2].set_xlabel('Time (s)')
-        animation = FuncAnimation(figure, update, interval=100)
+        self.ax[0].set_ylabel('X')
+        self.ax[1].set_ylabel('Y')
+        self.ax[2].set_ylabel('Z')
+        self.ax[2].set_xlabel('Time (s)')
+        self.animation = FuncAnimation(figure, update, interval=100)
+
+        def _pause(self,event):
+            if self.stop_pressed:
+                self.animation.event_source.stop()
+                self.stop_pressed = False
+            else:
+                self.animation.event_source.start()
+                self.stop_pressed = True
+        plt.show()
 
     def hideButton(self, button):
         '''
@@ -1310,6 +1320,7 @@ class GUIApplication(threading.Thread):
         :return: None
         '''
         button.lower()
+        self.stop_pressed = True
 
     def showButton(self, button):
         '''
@@ -1318,4 +1329,29 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         button.lift()
+        self.stop_pressed = False
+
+    def plotGraphPressed(self):
+        self.start_pressed = True
+
+
+    def showErrorBox(self, err):
+        """
+        Displays an error in a pop up box
+        :param args: The traceback to the error to display
+        :return: None
+        """
+        print(err)
+        showerror(title='Error', message=err)
+
+    def getCheckButtonList(self, varList):
+        """
+        Takes a list of tkinter Var-variables and creates a new list of the datatype stored
+        :param list: the list to get
+        :return: A list of output variables
+        """
+        outputList = dict()
+        for key, var in varList.items():
+            outputList[key] = var.get()
+        return outputList
 

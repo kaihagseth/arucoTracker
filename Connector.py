@@ -84,7 +84,7 @@ class Connector(Thread):
                 poses = self.PE.getEulerPoses()
                 logging.debug("Poses: " + str(poses))
                 frame = self.PE.getPosePreviewImg(self._cameraIndex, self._boardIndex, self._auto)
-                boardPose_quality = self.PE.getBoardPositionQuality()
+                boardPose_quality = self.PE.getBoardPositionQuality(self._boardIndex)
                 # Get the pose(s) from all cams.
                 self.PE.writeCsvLog(poses)
                 # Check if we want to abort, function from GUI.
@@ -212,6 +212,15 @@ class Connector(Thread):
         :return: None
         """
         self.PE.finishMerge()
+
+    def getMergerBoards(self):
+        """
+        Returns the boards from the merger
+        :return: A dictionary containing all the merger boards.
+        """
+        print("connecter requested to return merger boards")
+        print(self.PE.getMergerBoards())
+        return self.PE.getMergerBoards()
 
 if __name__ == '__main__':
     # logging_setup()
