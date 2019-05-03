@@ -25,11 +25,13 @@ class VisionEntity:
         self._cameraPoseQuality = 0
         self._detection_quality = dict()
         self.runThread = False
+        self.running = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
         self.__rejected = None # Rejected aruco corners - Should only be written to from thread.
         self._camera.loadCameraParameters()
         self.setIntrinsicCamParams()
+        self.displayFX = None # Function used to display a frame created in this Vision Entity
 
     def runThreadedLoop(self, dictionary, boards):
         """
@@ -39,7 +41,7 @@ class VisionEntity:
         :param boards: The board object the pose estimator should detect and calculate pose for.
         :return:
         """
-
+        self.running = True
         while self.runThread:
             self.grabFrame()
             self.retrieveFrame()
@@ -49,8 +51,11 @@ class VisionEntity:
                     self.estimatePose(board)
             except RuntimeError as err:
                 logging.error(err)
-                pass
+                continue
+            if self.dispFx:
+                self.dispFx(self.drawAxis())
         self.terminate()
+        self.running = False
 
     def calibrateCameraWithTool(self):
         """
@@ -324,3 +329,11 @@ class VisionEntity:
         :return:
         """
         self._camera.setCamLabel(callname)
+
+    def setDisplayFX(self, displayFX):
+        """
+        Sets the display function for this object.
+        :param displayFX: The function to display
+        :return: None
+        """
+        self.displayFX = displayFX

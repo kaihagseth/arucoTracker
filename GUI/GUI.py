@@ -4,30 +4,23 @@ import tkinter as tk
 from tkinter import *
 from tkinter import Menu
 from tkinter import ttk
-import traceback
 from tkinter.messagebox import showinfo, showerror
-
 import matplotlib
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
 matplotlib.use('TkAgg')
 import cv2
 import ttkthemes
 import copy
-import itertools
 from PIL import ImageTk, Image
-
 from GUI import GUIDataPlotting
 from GUI.VEConfigUnit import VEConfigUnit
 from GUI.ArucoBoardUnit import ArucoBoardUnit
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.ArucoBoard import ArucoBoard
-from VisionEntityClasses.helperFunctions import stackChecker
 from exceptions import CamNotOpenedException
-
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
-
 class GUIApplication(threading.Thread):
     global length
 
@@ -43,8 +36,7 @@ class GUIApplication(threading.Thread):
         self.counter = 0
 
         # Observer technique: Tell connector which function to call when updating fields.
-        self.connector.setGUIupdaterFunction(self.updateGUIFields)
-        self.connector.setGUIStreamerFunction(self.showFindPoseStream)
+        self.connector.setPoseDisplayFunction(self.displayPoseInTrackingWindow)
         self.connectorStarted = False
         # Fields written to by external objects. Should only be read in this object.
         self.imageFrame = None           # Image frame to be shown in camera window.
@@ -74,9 +66,7 @@ class GUIApplication(threading.Thread):
         self.cameraButtonIndexList = []
 
         # Pose data
-        self.x_value_list = []
-        self.y_value_list = []
-        self.z_value_list = []
+        self.translation_value_lists = [[],[],[]]
 
     def run(self):
         '''
@@ -192,12 +182,8 @@ class GUIApplication(threading.Thread):
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1)
 
         # Text variables for visualization of movement
-        self.x_value = DoubleVar()
-        self.y_value = DoubleVar()
-        self.z_value = DoubleVar()
-        self.roll_value = DoubleVar()
-        self.pitch_value = DoubleVar()
-        self.yaw_value = DoubleVar()
+        self.translation_values = [DoubleVar(), DoubleVar(), DoubleVar()]
+        self.rotation_values = [DoubleVar(), DoubleVar(), DoubleVar()]
         self.boardPose_quality = DoubleVar()
 
         self.DISPPLAYLABEL_WIDTH = 7
@@ -206,37 +192,37 @@ class GUIApplication(threading.Thread):
         self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.x_label.grid(column=0, row=0, sticky='w')
-        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.translation_values[0], bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispX_camPaneTabMain.grid(column=1, row=0)
         self.y_label = Label(self.dispPoseBunker_camPaneTabMain, text='Y-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.y_label.grid(column=2, row=0)
-        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.y_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.self.translation_values[1],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispY_camPaneTabMain.grid(column=3, row=0)
         self.z_label = Label(self.dispPoseBunker_camPaneTabMain, text='Z-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.z_label.grid(column=4, row=0)
-        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.self.translation_values[1],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
         self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.roll_label.grid(column=0, row=1, sticky='w')
-        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.rotation_values[0],bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                              font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispRoll_camPaneTabMain.grid(column=1, row=1)
         self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize),padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.pitch_label.grid(column=2, row=1)
-        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.rotation_values[1],fg=self.DISPPOSE_TEXTCOLOR,
                                               bg='#424242',font=(self.poseFontType,self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispPitch_camPaneTabMain.grid(column=3, row=1)
         self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
                                           font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.yaw_label.grid(column=4, row=1)
-        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
+        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.rotation_values[2],bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
                                             font=(self.poseFontType, self.poseFontSize), padx=15, pady=10,width=self.DISPPLAYLABEL_WIDTH)
         self.dispYaw_camPaneTabMain.grid(column=5, row=1)
         # Display the quality of board estimation
@@ -249,12 +235,6 @@ class GUIApplication(threading.Thread):
 
         # Setup calibration page:
         self.setupCalibrationPage()
-        #self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
-        #self.second_label.place(relx=0.5, rely=0.02, anchor='center')
-        #self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
-        #self.start_btn.grid(column=0, row=0, pady=10)
-        #self.stop_btn.grid(column=1, row=0, pady=10)
-        #self.hidecam_btn.grid(column=2, row=0, pady=10)
         # Page 3: PDF setup
         # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
@@ -278,8 +258,6 @@ class GUIApplication(threading.Thread):
 
         self.page_3_entry_frame = Frame(self.page_3_frame)
         self.page_3_entry_frame.configure(relief='groove', borderwidth='2')
-
-
 
         self.page_3_label_frame.pack(side=LEFT)
         self.page_3_entry_frame.pack(side=RIGHT)
@@ -375,20 +353,16 @@ class GUIApplication(threading.Thread):
         self.btn_save.configure(foreground='#FFFFFF', text='Stop',disabledforeground='#911515',background='#665959')
         self.btn_save.configure(command=lambda: self.showButton(self.btn_plot), height=2, width=7)
 
-
-
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500, width=50)
+
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg='white',height=2,width=7,
-                                command=lambda: [self.sendStartSignal()])
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg='white', height=2, width=7,
+                                command=lambda: [self.startPoseEstimation()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg='white',height=2,width=7,
-                               command=lambda: [self.sendStopSignal()])
-        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,height=2,width=6,
-                                  bg='#424242', fg='white',)
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg='white', height=2, width=7,
+                               command=lambda: [self.stopPoseEstimation()])
         self.start_btn.grid(column=0, row=0, pady=10)
         self.stop_btn.grid(column=1, row=0, pady=10)
-        self.hidecam_btn.grid(column=2, row=0, pady=10)
         # Label to respond if button pushed before VEs have been inited
         self.poseEstimationStartDenied_label = Label(self.camFrameSettingSection,
                                                      text="Please init VEs in config tab first.", bg="#424242")
@@ -435,8 +409,6 @@ class GUIApplication(threading.Thread):
         self.start_btn.focus()
 
         # Adds board radio button to the GUI
-        #self.addBoardButton()
-        #self.doMerging()
         # Start it all
         self.launchCalibrationWindow()
         self.root.mainloop()
@@ -452,7 +424,6 @@ class GUIApplication(threading.Thread):
         self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
         self.configPaneTabMain.configure(bg='#424242')
-
 
         # Mid section Pane for configuring
         self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
@@ -492,11 +463,8 @@ class GUIApplication(threading.Thread):
             VECU.start()
             self.VEConfigUnits.append(VECU)
 
-
         self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 10,
                                                        text="Apply",bg='#424242',command=self.applyCamList, width=20,fg="white")
-        #deadspace5 = Frame(self.midSection_configPaneTabMain).pack()
-        #deadspace6 = Frame(self.midSection_configPaneTabMain).pack()
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
         deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg='#424242')
         self.midSection_configPaneTabMain.add(deadspace2)
@@ -507,6 +475,7 @@ class GUIApplication(threading.Thread):
         self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
         self.imgHolder.image = None
         self.imgHolder.pack()
+
     def setupCalibrationPage(self):
         mainframe_cabtab = Frame(self.page_2, width=1000, height=1000)
         mainframe_cabtab.pack()
@@ -538,11 +507,8 @@ class GUIApplication(threading.Thread):
 
     def setCamToCalib(self, value):
         self.camIndexToCalibrate = value
-        vecuToCalib = -1
         self.getVEConfigUnitById(value)
 
-
-        #self.doCalibration()
     def getVEConfigUnitById(self, ID):
         vecu = None
         for VECU in self.VEConfigUnits:
@@ -607,10 +573,10 @@ class GUIApplication(threading.Thread):
         except AssertionError as err:
             self.showErrorBox(err)
             return
-        displayFX = self.updateMergeProcessInfo
         main_board_index = self.main_board_var.get()
         self.sub_board_indicies = [ key for key in self.available_sub_boards if check_button_states[key]]
-        self.connector.startMerge(main_board_index, self.sub_board_indicies, displayFX)
+        self.connector.startMerge(main_board_index, self.sub_board_indicies, self.displayMergingQuality,
+                                  self.displayImageInMerger)
         self.merge_frame.pack_forget()
         self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
         self.mergeprocess_frame.pack()
@@ -642,27 +608,25 @@ class GUIApplication(threading.Thread):
 
     def mergeProcessFinished(self):
         """
-        Commands connector to finish the merge process.
+        Finishes the merging process.
         :return:
         """
         try:
-            self.connector.finishMerge() #TODO: Check that all sub boards has a quality attached to it.
+            self.connector.finishMerge()
         except AssertionError as err:
             self.showErrorBox(err)
             return
-
         while self.connector.getMergerBoards() is None:
             time.sleep(0.1)
         mergerBoards = self.connector.getMergerBoards()
         newBoard = mergerBoards["merged_board"]
         oldBoards = [mergerBoards["main_board"]] + mergerBoards["sub_boards"]
         self.boardIndex.set(newBoard.ID)
-        self.setBoardIndexToDisplay()
+        self.setBoardIndexToDisplay(newBoard.ID)
         self.merge_window.destroy()
         for board in oldBoards:
             self.removeBoardWidgetFromGUI(board)
             self.removeBoardButton(board.ID)
-
         self.addBoardWidgetToGUI(newBoard)
         self.addBoardButton(newBoard)
 
@@ -671,34 +635,32 @@ class GUIApplication(threading.Thread):
         Adds an aruco board to the pushed boards list, to make it accessible to external objects.
         :return: None
         """
-
         self.connector.addBoard(self.userBoard)
         self.addBoardWidgetToGUI(self.userBoard)
         self.addBoardButton(self.userBoard)
 
-    def updateMergeProcessInfo(self, qualityList):
-        '''
-        Update the merge process image and the board qualitys.
 
-        :param img: Live cv2-image of the process
-        :param quality: The merging quality. A list, where corresponding index is the board index. Not used indexes
-        should be set to -1!
-        :return: None
-        '''
-        # Set the image
-        image = cv2.cvtColor(self.imageFrame, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(image)
-        image = ImageTk.PhotoImage(image)
-        self.panel.configure(image=image)
-        self.panel.image = image
-
-        # Update the qualities.
+    def displayMergingQuality(self, qualityList):
+        """
+        Displays the quality of the merge in the merger window
+        :param qualityList: A list of qualities
+        :return:
+        """
         for sub_board_index, q in zip(self.sub_board_indicies, qualityList):
             pb = self.mergeBoardProgressbarsList[sub_board_index]
             pb.config(value=q)
 
-    def setMergerBoards(self):
-        pass
+    def displayImageInMerger(self, frame):
+        """
+        Displays an image frame in the merger window. Pass this function to where
+        :param frame: The cv2 image frame to display
+        :return:
+        """
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+        image = ImageTk.PhotoImage(image)
+        self.panel.configure(image=image)
+        self.panel.image = image
 
     def setMainMergerBoard(self, value):
         self.available_sub_boards = copy.copy(self.boardIDlist)
@@ -727,10 +689,7 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         self.VEsToSend = [] # List of VEs to send to PoseEstimator
-        logging.debug("In applyCamList()")
-        #print("VEConfigUnits:", len(self.VEConfigUnits), self.VEConfigUnits)
         for VECU in self.VEConfigUnits:
-            #print("Inside")
             # Check if this VE should be included
             include = VECU.getIncludeStatus()
             if include:
@@ -762,39 +721,21 @@ class GUIApplication(threading.Thread):
         cameraIndex = self.__displayedCameraIndex.get()
         self.connector.setCameraIndex(cameraIndex)
 
-    def getVEsForPE(self):
-        '''
-        Send the VEs defined and applied in the Config tab in GUI.
-        :return: List of VEs
-        '''
-        return self.VEsToSend
-
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point.
         # TODO: Use stack to indicate job done? Add button to GUI.
         :return:
         '''
-        self.connector.setResetExtrinsic(True)
-        #self.resetBoardPosition.append(True)
+        self.connector.resetCameraPositions()
 
-    def stopRawCameraClicked(self):
-        '''
-        Stops video stream. Possible to add more functionality later on for saving data etc.
-        :return: None at the moment, but may return datastream later on.
-        '''
-        self.saveFrame()
-        self.show_video = False
-
-    def hideCamBtnClicked(self):
-        #self.frame = None
-        self.main_label.configure(image="")
-
-    def showFindPoseStream(self):
-        pass
+    def displayFrameInMainWindow(self, frame):
+        """
+        Displays a frame in the main window of the GUI.
+        :return:
+        """
         try:
-            #print("In GUI, line 562. Frame: \n " + str(self.frame) + "\n")
-            image = cv2.cvtColor(self.imageFrame, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
             image = ImageTk.PhotoImage(image)
             self.main_label.configure(image=image)
@@ -804,56 +745,12 @@ class GUIApplication(threading.Thread):
         except cv2.error as e:
             logging.error(str(e))
 
-    def showImage(self):
-        '''
-        test to save single frame
-        :return: img
-        '''
-        self.img = ImageTk.PhotoImage(file='images/test_image.png')
-        self.img_label = Label(self.root, image=self.img)
-        self.img_label.grid(column=0, row=0)
-
-    # function for saving a single frame
     def saveFrame(self):
         '''
         Save a single frame from video feed
         :return: jpg
         '''
         cv2.imwrite('images/frame%d.jpg' % self.counter, self.imageFrame)
-
-    def changeCameraID(self, camid):
-        logging.info("CHANGING CAMERA ID: Camid to shift to", camid)
-        logging.info("Previous camid: ", self.camIDInUse)
-        self.camIDInUse = camid
-
-    def doAbortApp(self):
-        '''
-        Stop the poseestimation running, but (for now), don't stop the application. .
-        :return:
-        '''
-        return self.doStopApp
-
-    def setFindPoseFalse(self):
-        '''
-        Set flag who stops the poseestimation running to True.
-        '''
-        logging.info("Setting doStopApp to True")
-        self.doStopApp = True
-        self.poseEstimationIsRunning = False
-
-    def dispContinuousResults(self):
-        '''
-        Passed to, and called from Connector, while application runs.
-        Delivers pose and the "poseframe".
-        '''
-        self.showFindPoseStream()
-
-    def fileClicked(self):
-        '''
-        Dummy function for setup for buttons or other functions that needs callback functions
-        :return: print
-        '''
-        print('File clicked')
 
     def createArucoBoard(self):
         """
@@ -973,70 +870,36 @@ class GUIApplication(threading.Thread):
             self.gap_entry.insert(0, '')  # Insert blank for user input
             self.gap_entry.configure(foreground='black')
 
-    def updateGUIFields(self, poses, frame, boardPose_quality):
+    def graphPose(self, pose):
         """
-        Update GUI-objects fields outputframe and six axis pose.
-        # Pose should probably be a datatype/class?
-        :param poses: The poses of all models tracked.
-        :param frame: The frame to display in camera view.
+        Adds pose to graph and displays it in graph window
+        :param pose:  Pose to graph
+        :return:
+        """
+        raise NotImplementedError
+
+    def displayPoseInTrackingWindow(self, pose):
+        """
+        Displays a pose in tracking window.
+        :param pose:
         :return: None
         """
-        self.modelPoses = poses
-        self.imageFrame = frame
-        boardIndex = self.boardIndex.get()
-        if boardPose_quality is not None:
-            self.boardPose_quality.set(round(boardPose_quality, 2))
+        evec, tvec = pose
+        if tvec:
+            for pos, translation_value, translation_value_list in zip(tvec, self.translation_values, self.translation_value_lists):
+                translation_value_list.append(pos)
+                if len(translation_value_list) >= 10:
+                    del translation_value_list[0]
+                translation_value.set(round(sum(translation_value_list)/len(translation_value_list), 2))
         else:
-            self.boardPose_quality.set(0.0)
-
-        if poses:
-            try:
-                evec, tvec = poses[boardIndex]
-            except KeyError:
-                return
-            logging.debug('Tvec: ' + str(tvec) + " Evec: "+ str(evec) + " Boardindex: " + str(boardIndex) + " Poses: " + str(poses))
-
-            if tvec is not None:
-                x, y, z = tvec
-                sum_x = 0.0
-                sum_y = 0.0
-                sum_z = 0.0
-                self.x_graph = x
-                self.y_graph = y
-                self.z_graph = z
-                self.x_value_list.append(x)
-                self.y_value_list.append(y)
-                self.z_value_list.append(z)
-                if len(self.x_value_list) >= 10:
-                    del self.x_value_list[0]
-                if len(self.y_value_list) >= 10:
-                    del self.y_value_list[0]
-                if len(self.z_value_list) >= 10:
-                    del self.z_value_list[0]
-                for num in self.x_value_list:
-                    sum_x = sum_x + num
-                for num in self.y_value_list:
-                    sum_y = sum_y + num
-                for num in self.z_value_list:
-                    sum_z = sum_z + num
-
-                self.x_value.set(round(sum_x / len(self.x_value_list),2))
-                self.y_value.set(round(sum_y / len(self.y_value_list),2))
-                self.z_value.set(round(sum_z / len(self.z_value_list),2))
-                #logging.debug("Updating tvec")
-            else:
-                self.x_value.set(0.0)
-                self.y_value.set(0.0)
-                self.z_value.set(0.0)
-            if evec is not None:
-                roll, pitch, yaw = evec
-                self.roll_value.set(round(roll,2))
-                self.pitch_value.set(round(pitch,2))
-                self.yaw_value.set(round(yaw,2))
-            else:
-                self.roll_value.set(0.0)
-                self.pitch_value.set(0.0)
-                self.yaw_value.set(0.0)
+            for value in self.translation_values:
+                value.set(0.0)
+        if evec:
+            for rot, value in zip(evec, self.rotation_values):
+                value.set(round(rot, 2))
+        else:
+            for rot, value in zip(evec, self.rotation_values):
+                value.set(0.0)
 
     def plotGraph(self, poses, frame):
         '''
@@ -1065,71 +928,25 @@ class GUIApplication(threading.Thread):
             except TypeError:
                 print('test')
 
-    def readUserInputs(self):
-        # TODO: Remove, and use direct contact with connector.
+    def startPoseEstimation(self):
         """
-        Exports all user commands relevant outside of the GUI
-        :return: camID: index of selected camera. negative if auto. newBoard: arucoboard created and pushed from GUI
-        resetExtrinsic: Command to reset extrinsic matrices of cameras.
-        startCommand: Command to start PoseEstimator
-        stopCommand: Command to stop PoseEstimator
-        doPreview: Return whether to preview a frame from a camera in the VECU GUI section.
+        Starts the pose estimator
+        :return: None
         """
-        cameraIndex = None
-        boardIndex = None
         try:
-            cameraIndex = self.__displayedCameraIndex.get()
-            boardIndex = self.boardIndex.get()
-        except AttributeError as e:
-            # Don't crash if __displayedCameraIndex not initialised, but set a safe value instead.
-            cameraIndex = 5
-            boardIndex = 0
-        if cameraIndex < 0:
-            auto = True
-            self.connector.setAuto(True)
-        else:
-            self.connector.setAuto(False)
-        newBoard = stackChecker(self.__pushedBoards)
-        resetExtrinsic = stackChecker(self.__resetBoardPosition)
-        startCommand = stackChecker(self.__start_application)
-        stopCommand = stackChecker(self.__stop_application)
-        collectGUIVEs = stackChecker(self.__collectGUIVEs)
-        self.__doPreviewIndex = self.checkPreviewStatus() # -1 if none preview was requested
-#        msg = "__doPreviewIndex: ", self.__doPreviewIndex
-#        logging.debug(msg)
-        if self.__doPreviewIndex is not -1 and self.__doPreviewIndex is not None:
-            #Activate thread for showing prev image TODO: Use threading
-            self.showPreviewImage(self.__doPreviewIndex)
-        elif self.imgHolder.image is not None:
-            self.imgHolder.configure(image='')
-            self.imgHolder.image = None
-        #return cameraIndex, boardIndex, auto, newBoard, resetExtrinsic, startCommand, stopCommand, collectGUIVEs#, VEsToRun
+            logging.debug("Attempting to start pose estimation from GUI")
+            assert self.anyCameraInitiated and self.anyBoardsInitiated, "No cameras initialized. " \
+                                                                        "Please initialize camera in config-section"
+            self.connector.startPoseEstimation()
+        except AssertionError as err:
+            self.showErrorBox(err)
 
-    def sendStartSignal(self):
+    def stopPoseEstimation(self):
         """
-        Adds a start signal to the stop signal stack. The signal is consumed when read.
+        Stops the pose estimator
         :return: None
         """
-        if self.anyCameraInitiated and self.anyBoardsInitiated: # VEs are initialised
-            logging.info("Pose Estimation is starting.")
-            self.connector.setStartCommand(True)
-            if not self.connectorStarted:
-                self.connectorStarted = True
-                self.connector.start()
-            #self.__start_application.append(True)
-            logging.debug("Start signal sent.")
-            self.poseEstimationStartDenied_label.grid_forget()
-        else:
-            showinfo("Error", "Please choose some cameras in the Config-section first.")
-            #self.poseEstimationStartDenied_label.grid(row=1, column=0, columnspan=3)
-
-    def sendStopSignal(self):
-        """
-        Adds a start signal to the stop signal stack. The signal is consumed when read.
-        :return: None
-        """
-        self.connector.setStopCommand(True)
-        self.__stop_application.append(True)
+        self.connector.stopPoseEstimation()
         logging.debug("Stop signal sent.")
 
     def checkPreviewStatus(self):
@@ -1221,9 +1038,9 @@ class GUIApplication(threading.Thread):
         del self.boardButtons[boardID]
 
     def setBoardIndexToDisplay(self):
-        #TODO: Can be called directly from radiobutton.
         boardIndex = self.boardIndex.get()
         self.connector.setBoardIndex(boardIndex)
+        self.connector.updateDisplayFunctions(self.displayFrameInMainWindow())
 
     def updateCamlist(self, VElist):
         """
@@ -1334,7 +1151,6 @@ class GUIApplication(threading.Thread):
     def plotGraphPressed(self):
         self.start_pressed = True
 
-
     def showErrorBox(self, err):
         """
         Displays an error in a pop up box
@@ -1346,12 +1162,8 @@ class GUIApplication(threading.Thread):
 
     def getCheckButtonList(self, varList):
         """
-        Takes a list of tkinter Var-variables and creates a new list of the datatype stored
+        Takes a dict of tkinter Var-variables and creates a new dict of the datatype stored
         :param list: the list to get
         :return: A list of output variables
         """
-        outputList = dict()
-        for key, var in varList.items():
-            outputList[key] = var.get()
-        return outputList
-
+        return {key: value.get() for key, value in varList.items()}

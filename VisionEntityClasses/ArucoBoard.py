@@ -20,6 +20,7 @@ class ArucoBoard:
         self.ID = ArucoBoard.nextIndex
         ArucoBoard.nextIndex += 1
         self.dictionary = dictionary
+        self.autoTracked = False
         if board is not None:
             self._board = board
             return
@@ -46,7 +47,6 @@ class ArucoBoard:
     def updateBoardPose(self, camera_to_model_transformation):
         """
         Sets boards pose in world coordinates from a calibrated vision entity.
-        # FIXME: Sometimes causes crashes when ve loses sight of board?
         :param cam: The camera spotting the board.
         :return:
         """
@@ -179,3 +179,12 @@ class ArucoBoard:
             for j, corner in enumerate(marker):
                 transformed_points[i][j] = transformPointHomogeneous(corner, transformationMatrix)
         return transformed_points
+
+    def setAutoTracked(self, autoTracked):
+        """
+        Sets this boards auto track status. If this board is autoTracked, it will send a signal to the poseEstimator
+        when it changes
+        :param autoTracked: Boolean statement describing if this board is autotracked or not.
+        :return:
+        """
+        self.autoTracked = autoTracked

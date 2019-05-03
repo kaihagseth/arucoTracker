@@ -34,14 +34,6 @@ class Camera():
         if load_camera_parameters:
             self.loadCameraParameters()
 
-    def startVideoStream(self):
-        '''
-        Start threaded vidstream. Needs more work.
-        :return:
-        '''
-        self._video_stream_thread = WebcamVideoStream(src=0, camName=self._name)
-        self._video_stream_thread.start()
-
     def getStream(self):
         """
         Returns video stream
