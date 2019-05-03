@@ -153,10 +153,11 @@ class GUIApplication(threading.Thread):
         self.bottom_left.configure( bg='#424242', relief='groove', borderwidth='2')
 
 
+
         self.left_camPaneTabMain.add(self.top_left, height=500)
         self.left_camPaneTabMain.add(self.bottom_left, height=250)
 
-        self.midSection_camPaneTabMain = PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='gray40') # Mid GUI
+        self.midSection_camPaneTabMain = PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='gray80') # Mid GUI
         self.root_cam_tab.add(self.midSection_camPaneTabMain)
 
         self.top = PanedWindow(self.midSection_camPaneTabMain) # Top Mid GUI
@@ -169,7 +170,7 @@ class GUIApplication(threading.Thread):
         self.main_label.grid(column=0, row=0)
 
         self.bottom = PanedWindow(self.midSection_camPaneTabMain)
-        self.bottom.configure(height=20, bg='#424242')
+        self.bottom.configure(height=15, bg='#424242')
         self.midSection_camPaneTabMain.add(self.bottom, height=50)
 
         self.poseFontType = "Arial"
