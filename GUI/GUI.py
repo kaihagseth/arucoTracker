@@ -526,6 +526,7 @@ class GUIApplication(threading.Thread):
         if not self.poseEstimationIsRunning: # Can't calibrate while running.
             self.allowToCalibrate = True
         if self.allowToCalibrate:
+            logging.debug('Going to create a TopLevel window now')
             self.maincalib_window = Toplevel()
             self.maincalib_window.title("Calibrate cameras")
             self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
