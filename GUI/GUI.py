@@ -81,7 +81,7 @@ class GUIApplication(threading.Thread):
         # Some GUI frames (containers)
         self.calibCam_statusFrame = None
         self.maincalib_window = None
-        self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+
         self.calibConnectionFrame = None
 
     def run(self):
@@ -528,6 +528,7 @@ class GUIApplication(threading.Thread):
         if self.allowToCalibrate:
             logging.debug('Going to create a TopLevel window now')
             self.maincalib_window = Toplevel()
+            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
             self.maincalib_window.title("Calibrate cameras")
             self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
             self.prepareCalib_mainFrame.pack()
