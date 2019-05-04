@@ -75,7 +75,7 @@ class Connector(Thread):
         return camlist
 
     def getVEFromCamIndex(self, index):
-        return self.PE.getVEById(index)
+        return self.PE.getVE(index)
 
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'
@@ -85,7 +85,7 @@ class Connector(Thread):
 
     def getConnectedCams(self):
         camlist = []
-        for VE in self.PE.VisionEntityList:
+        for VE in self.PE.VisionEntityList.items():
             i = VE.getCam().getSrc()
             camlist.append(i)
         return camlist
@@ -93,8 +93,10 @@ class Connector(Thread):
     # Set class variables:
     def setCameraIndex(self, ci):
         if ci == -1:
+            logging.debug("Activated auto tracking")
             self.PE.setAutoTracker(True)
         else:
+            logging.debug("Switching to camera " + str(ci))
             self.PE.routeDisplayFunction(ci)
             self.PE.setAutoTracker(False)
 

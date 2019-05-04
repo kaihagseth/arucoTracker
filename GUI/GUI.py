@@ -378,7 +378,7 @@ class GUIApplication(threading.Thread):
 
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="Auto", padx=5, variable=self.__displayedCameraIndex,
-                       command=self.setCameraIndex, value=-1, bg='#424242', fg='orange',font=("Arial", "12","bold")).pack()
+                       command=lambda: [self.setCameraIndex(-1)], value=-1, bg='#424242', fg='orange',font=("Arial", "12","bold")).pack()
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='White',font=("Arial", "12")).pack()
 
@@ -717,9 +717,10 @@ class GUIApplication(threading.Thread):
             self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
             self.updateCamlist(self.VEsToSend)
 
-    def setCameraIndex(self):
-        cameraIndex = self.__displayedCameraIndex.get()
-        self.connector.setCameraIndex(cameraIndex)
+    def setCameraIndex(self, index):
+        logging.debug("Setting camera index")
+        self.__displayedCameraIndex.set(index)
+        self.connector.setCameraIndex(index)
 
     def resetCamExtrinsic(self):
         '''
@@ -734,7 +735,6 @@ class GUIApplication(threading.Thread):
         Displays a frame in the main window of the GUI.
         :return:
         """
-        logging.debug("attempting to display frame in main window")
         try:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
@@ -894,7 +894,7 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         evec, tvec = pose
-        if tvec:
+        if not tvec is None:
             for pos, translation_value, translation_value_list in zip(tvec, self.translation_values, self.translation_value_lists):
                 translation_value_list.append(pos)
                 if len(translation_value_list) >= 10:
@@ -903,7 +903,7 @@ class GUIApplication(threading.Thread):
         else:
             for value in self.translation_values:
                 value.set(0.0)
-        if evec:
+        if not evec is None:
             for rot, value in zip(evec, self.rotation_values):
                 value.set(round(rot, 2))
         else:
@@ -1065,6 +1065,7 @@ class GUIApplication(threading.Thread):
             if not self.camIndexesDisplayed[camID]: # Not already placed
                 buttonText = "Camera " + str(camID)
                 button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
+                                        command=lambda: [self.setCameraIndex(camID)],
                                         variable=self.__displayedCameraIndex,
                                         value=camID, bg='#424242', fg='orange')
                 self.cameraButtonList.append(button)

@@ -21,8 +21,7 @@ class PoseEstimator():
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 0.8  # How good the quality of the first frame has to be in order to be set as the first camera
     def __init__(self):
-        self.VisionEntityList = []  # List for holding VEs
-        self.threadInfoList = []  # List for reading results from VEs.
+        self.VisionEntityList = dict()  # List for holding VEs
         self._writer = None
         self._log_start_time = None
         self._arucoBoards = dict()  # List of aruco boards to track.
@@ -58,7 +57,7 @@ class PoseEstimator():
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
             VE = VisionEntity(cam_index)
-            self.VisionEntityList.append(VE)
+            self.VisionEntityList[cam_index] = VE
             VE.addBoards(self.getBoards())
         return cam_list
 
@@ -69,9 +68,9 @@ class PoseEstimator():
         :return: None
         """
         for VE in VElist:
-            if VE not in self.VisionEntityList: # Don't add double
+            if VE not in self.getVisionEntityList(): # Don't add double
                 VE.addBoards(self.getBoards())
-                self.VisionEntityList.append(VE)
+                self.VisionEntityList[VE.getCameraID()] = VE
                 logging.info("VE with camsource "+str(VE.getCam().getSrc())+" added.")
             else:
                 logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
@@ -96,7 +95,7 @@ class PoseEstimator():
         self.poseDisplayFX = poseDisplayFX
         self.qualityDisplayFX = qualityDisplayFX
         self.runThread = True
-        for VE in self.VisionEntityList:
+        for VE in self.getVisionEntityList():
             VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             th.start()
@@ -123,8 +122,7 @@ class PoseEstimator():
         :param index: Index of VE cam
         :return:
         '''
-        VE = self.getVEById(index)
-        self.VisionEntityList.remove(VE)
+        del self.VisionEntityList[index]
 
     def writeCsvLog(self, poses):
         """
@@ -163,39 +161,32 @@ class PoseEstimator():
         Create a new starterpoint for pose estimation.
         :return: None
         '''
-        for VE in self.VisionEntityList:
+        for VE in self.getVisionEntityList():
             VE.resetExtrinsicMatrix()
 
-    def getVEById(self, camID):
+    def getVE(self, index):
         """
         :param camID: OpenCV camera ID
         :return: Vision entity to be returned.
         """
-        logging.info("Length of VE-list: "+ str(len(self.VisionEntityList)))
-        for VE in self.VisionEntityList:
-            cam = VE.getCam()
-            if cam._src is camID:
-                wantedVE = VE
-                return wantedVE
-        # If not found, log error.
-        logging.error('Camera not found on given index: '+str(camID)+', VE returned None. Parent caller: ' + str(inspect.stack()[2][3]))
+        try:
+            return self.VisionEntityList[index]
+        except KeyError as err:
+            logging.error("Vision entity list has no entries with key: " + str(index))
 
     def getVisionEntityList(self):
         """
         Returns list of all Vision entities.
         :return:
         """
-        return self.VisionEntityList
+        return self.VisionEntityList.values()
 
     def getVisionEntityIndexes(self):
         """
         Returns a list of all camera IDs of Vision Entities.
         :return: List of all indexes of Vision entities.
         """
-        indexList = []
-        for ve in self.getVisionEntityList():
-            indexList.append(ve.getCameraID())
-        return indexList
+        return self.VisionEntityList.keys()
 
     def updateBoardPoses(self):
         """
@@ -266,12 +257,12 @@ class PoseEstimator():
         if camID == -1:
             #If no master camera is present, select first index.
             if self._master_entity is None:
-                vision_entity = copy.copy(self.getVEById(0))
+                vision_entity = copy.copy(self.getVE(0))
             else:
                 vision_entity = copy.copy(self._master_entity)
         else:
             logging.error("CamID: " + str(camID))
-            vision_entity = self.getVEById(camID)
+            vision_entity = self.getVE(camID)
         quality = vision_entity.getCameraPoseQuality()
         return quality
 
@@ -297,6 +288,7 @@ class PoseEstimator():
         while True in veStatuses:
             veStatuses = [ve.running for ve in ves]
         self.running = False
+        self.worldCoordinatesIsSet = False
 
     def stopThreads(self):
         """
@@ -347,7 +339,7 @@ class PoseEstimator():
         :return: None
         """
         main_board = self.getBoards()[main_board_index]
-        self.routeDisplayFunction(imageDisplayFX)
+        self.setPoseDisplayFunction(imageDisplayFX)
         sub_boards = []
         for index in sub_boards_indeces:
             sub_boards.append(self.getBoards()[index])
@@ -406,7 +398,7 @@ class PoseEstimator():
         board = self.getBoards()[self.trackedBoardIndex]
         ve = board.getTrackingEntity()
         if ve is not None:
-            self.routeDisplayFunction(ve.getCameraID)
+            self.routeDisplayFunction(ve.getCameraID())
 
     def routeDisplayFunction(self, cameraIndex):
         """
@@ -417,7 +409,8 @@ class PoseEstimator():
         """
         for ve in self.getVisionEntityList():
             ve.setDisplayFunction(None)
-        self.getVEById(cameraIndex).setDisplayFunction(self.imageDisplayFX)
+        logging.debug("Routing display function, " + str(self.imageDisplayFX) + " to camera " + str(cameraIndex))
+        self.getVE(cameraIndex).setDisplayFunction(self.imageDisplayFX)
 
     def displayPose(self):
         """
