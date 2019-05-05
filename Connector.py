@@ -27,73 +27,42 @@ class Connector(Thread):
         self.GUIupdaterFunction = None
         self.GUIstreamFunction = None
         self.PE = PoseEstimator()
-        self._cameraIndex = 0
-        self._boardIndex = None
-        self._auto = True
         self._newBoard = None
         self._resetExtrinsic = None
-        self._startCommand = None
         self._stopCommand = None
-        self._collectGUIVEs = None#self.UI.readUserInputs()
-        #if ui_string == "GUI":
-            #self.UI = GUIApplication()
-            #guil = GUILogin(mainGUI=self.UI)
-            #guil.startLogin()
+        self._collectGUIVEs = None
+
     def run(self):
         self.startApplication()
 
-    def startApplication(self):
+    def startApplication(self, qualityDisplayFX, imageDisplayFX, poseDisplayFX):
         '''
         Start the UI, and communicate continuous with the GUI while loop is running in separate threads.
         '''
-        logging.info("Running StartApplication loop.")
-        doAbort = False
-        runApp = True
-        VEsInitInGUI = True
-        time.sleep(5)
-        counter = 0
-        # TODO: Find an automated way to wait for UI to initialize
-        while not doAbort:
-            counter += 1
-            logging.debug("Running startApplication loop " + str(counter)+" times. ")
-            if self._startCommand:
-                logging.debug("startCommand received")
-                if not VEsInitInGUI: # Not collected VEs from GUI, so use hardcoded method. Todo: Use flag instead
-                    self.PE.createVisionEntities()
-                else:
-                    # Do nothing. VEs already initialised
-                    pass
-                self.PE.runPoseEstimator()  # Create all threads and start them
-                #camlist = self.PE.getVisionEntityIndexes()
-                #self.UI.updateCamlist(camlist)
-                runApp = True
-                self._startCommand = False
-            if self._collectGUIVEs:
-                VEsInitInGUI = True
-            if self._stopCommand:
-                logging.debug("stop command received")
-                runApp = False
-                #doAbort = True
-                self.PE.stopThreads()
-            if self._resetExtrinsic:
-                # Reset the extrinsic matrix, meaning set new startposition for calculations.
-                pass
-            if runApp:
-                logging.info("Running runApp")
-                self.PE.updateBoardPoses()
-                poses = self.PE.getEulerPoses()
-                logging.debug("Poses: " + str(poses))
-                frame = self.PE.getPosePreviewImg(self._cameraIndex, self._boardIndex, self._auto)
-                boardPose_quality = self.PE.getBoardPositionQuality(self._boardIndex)
-                # Get the pose(s) from all cams.
-                self.PE.writeCsvLog(poses)
-                # Check if we want to abort, function from GUI.
-                self.updateFields(poses, frame, boardPose_quality)  # Write relevant information to UI-thread.
-                self.doFindPoseStreamer()
-            else:
-                time.sleep(0.1)
+        self.PE.initialize(qualityDisplayFX=qualityDisplayFX, imageDisplayFX=imageDisplayFX, poseDisplayFX=poseDisplayFX)
 
 
+    def setBoardIndex(self, bi):
+        """
+        Tells PoseEstimator which board to track.
+        :return: None
+        """
+        self.PE.trackedBoardIndex = bi
+
+    def startPoseEstimation(self, imageDisplayFX, poseDisplayFX, qualityDisplayFX):
+        """
+        Starts the pose estimator.
+        :return: None
+        """
+        self.PE.initialize(imageDisplayFX=imageDisplayFX, poseDisplayFX=poseDisplayFX, qualityDisplayFX=qualityDisplayFX)
+
+    def stopPoseEstimation(self):
+        """
+        Stops the pose estimator.
+        :return: None
+        """
+        logging.debug("Stopping pose estimator")
+        self.PE.stopThreads()
 
     def initConnectedCams(self):
         '''
@@ -102,20 +71,11 @@ class Connector(Thread):
         :param includeDefaultCam: If True, include the inbuilt webcam.
         :return: List of cams connected
         '''
-
         camlist = self.PE.createVisionEntities()
         return camlist
 
-    def getImgFromSingleCam(self, camId):
-        """
-        Get raw image, if poseEstimation is not running.
-        :param camId: Index number of camrea
-        :return: Frame from cam on given ID. None if VE ThreadLoop is running.
-        """
-        return self.PE.getRawPreviewImage(camId)
-
     def getVEFromCamIndex(self, index):
-        return self.PE.getVEById(index)
+        return self.PE.getVE(index)
 
     def logging_setup(self,path='config\logging.json'):
         path = 'config\logging_config'
@@ -125,23 +85,20 @@ class Connector(Thread):
 
     def getConnectedCams(self):
         camlist = []
-        for VE in self.PE.VisionEntityList:
+        for VE in self.PE.VisionEntityList.items():
             i = VE.getCam().getSrc()
             camlist.append(i)
         return camlist
 
     # Set class variables:
     def setCameraIndex(self, ci):
-        self._cameraIndex = ci
-
-    def setBoardIndex(self, bi):
-        self._boardIndex = bi
-
-    def setAuto(self, auto):
-        self._auto = auto
-
-    def setNewBoard(self, nb):
-        self._newBoard = nb
+        if ci == -1:
+            logging.debug("Activated auto tracking")
+            self.PE.setAutoTracker(True)
+        else:
+            logging.debug("Switching to camera " + str(ci))
+            self.PE.routeDisplayFunction(ci)
+            self.PE.setAutoTracker(False)
 
     def addBoard(self, board):
         self.PE.addBoard(board)
@@ -150,8 +107,6 @@ class Connector(Thread):
         self._resetExtrinsic = reset
         self.PE.resetExtrinsicMatrices()
 
-    def setStartCommand(self, sc):
-        self._startCommand = sc
 
     def setStopCommand(self, sc):
         self._stopCommand = sc
@@ -196,7 +151,7 @@ class Connector(Thread):
         """
         self.PE.removeVEFromListByIndex(camID)
 
-    def startMerge(self, main_board_index, sub_boards_index, displayFx):
+    def startMerge(self, main_board_index, sub_boards_index, qualityDisplayFX, imageDisplayFX):
         """
         Starts merging of boards
         :param main_board: main board to merge
@@ -204,7 +159,7 @@ class Connector(Thread):
         :param displayFx: the function used to display board quality in UI
         :return:
         """
-        self.PE.startMerge(main_board_index, sub_boards_index, displayFx)
+        self.PE.startMerge(main_board_index, sub_boards_index, qualityDisplayFX, imageDisplayFX)
 
     def finishMerge(self):
         """
@@ -221,6 +176,14 @@ class Connector(Thread):
         print("connecter requested to return merger boards")
         print(self.PE.getMergerBoards())
         return self.PE.getMergerBoards()
+
+    def setPoseDisplayFunction(self, poseDisplayFX):
+        """
+        Passes a function that displays pose to the pose estimator.
+        :param poseDisplayFX: Function that displays pose
+        :return: None
+        """
+        self.PE.setPoseDisplayFunction(poseDisplayFX)
 
 if __name__ == '__main__':
     # logging_setup()

@@ -2,7 +2,6 @@ import logging
 import cv2
 import numpy as np
 from VisionEntityClasses import IntrinsicCalibrator as ic
-from WebcamVideoStream import WebcamVideoStream
 from exceptions import CamNotOpenedException
 
 class Camera():
@@ -33,14 +32,6 @@ class Camera():
             raise CamNotOpenedException("Cam not opened on corresponding index.")
         if load_camera_parameters:
             self.loadCameraParameters()
-
-    def startVideoStream(self):
-        '''
-        Start threaded vidstream. Needs more work.
-        :return:
-        '''
-        self._video_stream_thread = WebcamVideoStream(src=0, camName=self._name)
-        self._video_stream_thread.start()
 
     def getStream(self):
         """

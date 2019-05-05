@@ -21,13 +21,20 @@ class PoseEstimator():
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     QTHRESHOLD = 0.8  # How good the quality of the first frame has to be in order to be set as the first camera
     def __init__(self):
-        self.VisionEntityList = []  # List for holding VEs
-        self.threadInfoList = []  # List for reading results from VEs.
+        self.VisionEntityList = dict()  # List for holding VEs
         self._writer = None
         self._log_start_time = None
         self._arucoBoards = dict()  # List of aruco boards to track.
         self.worldCoordinatesIsSet = False
         self.merger = None
+        self.imageDisplayFX = None # Function used to display image frame
+        self.autoTracking = False # Tells if autotracking is active or not.
+        self.trackedBoardIndex = None # Tells which board is being tracked.
+        self.qualityDisplayFX = None # Function used to display quality of a chosen board
+        self.poseDisplayFX = None # Function used to display pose of a chosen board
+        self.logging = False
+        self.running = False
+        self.runThread = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
         """
@@ -50,7 +57,7 @@ class PoseEstimator():
         cam_list = self.findConnectedCamIndexes()
         for cam_index in cam_list:
             VE = VisionEntity(cam_index)
-            self.VisionEntityList.append(VE)
+            self.VisionEntityList[cam_index] = VE
             VE.addBoards(self.getBoards())
         return cam_list
 
@@ -61,9 +68,9 @@ class PoseEstimator():
         :return: None
         """
         for VE in VElist:
-            if VE not in self.VisionEntityList: # Don't add double
+            if VE not in self.getVisionEntityList(): # Don't add double
                 VE.addBoards(self.getBoards())
-                self.VisionEntityList.append(VE)
+                self.VisionEntityList[VE.getCameraID()] = VE
                 logging.info("VE with camsource "+str(VE.getCam().getSrc())+" added.")
             else:
                 logging.info("Duplicate found! VE with camera index " + str(VE.getCam().getSrc())+" is duplicated and not added.")
@@ -78,19 +85,36 @@ class PoseEstimator():
                 logging.info(msg)
         return wantedCamIndexes
 
-    def runPoseEstimator(self):
+    def initialize(self, imageDisplayFX=None, poseDisplayFX=None, qualityDisplayFX=None):
         '''
         Start Vision Entity threads for pose estimation.
         :return: None
         '''
-        logging.info('Starting runPoseEstimator()')
-        for VE in self.VisionEntityList:
-            logging.info('VE start')
+        logging.debug('Initializing pose estimator')
+        self.imageDisplayFX = imageDisplayFX
+        self.poseDisplayFX = poseDisplayFX
+        self.qualityDisplayFX = qualityDisplayFX
+        self.runThread = True
+        for VE in self.getVisionEntityList():
             VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
-            logging.debug('Passing thread creation.')
-            logging.debug('ThreadInfoList: ', self.threadInfoList)
             th.start()
+            logging.debug('Vision entity created.')
+        th = threading.Thread(target=self.runPoseEstimationLoop)
+        th.start()
+
+    def runPoseEstimationLoop(self):
+        self.running = True
+        while self.runThread:
+            self.updateBoardPoses()
+            if self.poseDisplayFX:
+                self.displayPose()
+            if self.qualityDisplayFX:
+                self.displayQuality()
+            if self.logging:
+                self.writeCsvLog()
+            if self.autoTracking:
+                self.autoTrack()
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -98,13 +122,12 @@ class PoseEstimator():
         :param index: Index of VE cam
         :return:
         '''
-        VE = self.getVEById(index)
-        self.VisionEntityList.remove(VE)
+        del self.VisionEntityList[index]
 
     def writeCsvLog(self, poses):
         """
         Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
-        #TODO: rewrite to accommodate for more than one pose!!
+        # TODO: rewrite to accommodate for more than one pose!!
         # FIXME: This function is not working as intended.
         :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
         :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
@@ -136,66 +159,54 @@ class PoseEstimator():
     def resetExtrinsicMatrices(self):
         '''
         Create a new starterpoint for pose estimation.
-
         :return: None
         '''
-        for VE in self.VisionEntityList:
+        for VE in self.getVisionEntityList():
             VE.resetExtrinsicMatrix()
 
-    def getVEById(self, camID):
+    def getVE(self, index):
         """
         :param camID: OpenCV camera ID
         :return: Vision entity to be returned.
         """
-        logging.info("Length of VE-list: "+ str(len(self.VisionEntityList)))
-        for VE in self.VisionEntityList:
-            cam = VE.getCam()
-            if cam._src is camID:
-                wantedVE = VE
-                return wantedVE
-        # If not found, log error.
-        logging.error('Camera not found on given index: '+str(camID)+', VE returned None. Parent caller: ' + str(inspect.stack()[2][3]))
+        try:
+            return self.VisionEntityList[index]
+        except KeyError as err:
+            logging.error("Vision entity list has no entries with key: " + str(index))
 
     def getVisionEntityList(self):
         """
         Returns list of all Vision entities.
         :return:
         """
-        return self.VisionEntityList
+        return self.VisionEntityList.values()
 
     def getVisionEntityIndexes(self):
         """
         Returns a list of all camera IDs of Vision Entities.
         :return: List of all indexes of Vision entities.
         """
-        indexList = []
-        for ve in self.getVisionEntityList():
-            indexList.append(ve.getCameraID())
-        return indexList
+        return self.VisionEntityList.keys()
 
     def updateBoardPoses(self):
         """
         Writes a new pose to each board in board list.
         :return: None
         """
-        for _, board in self._arucoBoards.items():
+        for board in self._arucoBoards.values():
             for ve in self.getVisionEntityList():
                 # Collecting frame and detecting markers for each camera
-                poses = ve.getPoses()
-                model_pose = poses[board.ID]
-                # Idea: Set a flag in pose estimator when the first board is detected.
                 if (not self.worldCoordinatesIsSet) and ve.getDetectionQuality()[board.ID] >= self.QTHRESHOLD:
                     self.worldCoordinatesIsSet = True
                     board.setFirstBoardPosition(ve)
                     board.setTrackingEntity(ve)
             board.setTrackingEntity(self.chooseMasterCam(board))
-            tracking_entity = board.getTrackingEntity() # FIXME: Remove copy if it did not fix crash
+            tracking_entity = board.getTrackingEntity()
             if tracking_entity:
                 te_poses = copy.copy(tracking_entity.getPoses())
                 board.updateBoardPose(te_poses[board.ID])
             else:
                 board.updateBoardPose(None)
-
             # Set camera world positions if they are not already set and both the camera and the master camera can see the frame
             for ve in self.getVisionEntityList():
                 if tracking_entity is None:
@@ -207,25 +218,21 @@ class PoseEstimator():
                         ve.setCameraPose(board)
                         ve.setCameraPoseQuality(potentialCameraPoseQuality)
 
-    def getEulerPoses(self):
+    def getEulerPose(self, boardID):
         """
-        Returns poses from all boards. list of tuples of tuple Nx2x3
-        :return:list of tuples of tuple Nx2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
+        Returns a pose expressed in translation and euler angles from selected board.
+        :return:list of tuples of tuple 2x3 Board - tvec(x, y, z)mm - evec(roll, yaw, pitch)deg
         """
-        poses = dict()
-        logging.debug("Length of aruco list: " + str(len(self._arucoBoards)))
-        for board in self._arucoBoards.values():
-            try:
-                rvec, tvec = board.getRvecTvec()
-                tvec = tvec.astype(float).reshape(-1)
-                evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(float)
-            except (TypeError, AttributeError):
-                tvec = None
-                evec = None
-            pose = evec, tvec
-            poses[board.ID] = pose
-        return poses
-
+        board = self.getBoards()[boardID]
+        try:
+            rvec, tvec = board.getRvecTvec()
+            tvec = tvec.astype(float).reshape(-1)
+            evec = np.rad2deg(rotationMatrixToEulerAngles(board.getTransformationMatrix())).astype(float)
+        except (TypeError, AttributeError):
+            tvec = None
+            evec = None
+        pose = evec, tvec
+        return pose
 
     def chooseMasterCam(self, board):
         """
@@ -241,36 +248,6 @@ class PoseEstimator():
                 master_ve = ve
         return master_ve
 
-    def getPosePreviewImg(self, cameraIndex, boardIndex, autoTrack):
-        """
-        Returns a pose preview image from master camera. If no master camera is present, returns a frame from camera on
-        index 0.
-        :param autoTrack Bool that decides if auto tracking is active.
-        :param ID. The ID of the board to track, or the cam to use.
-        :return: Frame drawn with axis cross, corners, and poses
-        """
-        if autoTrack:
-            boards = self.getBoards()
-            board = boards[boardIndex]
-            tracking_entity = board.getTrackingEntity()
-            if tracking_entity is None:
-                logging.debug("Tracking entity is none, asking to first vision entity in vision entity list. ")
-                vision_entity = copy.copy(self.getVisionEntityList()[0])
-            else:
-                vision_entity = copy.copy(tracking_entity)
-        else:
-            vision_entity = self.getVEById(cameraIndex)
-
-        if vision_entity is not None and vision_entity.getCornerDetectionAttributes()[0] is not None and\
-                vision_entity.getPoses() is not None:
-            out_frame = vision_entity.drawAxis()
-        else:
-            if vision_entity is None:
-                out_frame = self.getVisionEntityList()[0].getFrame()
-            else:
-                out_frame = vision_entity.getFrame()
-        return out_frame
-
     def getCameraPositionQuality(self, camID=-1):
         '''
         Get the quality/reliability , of the pose of a cam from world origo.
@@ -280,12 +257,12 @@ class PoseEstimator():
         if camID == -1:
             #If no master camera is present, select first index.
             if self._master_entity is None:
-                vision_entity = copy.copy(self.getVEById(0))
+                vision_entity = copy.copy(self.getVE(0))
             else:
                 vision_entity = copy.copy(self._master_entity)
         else:
             logging.error("CamID: " + str(camID))
-            vision_entity = self.getVEById(camID)
+            vision_entity = self.getVE(camID)
         quality = vision_entity.getCameraPoseQuality()
         return quality
 
@@ -300,33 +277,18 @@ class PoseEstimator():
         quality = board.getPoseQuality()
         return quality
 
-    def getBoardPositionQualityWrtCam(self, boardIndex=0, camID=-1):
-        ''' TEST FUNCTION YET
-        Get the quality/reliability, of the pose estimation of given board, from a desired camera.
-        :param boardIndex: Board to select
-        :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
-        '''
-        #Find cam
-        if camID == -1:
-            #If no master camera is present, select first index.
-            if self._master_entity is None:
-                vision_entity = copy.copy(self.getVEById(0))
-            else:
-                vision_entity = copy.copy(self._master_entity)
-        else:
-            vision_entity = self.getVEById(camID)
-        board = self._arucoBoards[boardIndex]
-        quality = board.getPoseQuality()
-        return quality
-
-    def getRawPreviewImage(self, camID):
-        '''
-        Get a raw, unfiltered image from the camera on selected ID.
-        :return: Raw, unfiltered image. Return None if unsuccessful, or camera used elsewhere.
-        '''
-        VE = self.getVEById(camID)
-        frame = VE.getFrame()
-        return frame
+    def stopPoseEstimation(self):
+        """
+        Stops the pose estimator
+        :return:
+        """
+        self.runThread = False
+        self.stopThreads()
+        ves = self.getVisionEntityList()
+        while True in veStatuses:
+            veStatuses = [ve.running for ve in ves]
+        self.running = False
+        self.worldCoordinatesIsSet = False
 
     def stopThreads(self):
         """
@@ -335,7 +297,6 @@ class PoseEstimator():
         """
         for VE in self.getVisionEntityList():
             VE.runThread = False
-        #self.VisionEntityList = []
 
     def addBoard(self, board):
         """
@@ -370,7 +331,7 @@ class PoseEstimator():
         """
         return self._arucoBoards
 
-    def startMerge(self, main_board_index, sub_boards_indeces, displayFx):
+    def startMerge(self, main_board_index, sub_boards_indeces, qualityDisplayFX, imageDisplayFX):
         """
         Starts a merger that will merge several arucoboards to one.
         :param main_board: The main board will be the reference the sub boards are connected to.
@@ -378,12 +339,13 @@ class PoseEstimator():
         :return: None
         """
         main_board = self.getBoards()[main_board_index]
+        self.setPoseDisplayFunction(imageDisplayFX)
         sub_boards = []
         for index in sub_boards_indeces:
             sub_boards.append(self.getBoards()[index])
         self.merger = Merger(self.dictionary, main_board, sub_boards)
         self.merger.startMerge()
-        self.merger.setDisplayFunction(displayFx)
+        self.merger.setDisplayFunction(qualityDisplayFX)
 
     def finishMerge(self):
         """
@@ -420,3 +382,54 @@ class PoseEstimator():
             return None
         else:
             return self.merger.getBoards()
+
+    def setPoseDisplayFunction(self, poseDisplayFX):
+        """
+        Sets a function in this class that displays the selected boards pose
+        :return: None
+        """
+        self.poseDisplayFX = poseDisplayFX
+
+    def autoTrack(self):
+        """
+        Selects a route for the display function based on a selected board and this boards tracking entity.
+        :return: None
+        """
+        board = self.getBoards()[self.trackedBoardIndex]
+        ve = board.getTrackingEntity()
+        if ve is not None:
+            self.routeDisplayFunction(ve.getCameraID())
+
+    def routeDisplayFunction(self, cameraIndex):
+        """
+        Routes a display function to a vision entity
+        :param cameraIndex: Index of vision entity to route function to.
+        :param displayFX: Display function to route.
+        :return: None
+        """
+        for ve in self.getVisionEntityList():
+            ve.setDisplayFunction(None)
+        logging.debug("Routing display function, " + str(self.imageDisplayFX) + " to camera " + str(cameraIndex))
+        self.getVE(cameraIndex).setDisplayFunction(self.imageDisplayFX)
+
+    def displayPose(self):
+        """
+        Displays a pose in the selected pose display function
+        :return: None
+        """
+        self.poseDisplayFX(self.getEulerPose(self.trackedBoardIndex))
+
+    def displayQuality(self):
+        """
+        Displays quality of pose for the selected board.
+        :return: None
+        """
+        self.qualityDisplayFX(self.getBoards()[self.trackedBoardIndex].getPoseQuality())
+
+    def setAutoTracker(self, autoTrackingStatus):
+        """
+        Sets the auto tracking status for this pose estimator
+        :param autoTrackingStatus: Boolean describing of autotracking is active or not.
+        :return: None
+        """
+        self.autoTracking = autoTrackingStatus
