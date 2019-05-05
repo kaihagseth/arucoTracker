@@ -13,6 +13,7 @@ import ttkthemes
 import copy
 from PIL import ImageTk, Image
 from GUI import GUIDataPlotting
+import numpy as np
 from GUI.VEConfigUnit import VEConfigUnit
 from GUI.ArucoBoardUnit import ArucoBoardUnit
 from VisionEntityClasses.VisionEntity import VisionEntity
@@ -685,7 +686,7 @@ class GUIApplication(threading.Thread):
         try:
             self.boardIDlist = set(self.arucoBoardUnits.keys())
             assert (len(self.boardIDlist) > 1), "You need at least 2 boards in order to initialize a merge"
-            assert self.imageFrame is not None, "Camera feed needs to be running before merging."
+            assert self.poseEstimationIsRunning, "Camera feed needs to be running before merging."
         except AssertionError as err:
             self.showErrorBox(err)
             return
@@ -740,8 +741,7 @@ class GUIApplication(threading.Thread):
             return
         main_board_index = self.main_board_var.get()
         self.sub_board_indicies = [ key for key in self.available_sub_boards if check_button_states[key]]
-        self.connector.startMerge(main_board_index, self.sub_board_indicies, self.displayMergingQuality,
-                                  self.displayImageInMerger)
+
         self.merge_frame.pack_forget()
         self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
         self.mergeprocess_frame.pack()
@@ -775,6 +775,8 @@ class GUIApplication(threading.Thread):
         # )
         self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
         self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
+        self.connector.startMerge(main_board_index, self.sub_board_indicies, self.displayMergingQuality,
+                                  self.displayImageInMerger)
 
     def mergeProcessFinished(self):
         """
@@ -782,6 +784,7 @@ class GUIApplication(threading.Thread):
         :return:
         """
         try:
+            self.connector.setImageDisplayFunction(self.displayFrameInMainWindow)
             self.connector.finishMerge()
         except AssertionError as err:
             self.showErrorBox(err)
@@ -792,7 +795,7 @@ class GUIApplication(threading.Thread):
         newBoard = mergerBoards["merged_board"]
         oldBoards = [mergerBoards["main_board"]] + mergerBoards["sub_boards"]
         self.boardIndex.set(newBoard.ID)
-        self.setBoardIndexToDisplay(newBoard.ID)
+        self.setBoardIndexToDisplay()
         self.merge_window.destroy()
         for board in oldBoards:
             self.removeBoardWidgetFromGUI(board)
@@ -826,7 +829,10 @@ class GUIApplication(threading.Thread):
         :param frame: The cv2 image frame to display
         :return:
         """
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        try:
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        except TypeError:
+            image = np.zeros((640, 480, 3), dtype=np.uint8)
         image = Image.fromarray(image)
         image = ImageTk.PhotoImage(image)
         self.panel.configure(image=image)
@@ -887,10 +893,8 @@ class GUIApplication(threading.Thread):
             self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
             self.updateCamlist(self.VEsToSend)
 
-    def setCameraIndex(self, index):
-        logging.debug("Setting camera index")
-        self.__displayedCameraIndex.set(index)
-        self.connector.setCameraIndex(index)
+    def setCameraIndexToDisplay(self):
+        self.connector.setCameraIndex(self.__displayedCameraIndex.get())
 
     def resetCamExtrinsic(self):
         '''
@@ -1055,7 +1059,8 @@ class GUIApplication(threading.Thread):
         :param quality:
         :return: None
         """
-        self.boardPose_quality.set(quality)
+        displayedQuality = round(quality, 2)
+        self.boardPose_quality.set(displayedQuality)
 
     def displayPoseInTrackingWindow(self, pose):
         """
@@ -1118,8 +1123,10 @@ class GUIApplication(threading.Thread):
                                                                         "Please initialize camera in config-section"
             self.connector.startPoseEstimation(self.displayFrameInMainWindow, self.displayPoseInTrackingWindow,
                                                self.displayQualityInTrackingWindow)
+            self.poseEstimationIsRunning = True
         except AssertionError as err:
             self.showErrorBox(err)
+            return
 
     def stopPoseEstimation(self):
         """
@@ -1127,6 +1134,7 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         self.connector.stopPoseEstimation()
+        self.poseEstimationIsRunning = False
         logging.debug("Stop signal sent.")
 
     def checkPreviewStatus(self):
@@ -1235,9 +1243,9 @@ class GUIApplication(threading.Thread):
             if not self.camIndexesDisplayed[camID]: # Not already placed
                 buttonText = "Camera " + str(camID)
                 button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
-                                        command=lambda: [self.setCameraIndex(camID)],
-                                        variable=self.__displayedCameraIndex,
-                                        value=camID, bg=self.GRAY, fg='orange')
+                                        font=("Arial", "12", "bold"),
+                                        command=self.setCameraIndexToDisplay, variable=self.__displayedCameraIndex,
+                                        value=camID, bg='#424242', fg='Orange')
                 self.cameraButtonList.append(button)
                 self.cameraButtonList[-1].pack()
 

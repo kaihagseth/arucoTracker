@@ -13,6 +13,7 @@ class Merger:
     def __init__(self, dictionary, main_board=None, sub_boards=None):
         self.main_board = main_board
         self.sub_boards = sub_boards
+        self.linkQualityDisplayFX = None
         self.running = False
         self.dictionary = dictionary
         self.merged_board = None
@@ -57,9 +58,8 @@ class Merger:
                 for sub_board in self.sub_boards:
                     sub_trans_matrix = sub_board.getTransformationMatrix()
                     potential_link_quality = self.mergerCostFunction(self.main_board, sub_board)
-                    print("potential link quality" + str(potential_link_quality))
                     if sub_board.link_quality < potential_link_quality:
-                        print("link quality updated, new quality: " + str(potential_link_quality))
+                        print("link quality updated, for board new quality: " + str(potential_link_quality))
                         sub_board.link_quality = potential_link_quality
                         sub_board.link_matrix = invertTransformationMatrix(main_trans_matrix) * \
                                                     sub_trans_matrix
@@ -86,8 +86,6 @@ class Merger:
         :return: merged board
         """
         self.running = False
-        #for sub_board in self.sub_boards:
-        #    sub_board.link_matrix = sub_board.meanTransformationMatrixFinder.get()
         self.mergeBoards()
         print("Merging completed")
         return self.merged_board
