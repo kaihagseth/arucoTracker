@@ -246,14 +246,6 @@ class GUIApplication(threading.Thread):
 
         # Setup calibration page:
         self.setupCalibrationPage()
-        #self.second_label = Label(self.page_2, text='Camera Calibration', bg=self.GRAY, fg=self.WHITE
-        # )
-        #self.second_label.place(relx=0.5, rely=0.02, anchor='center')
-        #self.calibrate_btn = Button(self.page_2, bg=self.GRAY, fg=self.WHITE
-        # , text='Calibrate', command=None)
-        #self.start_btn.grid(column=0, row=0, pady=10)
-        #self.stop_btn.grid(column=1, row=0, pady=10)
-        #self.hidecam_btn.grid(column=2, row=0, pady=10)
         # Page 3: PDF setup
         # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
@@ -386,9 +378,6 @@ class GUIApplication(threading.Thread):
         self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg=self.WHITE
                                ,height=2,width=7,
                                command=lambda: [self.sendStopSignal()])
-        self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,height=2,width=6,
-                                  bg=self.GRAY, fg=self.WHITE
-                                  ,)
         self.start_btn.grid(column=0, row=0, pady=10)
         self.stop_btn.grid(column=1, row=0, pady=10)
         # Label to respond if button pushed before VEs have been inited
@@ -496,8 +485,6 @@ class GUIApplication(threading.Thread):
 
         self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 10,
                                                        text="Apply",bg=self.GRAY,command=self.applyCamList, width=20,fg="white")
-        #deadspace5 = Frame(self.midSection_configPaneTabMain).pack()
-        #deadspace6 = Frame(self.midSection_configPaneTabMain).pack()
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
         deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg=self.GRAY)
         self.midSection_configPaneTabMain.add(deadspace2)
@@ -524,19 +511,9 @@ class GUIApplication(threading.Thread):
             self.maincalib_window.title("Calibrate cameras")
             self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg=self.GRAY)
             self.prepareCalib_mainFrame.grid(row=0,column=0)
-            self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg=self.GRAY, fg=self.WHITE
-                                                )
+            self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate',
+                                                font=('Arial', 14), bg=self.GRAY, fg=self.WHITE)
             self.selectCamToCalib_label.grid(row=1,column=0, columnspan=2)
-            #self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg=self.GRAY, fg="white")
-            #self.previewButton_calibPage.grid(row=3, column=0)
-            #self.connectButton_calibPage = Button(self.mainFrame, text="Connect",  state='disabled', bg=self.GRAY, fg="white")
-            #self.connectButton_calibPage.grid(row=2, column=0)
-            #self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg=self.GRAY, fg="white")
-            #self.connectStateLabel_calibPage.grid(row=2, column=1)
-
-            # Add a container that gonna hold "Connection Status Preview", given from the VEConfig-class
-            #self.calibCam_statusFrame = Frame(self.prepareCalib_mainFrame,width=100,height=100)
-            #self.calibCam_statusFrame.grid(row=2,column=0)
             # OptionMenu for selecting cam to calib.
             self.camToCalib_var = IntVar()
             self.camToCalib_var.set(0)
@@ -545,11 +522,8 @@ class GUIApplication(threading.Thread):
                 calibCamToList.append(i)
             self.possibleCamsToCalibOption = OptionMenu(self.prepareCalib_mainFrame, self.camToCalib_var,
                                                         *calibCamToList, command=self.setCamToCalib)
-            self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY,bg=self.GRAY, fg=self.WHITE
-                                                  )
+            self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY,bg=self.GRAY, fg=self.WHITE)
             self.possibleCamsToCalibOption.grid(row=1,column=3)
-            #self.deadLabel = Label(self.prepareCalib_mainFrame, text='deadLabel1')
-            #self.deadLabel.grid(row=2,column=0)
 
 
     def setCamToCalib(self, cameraIndex):
@@ -581,19 +555,16 @@ class GUIApplication(threading.Thread):
         self.calibType_var.set('Film')
         self.calibOptions = OptionMenu(self.prepareCalib_mainFrame, self.calibType_var,
                                                     *calibOptions, command=self.doCalib)
-        self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY, bg=self.GRAY, fg=self.WHITE
-                                              )
+        self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY, bg=self.GRAY, fg=self.WHITE)
         self.possibleCamsToCalibOption.grid(row=1, column=3)
         deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg=self.GRAY)
         self.doCalibButton = Button(self.prepareCalib_mainFrame, text="Calibrate",bg=self.GRAY,fg=self.WHITE
                                     ,command=self.doCalib)
         self.doCalibButton.grid(row=5,column=0)
         self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
-                                            font=('Arial', 11), bg=self.GRAY, fg=self.WHITE
-                                            )
+                                            font=('Arial', 11), bg=self.GRAY, fg=self.WHITE)
         self.selectCamToCalib_label.grid(row=5, column=1)
-        self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg=self.GRAY,fg=self.WHITE
-                                   )
+        self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg=self.GRAY,fg=self.WHITE)
         self.lengthOfCalib.insert(0,'12')
         self.lengthOfCalib.grid(row=5,column=3)
         self.calibName_label = Label(self.prepareCalib_mainFrame, text='Name of calibration file, 2 letters.',
@@ -627,6 +598,7 @@ class GUIApplication(threading.Thread):
         else:
             logging.debug('The filename is ' + str(len(calibFileName)) + ' long. The name is ' + calibFileName)
             self.showErrorBox('The name of the calibration-file must be precisely 2 letters/numbers long! ')
+
     def takeUpCalibrationVideo(self, lengthSec, VE):
         '''
         Running in own thread.
@@ -719,8 +691,6 @@ class GUIApplication(threading.Thread):
                                 , command=self.merge_window.destroy)
         self.next_btn = Button(self.packer, text='Next',bg=self.GRAY, fg=self.WHITE
                                , command=self.doMergeProcess)
-        #self.abort_btn = Button(self.packer, bg=self.GRAY, fg=self.WHITE
-        # )
         self.abort_btn.pack(side=LEFT,pady=10,padx=10)
         self.next_btn.pack(side=RIGHT,pady=10,padx=10)
 
@@ -1065,7 +1035,7 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         evec, tvec = pose
-        if not tvec is None:
+        if tvec is not None:
             for pos, translation_value, translation_value_list in zip(tvec, self.translation_values, self.translation_value_lists):
                 translation_value_list.append(pos)
                 if len(translation_value_list) >= 10:
@@ -1074,7 +1044,7 @@ class GUIApplication(threading.Thread):
         else:
             for value in self.translation_values:
                 value.set(0.0)
-        if not evec is None:
+        if evec is not None:
             for rot, value in zip(evec, self.rotation_values):
                 value.set(round(rot, 2))
         else:
