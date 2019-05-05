@@ -35,6 +35,7 @@ class VEConfigUnit(Thread):
         self.conStatusLabels = []
         self.createSetupBox()
         self.createCalibWidgets()
+        self.calibFrameNotCreated = True
 
 
     def createSetupBox(self):
@@ -89,8 +90,8 @@ class VEConfigUnit(Thread):
         for lbl in self.conStatusLabels:
             if text is not None:
                 lbl.configure(text=text)
-            if state is not None:
-                lbl.configure(state=state)
+            #if state is not None:
+             #   lbl.configure(state=state)
             if fg is not None:
                 lbl.configure(fg=fg)
 
@@ -113,15 +114,20 @@ class VEConfigUnit(Thread):
         return previewBtn
 
     def createCalibWidgets(self):
-        self.calibFrame = Frame(self.calibTabParent)
-        self.calibConnectBtn = self.createConnectBtn(self.calibFrame)
-        self.calibPreviewBtn = self.createPreviewBtn(self.calibFrame)
-        self.calibConStatusLabel = self.createConStatusLabel(self.calibFrame)
-        self.calibConnectBtn.grid(row=0, column=0)
-        self.calibConStatusLabel.grid(row=0, column=1)
-        self.calibPreviewBtn.grid(row=0, column=2)
+        pass # Moved to "getCalibConnectionFrame"
 
-    def getCalibConnectionFrame(self):
+    def getCalibConnectionFrame(self, parent):
+        if self.calibFrameNotCreated:
+
+            self.calibFrame = Frame(parent, bg='#424242')#self.calibTabParent)
+            self.calibConnectBtn = self.createConnectBtn(self.calibFrame)
+            self.calibPreviewBtn = self.createPreviewBtn(self.calibFrame)
+            self.calibConStatusLabel = self.createConStatusLabel(self.calibFrame)
+            self.calibConnectBtn.grid(row=0, column=0)
+            self.calibConStatusLabel.grid(row=0, column=1)
+            self.calibPreviewBtn.grid(row=0, column=2)
+            logging.debug('Winfo_id: ' + str(self.calibFrame.winfo_id()))
+            self.calibFrameNotCreated = False
         return self.calibFrame
 
     def configButtons(self,buttonType, text=None,state=None, command=None, fg=None):
@@ -145,14 +151,7 @@ class VEConfigUnit(Thread):
         if not len(buttonsToUpdate) == 0: # Only try if found buttons
             for btn in buttonsToUpdate:
                 if text is not None:
-                    try:
-                        btn.configure(text=text)
-                    except TclError as e:
-                        logging.error(str(e))
-                    try:
-                        btn.configure(textvariable=text)
-                    except TclError as e:
-                        logging.error(str(e))
+                    btn.configure(text=text)
                 if state is not None:
                     btn.configure(state=state)
                 if command is not None:
@@ -210,6 +209,7 @@ class VEConfigUnit(Thread):
             self.configButtons(buttonType="preview",state='normal')
             self.doConfigStatusLabel(text="Connecting...", fg="black")
             try:
+                # Create the VisionEntity
                 self._VE = VisionEntity(self._id)
                 self._currState = 1
                 if self._VE is not None:
@@ -227,6 +227,7 @@ class VEConfigUnit(Thread):
                 self.setState(7)
                 return
         elif newState is 2: # Connected, VE created, preview is available
+            logging.debug("Setting state to 2.")
             self.configButtons(buttonType="connect", text="Disconnect", command=self.doDisconnect)
             self.configButtons(buttonType="preview",state="normal", text="Preview", command=self.doPreview)
             self.doConfigStatusLabel(text="Connected", fg="green")
@@ -262,7 +263,7 @@ class VEConfigUnit(Thread):
             self._VE = None # Not the responsibility of GUI anymore
 
         elif newState is 7: # Failed to open camera
-            self.doConfigStatusLabel(text="Failed.", fg="black")
+            self.doConfigStatusLabel(text="Failed.", fg="white")
             self.configButtons(buttonType="connect",text="Retry")
             self.configButtons(buttonType="preview", state="disabled")
             self.calibFilePopup.config(state="disabled")
@@ -348,3 +349,12 @@ class VEConfigUnit(Thread):
 
     def getState(self):
         return self._state
+
+    def updateOptionMenu(self):
+        menu = self.calibFilePopup["menu"]
+        menu.delete(0, "end")
+        path = "calibValues"
+        choices = os.listdir(path)
+        for string in choices:
+            menu.add_command(label=string,
+                             command=lambda value=string: self.dropVar.set(value))

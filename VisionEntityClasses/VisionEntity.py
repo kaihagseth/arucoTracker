@@ -324,3 +324,4 @@ class VisionEntity:
         :return:
         """
         self._camera.setCamLabel(callname)
+

@@ -9,22 +9,23 @@ from exceptions import FailedCalibrationException
 This module handles camera calibration.
 """
 
-def calibCam(self, frames, showCalibration=False, cb_square_size=1):
+def calibCam(frames, showCalibration=False, cb_square_size=1):
     '''
     Calibrate the camera lens.
     :param frames: List of frames to use in calibration.
     :return: None
     '''
-    cb_n_width = 5
+    logging.info('Starting to calibrate camera. ')
+    cb_n_width = 9
     cb_n_height = 7
     #Save the images to a distinct camera folder
 
     ''' Make sure we don't use invalid ID.  '''
-    if self._parr_cam is None:
-        camID = '0'
-        logging.error('CameraID not found!')
-    else:
-        camID = self._parr_cam.getSrc()
+#    if self._parr_cam is None:
+#        camID = '0'
+#        logging.error('CameraID not found!')
+#    else:
+#        camID = self._parr_cam.getSrc()
     # Termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -40,7 +41,10 @@ def calibCam(self, frames, showCalibration=False, cb_square_size=1):
         gray = None
         img = frames[0]
         ''' For each frame in list, find cb-corners and add object and image points in a list. '''
+        logging.info('Numbers of frames senth to calibration: ' + str(len(frames)))
         for frame in frames:
+            cv2.imshow('Frames calibrating with', frame)
+            cv2.waitKey(25)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             # Find the chess board corners
             ret, corners = cv2.findChessboardCorners(gray, (cb_n_height, cb_n_width), None)
@@ -54,24 +58,25 @@ def calibCam(self, frames, showCalibration=False, cb_square_size=1):
                     cv2.drawChessboardCorners(frame, (cb_n_height, cb_n_width), corners, ret)
                     cv2.imshow('img', frame)
                     cv2.waitKey(1)
+                logging.info('Corners was found.')
             else:
                 logging.error('findChessboardCorners could not find corners.')
         if showCalibration:
             cv2.destroyAllWindows()
         '''Do the calibration:'''
-        if not objpoints:
-            logging.error('Objpoints is none!')
-        if not imgpoints:
-            logging.error('Imgpoints is none!')
-        logging.info('Starting calibration with ' + str(len(imgpoints)) + ' valid frames')
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-        h, w = img.shape[:2]
-        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-        '''Update class with latest numbers.'''
-        camera_parameters = {'mtx': mtx, 'ret': ret, 'dist': dist, 'rvecs': rvecs, 'tvecs': tvecs,
-                             'newcameramtx': newcameramtx, 'roi': roi}
-        logging.info('Calibration done')
-        return camera_parameters
+        if (not objpoints) or (not imgpoints):
+            logging.error('Objpoints or imagePoints is none!')
+        else:
+            logging.info('Starting calibration with ' + str(len(imgpoints)) + ' valid frames')
+            ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+            h, w = img.shape[:2]
+            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+            '''Update class with latest numbers.'''
+            camera_parameters = {'mtx': mtx, 'ret': ret, 'dist': dist, 'rvecs': rvecs, 'tvecs': tvecs,
+                                 'newcameramtx': newcameramtx, 'roi': roi}
+            logging.info('Calibration done')
+            return camera_parameters
+        return None
     except IndexError:
         pass#cv2.error as e:
      #   print('OpenCV failed. ')
@@ -113,13 +118,22 @@ def videoCalibration(videoName, debug=False):
     :param videoName: filename of video
     :return: Camera calibration parameters in dictionary.
     """
-    video_capture = cv2.VideoCapture('calibVideos/' + videoName)
+    video_capture = cv2.VideoCapture('calibVideos/' + videoName + '.avi')
     ret, image = video_capture.read()
     frames = []
+    n = 1
+    i = 1
     while ret:
         frames.append(image)
         ret, image = video_capture.read()
+        if i >= 10:
+            logging.info('Converted ' + str(n) + ' frames. ')
+            i = 0
+        i += 1
+        n += 1
     frames = np.array(frames)[1::6]
     if debug:
         logging.debug('Videocalibration starting with ' + str(len(frames)) + ' frames')
-    return calibCam(frames, debug)
+    params =  calibCam(frames, debug)
+    np.savez( ('calibValues/'+videoName+'.npz'),params)
+    logging.info('Parameters saved with filename ' + videoName+'.npz')

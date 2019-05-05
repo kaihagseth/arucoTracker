@@ -23,7 +23,7 @@ from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.ArucoBoard import ArucoBoard
 from VisionEntityClasses.helperFunctions import stackChecker
 from exceptions import CamNotOpenedException
-
+from VisionEntityClasses.IntrinsicCalibrator import videoCalibration
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
@@ -101,7 +101,7 @@ class GUIApplication(threading.Thread):
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
         self.setup_menu = Menu(self.menu, tearoff=0)
-
+        #self.prepareCalib_mainFrame = None
 
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
@@ -498,7 +498,7 @@ class GUIApplication(threading.Thread):
         self.numbCamsToShow = 5
         for i in range(0,self.numbCamsToShow+1): # Create VEConfigUnits
             # Create VECU fpr given index
-            VECU = VEConfigUnit(i,self, self.selectCamIndexesFrame, self.calibCam_statusFrame, self.setPreviewStatus)
+            VECU = VEConfigUnit(i,self, self.selectCamIndexesFrame, None, self.setPreviewStatus)
             VECU.start()
             self.VEConfigUnits.append(VECU)
 
@@ -519,7 +519,7 @@ class GUIApplication(threading.Thread):
         self.imgHolder.pack()
     def setupCalibrationPage(self):
         mainframe_cabtab = Frame(self.page_2, width=1000, height=1000)
-        mainframe_cabtab.pack()
+        mainframe_cabtab.grid(row=0,column=0)
 
     def launchCalibrationWindow(self):
         self.allowToCalibrate = False
@@ -531,7 +531,7 @@ class GUIApplication(threading.Thread):
             self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
             self.maincalib_window.title("Calibrate cameras")
             self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
-            self.prepareCalib_mainFrame.pack()
+            self.prepareCalib_mainFrame.grid(row=0,column=0)
             self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg='#424242', fg='white')
             self.selectCamToCalib_label.grid(row=1,column=0, columnspan=2)
             #self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg='#424242', fg="white")
@@ -540,15 +540,22 @@ class GUIApplication(threading.Thread):
             #self.connectButton_calibPage.grid(row=2, column=0)
             #self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg='#424242', fg="white")
             #self.connectStateLabel_calibPage.grid(row=2, column=1)
-            self.calibCam_statusFrame = Frame(self.prepareCalib_mainFrame)
-            self.calibCam_statusFrame.grid(row=2,column=0)
+
+            # Add a container that gonna hold "Connection Status Preview", given from the VEConfig-class
+            #self.calibCam_statusFrame = Frame(self.prepareCalib_mainFrame,width=100,height=100)
+            #self.calibCam_statusFrame.grid(row=2,column=0)
+            # OptionMenu for selecting cam to calib.
             self.camToCalib_var = IntVar()
             self.camToCalib_var.set(0)
             calibCamToList = []
             for i,n in enumerate(range(self.numbCamsToShow)):
                 calibCamToList.append(i)
-            self.possibleCamsToCalibOption = OptionMenu(self.prepareCalib_mainFrame, self.camToCalib_var, *calibCamToList, command=self.setCamToCalib)
+            self.possibleCamsToCalibOption = OptionMenu(self.prepareCalib_mainFrame, self.camToCalib_var,
+                                                        *calibCamToList, command=self.setCamToCalib)
+            self.possibleCamsToCalibOption.config(highlightbackground='#424242',bg='#424242', fg='white')
             self.possibleCamsToCalibOption.grid(row=1,column=3)
+            #self.deadLabel = Label(self.prepareCalib_mainFrame, text='deadLabel1')
+            #self.deadLabel.grid(row=2,column=0)
 
 
     def setCamToCalib(self, value):
@@ -559,25 +566,104 @@ class GUIApplication(threading.Thread):
         '''
         logging.info('Selected cam with value: ' + str(self.camToCalib_var.get()))
         self.camIndexToCalibrate = self.camToCalib_var.get()
-        vecuToCalib = None
-        connectionFrame = None
-        vecuToCalib = self.getVEConfigUnitById(value)
-        if vecuToCalib is not None:
-            state = vecuToCalib.getState()
+        self.vecuToCalib = self.getVEConfigUnitById(value)
+        if self.vecuToCalib is not None:
+            logging.debug("Id of given VECU: "+ str(self.vecuToCalib.getIndex()))
+            state = self.vecuToCalib.getState()
+
             if self.calibConnectionFrame is not None:
+                logging.info('Removing widget with id ' + str(self.calibConnectionFrame.winfo_id()) )
                 self.calibConnectionFrame.grid_remove()
-            self.calibConnectionFrame = vecuToCalib.getCalibConnectionFrame()
+            self.calibConnectionFrame = self.vecuToCalib.getCalibConnectionFrame(self.prepareCalib_mainFrame)
             logging.debug('Correct connection_frame is given.')
             if self.calibConnectionFrame is not None:
-                self.calibConnectionFrame.grid(row=2,column=0)
-#        self.calibCam_statusFrame.grid(row=3,column=3)
+                logging.debug('Winfo_:parent: ' + self.calibConnectionFrame.winfo_parent())
+                logging.debug('Winfo_id: ' + str(self.calibConnectionFrame.winfo_id()))
+                self.calibConnectionFrame.grid(row=3,column=0,columnspan=4)
+        # Set whether to use film or images
+        calibOptions = ['Images', 'Film']
+        self.calibType_var = StringVar()
+        self.calibType_var.set('Film')
+        self.calibOptions = OptionMenu(self.prepareCalib_mainFrame, self.calibType_var,
+                                                    *calibOptions, command=self.doCalib)
+        self.possibleCamsToCalibOption.config(highlightbackground='#424242', bg='#424242', fg='white')
+        self.possibleCamsToCalibOption.grid(row=1, column=3)
+        deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg='#424242')
+        self.doCalibButton = Button(self.prepareCalib_mainFrame, text="Calibrate",bg='#424242',fg='white',command=self.doCalib)
+        self.doCalibButton.grid(row=5,column=0)
+        self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
+                                            font=('Arial', 11), bg='#424242', fg='white')
+        self.selectCamToCalib_label.grid(row=5, column=1)
+        self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg='#424242',fg='white')
+        self.lengthOfCalib.insert(0,'12')
+        self.lengthOfCalib.grid(row=5,column=3)
+        self.calibName_label = Label(self.prepareCalib_mainFrame, text='Name of calibration file',
+                                            font=('Arial', 11), bg='#424242', fg='white')
+        self.calibName_label.grid(row=6, column=1)
+        self.calibName = Entry(self.prepareCalib_mainFrame, bg='#424242', fg='white')
+        self.calibName.insert(0, 'CameraXB')
+        self.calibName.grid(row=6, column=3)
 
-        #self.doCalibration()
+    def doCalib(self):
+        logging.debug('Starting doing calib.')
+        calibType = self.calibType_var.get() # Either 'Film' or 'Images'
+        VEtoCalib = self.vecuToCalib.getVE()
+        if VEtoCalib is None: # Not already created
+            # Create VE
+            self.vecuToCalib.setState(1)
+        calibLength = int(self.lengthOfCalib.get())
+        if calibType == 'Film':
+            logging.debug('We are calibrating with film.')
+            calibThread = threading.Thread(target=self.takeUpCalibrationVideo, args=(calibLength, VEtoCalib))
+            calibThread.start()
+    def takeUpCalibrationVideo(self, lengthSec, VE):
+        '''
+        Running in own thread.
+        Take up the video, and send it to IntrinsicCalibration-class to do calibration.
+        :param lengthSec:
+        :param VE:
+        :return:
+        '''
+        # Define the codec and create VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        videoName = str(self.calibName.get())
+        out = cv2.VideoWriter(('calibVideos/'+videoName + '.avi'), fourcc, 20.0, (640, 480))
+        startTime = time.time()
+        notAbort = True
+        while notAbort:
+            VE.getCam().grabFrame()
+            ret, frame = VE.getCam().retrieveFrame()
+            #frame = VE.getFrame()
+            print('Frame: ' + str(frame))
+            #ret, frame = cap.read()
+            if frame is not None:
+                frame = cv2.flip(frame, 0)
+
+                # write the flipped frame
+                out.write(frame)
+
+                cv2.imshow('frame', frame)
+                cv2.waitKey(40)
+                timeElapsed = time.time() - startTime
+                print('Time elapsed: ' + str(timeElapsed))
+                print('Wanted length: ' + str(lengthSec))
+                if int(timeElapsed) > lengthSec:
+                    notAbort = False
+
+        # Calibrate the video
+        camParam = videoCalibration(videoName, debug=True)
+        #Destroy the calibration window.
+        self.vecuToCalib.updateOptionMenu()
+        self.maincalib_window.destroy()
+
     def getVEConfigUnitById(self, ID):
         vecu = None
         for VECU in self.VEConfigUnits:
-            if VECU.getIndex():
-               return VECU
+            currID = VECU.getIndex()
+            logging.debug('CurrID: '+ str(currID))
+            if currID == ID:
+                logging.debug('Returning with ID ' +str(currID))
+                return VECU
         logging.error("No VECU found on given index.")
         return vecu
 
@@ -1199,7 +1285,7 @@ class GUIApplication(threading.Thread):
         :param index: Index of cam to preview
         :return: None
         '''
-        logging.debug("Index to preview:", index)
+        logging.debug("Index to preview:"+ str(index))
         if index is not -1 and index is not None:
             try:
                 VECU = self.getVECUByIndex(index)
