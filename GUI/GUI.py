@@ -117,13 +117,6 @@ class GUIApplication(threading.Thread):
         self.notebook.add(self.page_4, text='Graph')
         self.notebook.add(self.page_5, text='Configuration')
 
-        # Create notebook under setuptab
-        self.configurationtab_notebook = ttk.Notebook(self.page_5)
-        self.page_setup_calib = ttk.Frame(self.notebook)
-        self.page_setup_camconfig = ttk.Frame(self.notebook)
-        self.configurationtab_notebook.add(self.page_setup_camconfig, text='Camera config')
-        self.configurationtab_notebook.add(self.page_setup_calib, text='Calibration')
-        self.configurationtab_notebook.pack(fill=BOTH, expand=True)
         #  File menu setup
         self.file_menu.add_command(label='New', command=None)
         self.file_menu.add_command(label='Save', command=None)
@@ -425,6 +418,30 @@ class GUIApplication(threading.Thread):
         # Setup the config tab
 
         self.VEConfigUnits = []
+
+        # Set the configPaneTabMain as master of config tab.
+        self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
+        self.configPaneTabMain.pack(fill=BOTH, expand=True)
+        self.configPaneTabMain.configure(bg=self.GRAY)
+        # Left section Pane for configuring, Right section for image preview
+        self.leftSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
+        self.configPaneTabMain.add(self.leftSection_configPaneTabMain)
+        self.previewSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL,bg=self.GRAY)
+        self.configPaneTabMain.add(self.previewSection_configPaneTabMain)
+        self.configPaneTabMain.configure(bg=self.GRAY)
+        #self.page_setup_camconfig
+        # Create notebook under setuptab #TODO: Have the notebook in the left section.
+        self.configurationtab_notebook = ttk.Notebook(self.leftSection_configPaneTabMain)
+        self.page_setup_calib = ttk.Frame(self.configurationtab_notebook)
+        self.page_setup_camconfig = ttk.Frame(self.configurationtab_notebook)
+        self.configurationtab_notebook.add(self.page_setup_camconfig, text='Camera config')
+        self.configurationtab_notebook.add(self.page_setup_calib, text='Calibration')
+        self.configurationtab_notebook.pack(fill=BOTH, expand=True)
+        self.leftSection_configPaneTabMain.add(self.configurationtab_notebook)
+
+        #self.leftSection_configPaneTabMain.configure(bg=self.GRAY)
+
+
         self.setupConfigTab()
 
 
@@ -445,40 +462,27 @@ class GUIApplication(threading.Thread):
         # Create paned windows for GUI
         :return:
         '''
-
-        self.configPaneTabMain = PanedWindow(self.page_setup_camconfig, bg='black')
-        self.configPaneTabMain.pack(fill=BOTH, expand=True)
-        self.configPaneTabMain.configure(bg=self.GRAY)
-
-        # Mid section Pane for configuring
-        self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
-        self.configPaneTabMain.add(self.midSection_configPaneTabMain)
-        self.midSection_configPaneTabMain.configure(bg=self.GRAY)
-        self.rightSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)
-        self.configPaneTabMain.add(self.rightSection_configPaneTabMain)
-        self.configPaneTabMain.configure(bg=self.GRAY)
-
-        self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
-        self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
-        self.midtopSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
-
-        self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
-        self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
-        self.rightSection_configPaneTabMain.configure(bg=self.GRAY)
-        self.rightSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
+        #self.midtopSectionLabel_configPaneTabMain = Frame(self.page_setup_camconfig, height=100)
+        #self.leftSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
+        #self.midtopSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
+        #
+        #self.rightSectionLabel_configPaneTabMain = Label(self.previewSection_configPaneTabMain, text="right pane")
+        #self.previewSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
+        #self.previewSection_configPaneTabMain.configure(bg=self.GRAY)
+        #self.rightSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
 
         # Configurations for which cams to connect
-        self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
+        self.selectCamIndexesFrame = Frame(self.page_setup_camconfig)
         self.selectCamIndexesFrame.configure(bg=self.GRAY)
-        self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
+        self.selectCamIndexesFrame.pack(fill=BOTH)#.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
         self.selectCamIndexesFrame.configure(relief='groove')
         self.selectCamIndexesFrame.configure(borderwidth='2', pady='10')
 
-        self.midSection_configPaneTabMain.configure(relief='groove')
-        self.midSection_configPaneTabMain.configure(borderwidth='2')
-        self.rightSection_configPaneTabMain.configure(relief='groove')
-        self.rightSection_configPaneTabMain.configure(borderwidth='2')
+        self.leftSection_configPaneTabMain.configure(relief='groove')
+        self.leftSection_configPaneTabMain.configure(borderwidth='2')
+        self.previewSection_configPaneTabMain.configure(relief='groove')
+        self.previewSection_configPaneTabMain.configure(borderwidth='2')
 
         ''' Create VEConfigUnits that controls all  '''
         self.numbCamsToShow = 5
@@ -488,16 +492,17 @@ class GUIApplication(threading.Thread):
             VECU.start()
             self.VEConfigUnits.append(VECU)
 
-        self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 10,
-                                                       text="Apply",bg=self.GRAY,command=self.applyCamList, width=20,fg="white")
-        self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
-        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg=self.GRAY)
-        self.midSection_configPaneTabMain.add(deadspace2)
+        self.sendCamSelectionButton_configTab = Button(self.page_setup_camconfig, padx = 10, pady = 10,
+                                                       text="Apply", bg=self.GRAY, command=self.applyCamList, width=20, fg="white")
+        #self.leftSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
+        self.sendCamSelectionButton_configTab.pack(fill=BOTH)
+        deadspace2 = Frame(self.leftSection_configPaneTabMain, height=100, bg=self.GRAY)
+        self.leftSection_configPaneTabMain.add(deadspace2)
         # List for VEs stored in GUI
         self.prelimVEList = []
 
         #Container for preview image
-        self.imgHolder = Label(self.rightSectionLabel_configPaneTabMain)
+        self.imgHolder = Label(self.previewSection_configPaneTabMain)
         self.imgHolder.image = None
         self.imgHolder.pack()
 
