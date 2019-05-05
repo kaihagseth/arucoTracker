@@ -109,16 +109,21 @@ class GUIApplication(threading.Thread):
 
         # Adds tabs of the notebook
         self.page_1 = ttk.Frame(self.notebook)
-        self.page_2 = ttk.Frame(self.notebook)
         self.page_3 = ttk.Frame(self.notebook)
         self.page_4 = ttk.Frame(self.notebook)
         self.page_5 = ttk.Frame(self.notebook)
         self.notebook.add(self.page_1, text='Camera')
-        self.notebook.add(self.page_2, text='Calibration')
         self.notebook.add(self.page_3, text='PDF')
         self.notebook.add(self.page_4, text='Graph')
         self.notebook.add(self.page_5, text='Configuration')
 
+        # Create notebook under setuptab
+        self.configurationtab_notebook = ttk.Notebook(self.page_5)
+        self.page_setup_calib = ttk.Frame(self.notebook)
+        self.page_setup_camconfig = ttk.Frame(self.notebook)
+        self.configurationtab_notebook.add(self.page_setup_camconfig, text='Camera config')
+        self.configurationtab_notebook.add(self.page_setup_calib, text='Calibration')
+        self.configurationtab_notebook.pack(fill=BOTH, expand=True)
         #  File menu setup
         self.file_menu.add_command(label='New', command=None)
         self.file_menu.add_command(label='Save', command=None)
@@ -441,7 +446,7 @@ class GUIApplication(threading.Thread):
         :return:
         '''
 
-        self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
+        self.configPaneTabMain = PanedWindow(self.page_setup_camconfig, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
         self.configPaneTabMain.configure(bg=self.GRAY)
 
@@ -497,7 +502,7 @@ class GUIApplication(threading.Thread):
         self.imgHolder.pack()
 
     def setupCalibrationPage(self):
-        self.mainframe_cabtab = Frame(self.page_2)#, width=1000, height=1000, bg=self.GRAY)
+        self.mainframe_cabtab = Frame(self.page_setup_calib, bg=self.GRAY)#, width=1000, height=1000, bg=self.GRAY)
         self.mainframe_cabtab.grid(row=0,column=0)
         self.launchCalibrationWindow()
 
@@ -512,7 +517,12 @@ class GUIApplication(threading.Thread):
             #self.calibWindowIsOpened = True
             self.prepareCalib_mainFrame = Frame(self.mainframe_cabtab, height=1000, width=1000, bg=self.GRAY)
             #self.maincalib_window.title("Calibrate cameras")
-            self.prepareCalib_mainFrame.grid(row=0,column=0)
+            warningText = 'Please read this! \n - Doing calibration is not necessary for daily use. \n' \
+                          '- It\'s only necessary when using new cameras, or changing the lenses on the old. \n' \
+                          '- For guidance on calibration, please refer to the user manual. '
+            self.warningLabel_calibtab = Label(self.mainframe_cabtab, bg='#424200', fg=self.WHITE, text=warningText)
+            self.warningLabel_calibtab.grid(row=0, column=0)
+            self.prepareCalib_mainFrame.grid(row=1,column=0)
             self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate',
                                                 font=('Arial', 14), bg=self.GRAY, fg=self.WHITE)
             self.selectCamToCalib_label.grid(row=1,column=0, columnspan=2)
