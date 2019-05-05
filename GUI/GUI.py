@@ -270,19 +270,19 @@ class GUIApplication(threading.Thread):
         self.page_3_label_frame.pack(side=LEFT)
         self.page_3_entry_frame.pack(side=RIGHT)
 
-        self.length = Label(self.page_3_label_frame, text='Length:')  # Add text to label
+        self.length = Label(self.page_3_label_frame, text='Length:', bg=self.GRAY, fg=self.WHITE)  # Add text to label
         self.length_entry = Entry(self.page_3_entry_frame)  # Create entry for that label
         vcmd_length = (self.length_entry.register(self.on_validate), '%P')  # Check if input is valid
 
-        self.width = Label(self.page_3_label_frame, text='Width: ')
+        self.width = Label(self.page_3_label_frame, text='Width: ',bg=self.GRAY, fg=self.WHITE)
         self.width_entry = Entry(self.page_3_entry_frame)
         vcmd_width = (self.width_entry.register(self.on_validate), '%P')
 
-        self.size = Label(self.page_3_label_frame, text='Size: ')
+        self.size = Label(self.page_3_label_frame, text='Size: ',bg=self.GRAY, fg=self.WHITE)
         self.size_entry = Entry(self.page_3_entry_frame)
         vcmd_size = (self.size_entry.register(self.on_validate), '%P')
 
-        self.gap = Label(self.page_3_label_frame, text='Gap: ')
+        self.gap = Label(self.page_3_label_frame, text='Gap: ',bg=self.GRAY, fg=self.WHITE)
         self.gap_entry = Entry(self.page_3_entry_frame, validate='key')
         vcmd_gap = (self.gap_entry.register(self.on_validate), '%P')
 
@@ -518,10 +518,7 @@ class GUIApplication(threading.Thread):
             self.allowToCalibrate = True
         if self.allowToCalibrate:
             logging.debug('Going to create a TopLevel window now')
-            #self.maincalib_window = Toplevel()
-            #self.calibWindowIsOpened = True
             self.prepareCalib_mainFrame = Frame(self.mainframe_cabtab, height=1000, width=1000, bg=self.GRAY)
-            #self.maincalib_window.title("Calibrate cameras")
             warningText = 'Please read this! \n - Doing calibration is not necessary for daily use. \n' \
                           '- It\'s only necessary when using new cameras, or changing the lenses on the old. \n' \
                           '- For guidance on calibration, please refer to the user manual. '
@@ -577,8 +574,6 @@ class GUIApplication(threading.Thread):
         deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg=self.GRAY).grid(row=4,column=1)
         self.doCalibButton = Button(self.prepareCalib_mainFrame, text="Calibrate",bg=self.GRAY,fg=self.WHITE
                                     ,command=self.doCalib, padx=5, pady=5)
-        #self.doExitCalibButton = Button(self.prepareCalib_mainFrame, text="Cancel",bg=self.GRAY,fg=self.WHITE
-        #                            ,command=self.maincalib_window.destroy)
         self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
                                             font=('Arial', 11), bg=self.GRAY, fg=self.WHITE)
         self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg=self.GRAY,fg=self.WHITE)
@@ -667,7 +662,6 @@ class GUIApplication(threading.Thread):
         camParam = videoCalibration(videoName, debug=True)
         #Destroy the calibration window.
         self.vecuToCalib.updateOptionMenu()
-        #self.maincalib_window.destroy()
 
     def getVEConfigUnitById(self, ID):
         vecu = None
