@@ -186,11 +186,8 @@ class GUIApplication(threading.Thread):
         self.poseFontType = "Arial"
         self.poseFontSize = 14
         self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg=self.GRAY, fg=self.WHITE,
-        self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg=self.GRAY, fg=self.WHITE
-                                                  ,
                                                   font=(self.poseFontType, self.poseFontSize,"bold"))
         self.shipPoseLabel_camPaneTabMain.grid(column=0, row=0, sticky='w')
-
         self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)  # , orient=HORIZONTAL)
         self.dispPoseBunker_camPaneTabMain.configure(bg=self.GRAY)
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1)
@@ -245,8 +242,6 @@ class GUIApplication(threading.Thread):
                                                       font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispBoardPoseQual_camPaneTabMain.grid(column=6, row=0)
 
-        # Setup calibration page:
-        self.setupCalibrationPage()
         # Page 3: PDF setup
         # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
@@ -427,6 +422,10 @@ class GUIApplication(threading.Thread):
         self.VEConfigUnits = []
         self.setupConfigTab()
 
+
+        # Setup calibration page:
+        self.setupCalibrationPage()
+
         # Set focus to start button
         self.start_btn.focus()
 
@@ -498,8 +497,10 @@ class GUIApplication(threading.Thread):
         self.imgHolder.pack()
 
     def setupCalibrationPage(self):
-        mainframe_cabtab = Frame(self.page_2, width=1000, height=1000)
-        mainframe_cabtab.grid(row=0,column=0)
+        self.mainframe_cabtab = Frame(self.page_2)#, width=1000, height=1000, bg=self.GRAY)
+        self.mainframe_cabtab.grid(row=0,column=0)
+        self.launchCalibrationWindow()
+
 
     def launchCalibrationWindow(self):
         self.allowToCalibrate = False
@@ -507,10 +508,10 @@ class GUIApplication(threading.Thread):
             self.allowToCalibrate = True
         if self.allowToCalibrate:
             logging.debug('Going to create a TopLevel window now')
-            self.maincalib_window = Toplevel()
-            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg=self.GRAY)
-            self.maincalib_window.title("Calibrate cameras")
-            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg=self.GRAY)
+            #self.maincalib_window = Toplevel()
+            #self.calibWindowIsOpened = True
+            self.prepareCalib_mainFrame = Frame(self.mainframe_cabtab, height=1000, width=1000, bg=self.GRAY)
+            #self.maincalib_window.title("Calibrate cameras")
             self.prepareCalib_mainFrame.grid(row=0,column=0)
             self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate',
                                                 font=('Arial', 14), bg=self.GRAY, fg=self.WHITE)
@@ -524,7 +525,7 @@ class GUIApplication(threading.Thread):
             self.possibleCamsToCalibOption = OptionMenu(self.prepareCalib_mainFrame, self.camToCalib_var,
                                                         *calibCamToList, command=self.setCamToCalib)
             self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY,bg=self.GRAY, fg=self.WHITE)
-            self.possibleCamsToCalibOption.grid(row=1,column=3)
+            self.possibleCamsToCalibOption.grid(row=1,column=2, padx=10, pady=10)
 
 
     def setCamToCalib(self, cameraIndex):
@@ -541,54 +542,57 @@ class GUIApplication(threading.Thread):
             logging.debug("Id of given VECU: "+ str(self.vecuToCalib.getIndex()))
             state = self.vecuToCalib.getState()
             if self.calibConnectionFrame is not None:
-                logging.info('Removing widget with id ' + str(self.calibConnectionFrame.winfo_id()) )
+                try:
+                    logging.info('Removing widget with id ' + str(self.calibConnectionFrame.winfo_id()) )
+                except TclError:
+                    logging.info('Dumb error.')
                 self.calibConnectionFrame.grid_remove()
             self.calibConnectionFrame = self.vecuToCalib.getCalibConnectionFrame(self.prepareCalib_mainFrame)
             logging.debug('Correct connection_frame is given.')
             if self.calibConnectionFrame is not None:
                 logging.debug('Winfo_:parent: ' + self.calibConnectionFrame.winfo_parent())
                 logging.debug('Winfo_id: ' + str(self.calibConnectionFrame.winfo_id()))
-                self.calibConnectionFrame.grid(row=3,column=0,columnspan=4)
+                self.calibConnectionFrame.grid(row=3,column=0,columnspan=2)
         # Set whether to use film or images
         calibOptions = ['Images', 'Film']
         self.calibType_var = StringVar()
         self.calibType_var.set('Film')
-        self.calibOptions = OptionMenu(self.prepareCalib_mainFrame, self.calibType_var,
-                                                    *calibOptions, command=self.doCalib)
+        self.calibOptions = OptionMenu(self.prepareCalib_mainFrame, self.calibType_var, *calibOptions, command=self.doCalib)
         self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY, bg=self.GRAY, fg=self.WHITE)
-        self.possibleCamsToCalibOption.grid(row=1, column=3)
-        deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg=self.GRAY)
+        deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg=self.GRAY).grid(row=4,column=1)
         self.doCalibButton = Button(self.prepareCalib_mainFrame, text="Calibrate",bg=self.GRAY,fg=self.WHITE
-                                    ,command=self.doCalib)
-        self.doCalibButton.grid(row=5,column=0)
+                                    ,command=self.doCalib, padx=5, pady=5)
+        #self.doExitCalibButton = Button(self.prepareCalib_mainFrame, text="Cancel",bg=self.GRAY,fg=self.WHITE
+        #                            ,command=self.maincalib_window.destroy)
         self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
                                             font=('Arial', 11), bg=self.GRAY, fg=self.WHITE)
-        self.selectCamToCalib_label.grid(row=5, column=1)
         self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg=self.GRAY,fg=self.WHITE)
         self.lengthOfCalib.insert(0,'12')
-        self.lengthOfCalib.grid(row=6,column=3)
         self.calibName_label = Label(self.prepareCalib_mainFrame, text='Name of calibration file, 2 letters.',
-                                            font=('Arial', 11), bg=self.GRAY, fg=self.WHITE
-                                     )
-        self.calibName_label.grid(row=6, column=1)
-        self.calibName = Entry(self.prepareCalib_mainFrame, bg=self.GRAY, fg=self.WHITE
-                               )
+                                            font=('Arial', 11), bg=self.GRAY, fg=self.WHITE)
+        self.calibName = Entry(self.prepareCalib_mainFrame, bg=self.GRAY, fg=self.WHITE)
         self.calibName.insert(0, 'XB')
-        self.calibName.grid(row=7, column=3)
         # Add option for setting number of corners on checkboard
-        self.verticalCBCorners_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
+        self.verticalCBCorners_label = Label(self.prepareCalib_mainFrame, text='Inner CB corners y',
                                             font=('Arial', 11), bg=self.GRAY, fg=self.WHITE)
         self.verticalCBCorners_box = Spinbox(self.prepareCalib_mainFrame, from_=1, to=25, bg=self.GRAY, fg=self.WHITE)
-        self.verticalCBCorners_box.insert(0, 9)
-        self.horizontalCBCorners_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
+        self.verticalCBCorners_box.insert(END, '7')
+        self.horizontalCBCorners_label = Label(self.prepareCalib_mainFrame, text='Inner CB corners x',
                                             font=('Arial', 11), bg=self.GRAY, fg=self.WHITE)
         self.horizontalCBCorners_box = Spinbox(self.prepareCalib_mainFrame, from_=1, to=25, bg=self.GRAY, fg=self.WHITE)
-        self.horizontalCBCorners_box.insert(0, 9)
-        # Place the CBcorner widgets:
-        self.verticalCBCorners_label.grid(row=7, column=1)
-        self.horizontalCBCorners_label.grid(row=7, column=3)
-        self.verticalCBCorners_box.grid(row=7, column=2)
-        self.horizontalCBCorners_box.grid(row=7, column=4)
+        self.horizontalCBCorners_box.insert(END, '9')
+        # Place the widgets:
+        self.possibleCamsToCalibOption.grid(row=1, column=3, padx=5, pady=5)
+        self.selectCamToCalib_label.grid(row=5, column=0, padx=5, pady=5)
+        self.lengthOfCalib.grid(row=5,column=1, padx=5, pady=5)
+        self.calibName_label.grid(row=6, column=0, padx=5, pady=5)
+        self.calibName.grid(row=6, column=1, padx=5, pady=5)
+        self.verticalCBCorners_label.grid(row=7, column=0, padx=5, pady=5)
+        self.verticalCBCorners_box.grid(row=7, column=1, padx=5, pady=5)
+        self.horizontalCBCorners_label.grid(row=8, column=0, padx=5, pady=5)
+        self.horizontalCBCorners_box.grid(row=8, column=1, padx=5, pady=5)
+        #self.doExitCalibButton.grid(row=10,column=0, padx=10, pady=10)
+        self.doCalibButton.grid(row=10,column=3, padx=10, pady=10)
 
     def doCalib(self):
         '''
@@ -648,7 +652,7 @@ class GUIApplication(threading.Thread):
         camParam = videoCalibration(videoName, debug=True)
         #Destroy the calibration window.
         self.vecuToCalib.updateOptionMenu()
-        self.maincalib_window.destroy()
+        #self.maincalib_window.destroy()
 
     def getVEConfigUnitById(self, ID):
         vecu = None
