@@ -373,11 +373,11 @@ class GUIApplication(threading.Thread):
         # Start and stop button setup
         self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg=self.WHITE
                                 ,height=2,width=7,
-                                command=lambda: [self.sendStartSignal()])
+                                command=lambda: [self.startPoseEstimation()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
         self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg=self.WHITE
                                ,height=2,width=7,
-                               command=lambda: [self.sendStopSignal()])
+                               command=lambda: [self.stopPoseEstimation()])
         self.start_btn.grid(column=0, row=0, pady=10)
         self.stop_btn.grid(column=1, row=0, pady=10)
         # Label to respond if button pushed before VEs have been inited
@@ -396,7 +396,7 @@ class GUIApplication(threading.Thread):
 
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="Auto", padx=5, variable=self.__displayedCameraIndex,
-                       command=self.setCameraIndex, value=-1, bg=self.GRAY, fg='orange',font=("Arial", "12","bold")).pack()
+                       command=self.setCameraIndexToDisplay, value=-1, bg=self.GRAY, fg='orange',font=("Arial", "12","bold")).pack()
 
         self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg=self.GRAY, fg=self.WHITE
                                  ,font=("Arial", "12")).pack()
