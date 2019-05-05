@@ -128,6 +128,9 @@ class VEConfigUnit(Thread):
             self.calibPreviewBtn.grid(row=0, column=2)
             logging.debug('Winfo_id: ' + str(self.calibFrame.winfo_id()))
             self.calibFrameNotCreated = False
+            state = self._currState
+            logging.debug('State: '+ str(state))
+            self.setState(state)
         return self.calibFrame
 
     def configButtons(self,buttonType, text=None,state=None, command=None, fg=None):
