@@ -101,7 +101,6 @@ class GUIApplication(threading.Thread):
         self.menu = Menu(self.root)
         self.file_menu = Menu(self.menu, tearoff=0)
         self.setup_menu = Menu(self.menu, tearoff=0)
-        #self.prepareCalib_mainFrame = None
 
         # Create notebook
         self.notebook = ttk.Notebook(self.root)
@@ -149,23 +148,28 @@ class GUIApplication(threading.Thread):
         #self.setup_menu.add_command(label='Paste', command=None)
         self.menu.add_cascade(label='Setup', menu=self.setup_menu)
 
+        # GUI font and colors
+        self.DISPPLAYLABEL_WIDTH = 7
+        self.WHITE = "White"
+        self.GRAY = '#424242'
+
         # Configure setup
         self.root.config(menu=self.menu)
 
         # Camera Page: Configure PanedWindows
         self.root_cam_tab = PanedWindow(self.page_1)
-        self.root_cam_tab.configure(bg='#424242')
+        self.root_cam_tab.configure(bg=self.GRAY)
         self.root_cam_tab.pack(fill=BOTH,
                                expand=True)
 
-        self.left_camPaneTabMain = tk.PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='#424242')  # Left side of GUI
+        self.left_camPaneTabMain = tk.PanedWindow(self.root_cam_tab, orient=VERTICAL, bg=self.GRAY)  # Left side of GUI
         self.root_cam_tab.add(self.left_camPaneTabMain)
 
         self.top_left = PanedWindow(self.left_camPaneTabMain)
-        self.top_left.configure(bg='#424242', relief='groove', borderwidth='2')
+        self.top_left.configure(bg=self.GRAY, relief='groove', borderwidth='2')
 
         self.bottom_left = PanedWindow(self.left_camPaneTabMain)
-        self.bottom_left.configure( bg='#424242', relief='groove', borderwidth='2')
+        self.bottom_left.configure( bg=self.GRAY, relief='groove', borderwidth='2')
 
 
         self.left_camPaneTabMain.add(self.top_left, height=500)
@@ -175,26 +179,27 @@ class GUIApplication(threading.Thread):
         self.root_cam_tab.add(self.midSection_camPaneTabMain)
 
         self.top = PanedWindow(self.midSection_camPaneTabMain) # Top Mid GUI
-        self.top.configure(bg='#424242')
-        self.frame = Frame(self.top, bg='#424242')
+        self.top.configure(bg=self.GRAY)
+        self.frame = Frame(self.top, bg=self.GRAY)
         self.top.add(self.frame)
         self.midSection_camPaneTabMain.add(self.top, height=500)
         self.main_label = Label(self.top, text='Camera Views')
-        self.main_label.config(height=480, bg='#424242')
+        self.main_label.config(height=480, bg=self.GRAY)
         self.main_label.grid(column=0, row=0)
 
         self.bottom = PanedWindow(self.midSection_camPaneTabMain)
-        self.bottom.configure(height=20, bg='#424242')
+        self.bottom.configure(height=20, bg=self.GRAY)
         self.midSection_camPaneTabMain.add(self.bottom, height=50)
 
         self.poseFontType = "Arial"
         self.poseFontSize = 14
-        self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg='#424242', fg='white',
+        self.shipPoseLabel_camPaneTabMain = Label(self.bottom, text="Poses:", bg=self.GRAY, fg=self.WHITE_TEXT
+                                                  ,
                                                   font=(self.poseFontType, self.poseFontSize,"bold"))
         self.shipPoseLabel_camPaneTabMain.grid(column=0, row=0, sticky='w')
 
         self.dispPoseBunker_camPaneTabMain = Frame(self.bottom)  # , orient=HORIZONTAL)
-        self.dispPoseBunker_camPaneTabMain.configure(bg='#424242')
+        self.dispPoseBunker_camPaneTabMain.configure(bg=self.GRAY)
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1)
 
         # Text variables for visualization of movement
@@ -206,58 +211,58 @@ class GUIApplication(threading.Thread):
         self.yaw_value = DoubleVar()
         self.boardPose_quality = DoubleVar()
 
-        self.DISPPLAYLABEL_WIDTH = 7
-        self.DISPPOSE_TEXTCOLOR = "White"
         # Display of variables that represents the movement of the object - XYZ - PITCH YAW ROLL.
-        self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.x_label = Label(self.dispPoseBunker_camPaneTabMain, text='X-VALUE:', bg=self.GRAY, fg=self.WHITE,
+                             font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.x_label.grid(column=0, row=0, sticky='w')
-        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.dispX_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.x_value, bg=self.GRAY, fg=self.WHITE,
+                                          font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispX_camPaneTabMain.grid(column=1, row=0)
-        self.y_label = Label(self.dispPoseBunker_camPaneTabMain, text='Y-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.y_label = Label(self.dispPoseBunker_camPaneTabMain, text='Y-VALUE:', bg=self.GRAY, fg=self.WHITE,
+                             font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.y_label.grid(column=2, row=0)
-        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.y_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.dispY_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.y_value, bg=self.GRAY, fg=self.WHITE,
+                                          font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispY_camPaneTabMain.grid(column=3, row=0)
-        self.z_label = Label(self.dispPoseBunker_camPaneTabMain, text='Z-VALUE:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.z_label = Label(self.dispPoseBunker_camPaneTabMain, text='Z-VALUE:', bg=self.GRAY, fg=self.WHITE,
+                             font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.z_label.grid(column=4, row=0)
-        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.dispZ_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.z_value, bg=self.GRAY, fg=self.WHITE,
+                                          font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispZ_camPaneTabMain.grid(column=5, row=0)
-        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize),padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.roll_label = Label(self.dispPoseBunker_camPaneTabMain, text='ROLL:', bg=self.GRAY, fg=self.WHITE,
+                                font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.roll_label.grid(column=0, row=1, sticky='w')
-        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value,bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                             font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.dispRoll_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=  self.roll_value, bg=self.GRAY, fg=self.WHITE,
+                                             font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispRoll_camPaneTabMain.grid(column=1, row=1)
-        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize),padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
+        self.pitch_label = Label(self.dispPoseBunker_camPaneTabMain, text='PITCH:', bg=self.GRAY, fg=self.WHITE,
+                                 font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.pitch_label.grid(column=2, row=1)
-        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value,fg=self.DISPPOSE_TEXTCOLOR,
-                                              bg='#424242',font=(self.poseFontType,self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
+        self.dispPitch_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.pitch_value, fg=self.WHITE,
+                                              bg=self.GRAY, font=(self.poseFontType,self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispPitch_camPaneTabMain.grid(column=3, row=1)
-        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                          font=(self.poseFontType, self.poseFontSize), padx=15,pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.yaw_label = Label(self.dispPoseBunker_camPaneTabMain, text='YAW:', bg=self.GRAY, fg=self.WHITE,
+                               font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.yaw_label.grid(column=4, row=1)
-        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value,bg='#424242', fg=self.DISPPOSE_TEXTCOLOR,
-                                            font=(self.poseFontType, self.poseFontSize), padx=15, pady=10,width=self.DISPPLAYLABEL_WIDTH)
+        self.dispYaw_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.yaw_value, bg=self.GRAY, fg=self.WHITE,
+                                            font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispYaw_camPaneTabMain.grid(column=5, row=1)
         # Display the quality of board estimation
-        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality,fg=self.DISPPOSE_TEXTCOLOR,
-                                            bg='#424242',font=(self.poseFontType, self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
+        self.boardPoseQuality_label = Label(self.dispPoseBunker_camPaneTabMain, textvariable=self.boardPose_quality, fg=self.WHITE,
+                                            bg=self.GRAY, font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.boardPoseQuality_label.grid(column=7, row=0)
-        self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg='#424242',fg=self.DISPPOSE_TEXTCOLOR,
-                                            font=(self.poseFontType, self.poseFontSize), padx=15,pady=10, width=self.DISPPLAYLABEL_WIDTH)
+        self.dispBoardPoseQual_camPaneTabMain = Label(self.dispPoseBunker_camPaneTabMain, text='Q Board:', bg=self.GRAY, fg=self.WHITE,
+                                                      font=(self.poseFontType, self.poseFontSize), padx=15, pady=10, width=self.DISPPLAYLABEL_WIDTH)
         self.dispBoardPoseQual_camPaneTabMain.grid(column=6, row=0)
 
         # Setup calibration page:
         self.setupCalibrationPage()
-        #self.second_label = Label(self.page_2, text='Camera Calibration', bg='#424242', fg='white')
+        #self.second_label = Label(self.page_2, text='Camera Calibration', bg=self.GRAY, fg=self.WHITE_TEXT
+        # )
         #self.second_label.place(relx=0.5, rely=0.02, anchor='center')
-        #self.calibrate_btn = Button(self.page_2, bg='#424242', fg='white', text='Calibrate', command=None)
+        #self.calibrate_btn = Button(self.page_2, bg=self.GRAY, fg=self.WHITE_TEXT
+        # , text='Calibrate', command=None)
         #self.start_btn.grid(column=0, row=0, pady=10)
         #self.stop_btn.grid(column=1, row=0, pady=10)
         #self.hidecam_btn.grid(column=2, row=0, pady=10)
@@ -277,11 +282,11 @@ class GUIApplication(threading.Thread):
         self.page_3_frame.pack()
         # Create container for holding board list
         self.boardlist_container = Frame(self.page_3)
-        self.boardlist_container.config(padx='10',pady='10',bg='#424242')
+        self.boardlist_container.config(padx='10',pady='10',bg=self.GRAY)
         self.boardlist_container.pack(side=BOTTOM)
         self.boardimgs = []
         self.boardimgages = [None,None,None,None,None,None,None,None,None]
-        self.page_3_label_frame = Frame(self.page_3_frame, bg='#424242')
+        self.page_3_label_frame = Frame(self.page_3_frame, bg=self.GRAY)
         self.page_3_label_frame.configure(relief='groove')
         self.page_3_label_frame.configure(borderwidth='2')
 
@@ -333,32 +338,36 @@ class GUIApplication(threading.Thread):
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
-        self.btn_frame = Frame(self.page_3, bg='#424242')
+        self.btn_frame = Frame(self.page_3, bg=self.GRAY)
         self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
         self.pdf_btn = Button(self.btn_frame, text='Generate board',
                               command=lambda: [self.createArucoBoard()])
-        self.pdf_btn.configure(bg='#424242', fg='white')
+        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE_TEXT
+                               )
         self.pdf_btn.pack(side=LEFT)
         self.pdf_btn = Button(self.btn_frame, text='Add to tracking list',
                               command=lambda: [self.exportArucoBoard()])
-        self.pdf_btn.configure(bg='#424242', fg='white')
+        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE_TEXT
+                               )
         self.pdf_btn.pack(side=LEFT)
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
                               command=lambda: [self.saveArucoPDF()])
-        self.pdf_btn.configure(bg='#424242', fg='white')
+        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE_TEXT
+                               )
         self.pdf_btn.pack(side=LEFT)
 
-        Frame(self.btn_frame, width=5,bg='#424242').pack(side=LEFT)
+        Frame(self.btn_frame, width=5,bg=self.GRAY).pack(side=LEFT)
         self.merge_btn = Button(self.btn_frame, text='Merge',
                               command=lambda: [self.doMerging()])
-        self.merge_btn.configure(bg='#424242', fg='white')
+        self.merge_btn.configure(bg=self.GRAY, fg=self.WHITE_TEXT
+                                 )
         self.merge_btn.pack(side=LEFT)
 
         # Page 4: Graph setup
         self.page_4_frame = Frame(self.page_4)
         self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
-        self.page_4_frame.configure(relief='groove', borderwidth='2', background='#424242', width=565)
+        self.page_4_frame.configure(relief='groove', borderwidth='2', background=self.GRAY, width=565)
 
         self.graph_frame = Frame(self.page_4_frame)
         self.graph_frame.configure(background='red')
@@ -386,15 +395,18 @@ class GUIApplication(threading.Thread):
 
 
 
-        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg='#424242', height=500, width=50)
+        self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg=self.GRAY, height=500, width=50)
         # Start and stop button setup
-        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg='white',height=2,width=7,
+        self.start_btn = Button(self.camFrameSettingSection, text='Start', bg='green', fg=self.WHITE_TEXT
+                                ,height=2,width=7,
                                 command=lambda: [self.sendStartSignal()])
         # init_cams_btn = Button(page_1, text='Initialise cameras', command=startClicked)
-        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg='white',height=2,width=7,
+        self.stop_btn = Button(self.camFrameSettingSection, text='Stop', bg='red', fg=self.WHITE_TEXT
+                               ,height=2,width=7,
                                command=lambda: [self.sendStopSignal()])
         self.hidecam_btn = Button(self.camFrameSettingSection, text='Hide', command=self.hideCamBtnClicked,height=2,width=6,
-                                  bg='#424242', fg='white',)
+                                  bg=self.GRAY, fg=self.WHITE_TEXT
+                                  ,)
         self.start_btn.grid(column=0, row=0, pady=10)
         self.stop_btn.grid(column=1, row=0, pady=10)
         self.hidecam_btn.grid(column=2, row=0, pady=10)
@@ -405,7 +417,8 @@ class GUIApplication(threading.Thread):
         self.camFrameSettingSection.pack()
 
         self.availCamsLabel = Label(self.left_camPaneTabMain, text='Available cameras: ',font=("Arial", "12"))
-        self.availCamsLabel.configure(bg='#424242',fg='white')
+        self.availCamsLabel.configure(bg=self.GRAY,fg=self.WHITE_TEXT
+                                      )
         self.availCamsLabel.pack()
 
         self.__displayedCameraIndex = tk.IntVar()  # Radio buttons controlling which camera feed to show. negatives means auto.
@@ -413,9 +426,10 @@ class GUIApplication(threading.Thread):
 
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="Auto", padx=5, variable=self.__displayedCameraIndex,
-                       command=self.setCameraIndex, value=-1, bg='#424242', fg='orange',font=("Arial", "12","bold")).pack()
+                       command=self.setCameraIndex, value=-1, bg=self.GRAY, fg='orange',font=("Arial", "12","bold")).pack()
 
-        self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg='#424242', fg='White',font=("Arial", "12")).pack()
+        self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg=self.GRAY, fg=self.WHITE_TEXT
+                                 ,font=("Arial", "12")).pack()
 
         # Board selection variable setup
         self.boardIndex = tk.IntVar()  # Radio buttons controlling which board to track.
@@ -461,29 +475,29 @@ class GUIApplication(threading.Thread):
 
         self.configPaneTabMain = PanedWindow(self.page_5, bg='black')
         self.configPaneTabMain.pack(fill=BOTH, expand=True)
-        self.configPaneTabMain.configure(bg='#424242')
+        self.configPaneTabMain.configure(bg=self.GRAY)
 
 
         # Mid section Pane for configuring
         self.midSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL, bg='gray80')
         self.configPaneTabMain.add(self.midSection_configPaneTabMain)
-        self.midSection_configPaneTabMain.configure(bg='#424242')
+        self.midSection_configPaneTabMain.configure(bg=self.GRAY)
         self.rightSection_configPaneTabMain = PanedWindow(self.configPaneTabMain, orient=VERTICAL)
         self.configPaneTabMain.add(self.rightSection_configPaneTabMain)
-        self.configPaneTabMain.configure(bg='#424242')
+        self.configPaneTabMain.configure(bg=self.GRAY)
 
         self.midtopSectionLabel_configPaneTabMain = Frame(self.midSection_configPaneTabMain,height=100)
         self.midSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
-        self.midtopSectionLabel_configPaneTabMain.configure(bg='#424242')
+        self.midtopSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
 
         self.rightSectionLabel_configPaneTabMain = Label(self.rightSection_configPaneTabMain, text="right pane")
         self.rightSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
-        self.rightSection_configPaneTabMain.configure(bg='#424242')
-        self.rightSectionLabel_configPaneTabMain.configure(bg='#424242')
+        self.rightSection_configPaneTabMain.configure(bg=self.GRAY)
+        self.rightSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
 
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.midSection_configPaneTabMain)
-        self.selectCamIndexesFrame.configure(bg='#424242')
+        self.selectCamIndexesFrame.configure(bg=self.GRAY)
         self.midSection_configPaneTabMain.add(self.selectCamIndexesFrame)
         Label(self.selectCamIndexesFrame, text="Hello").grid(row=0,column=0)
         self.selectCamIndexesFrame.configure(relief='groove')
@@ -504,11 +518,11 @@ class GUIApplication(threading.Thread):
 
 
         self.sendCamSelectionButton_configTab = Button(self.midSection_configPaneTabMain, padx = 10, pady = 10,
-                                                       text="Apply",bg='#424242',command=self.applyCamList, width=20,fg="white")
+                                                       text="Apply",bg=self.GRAY,command=self.applyCamList, width=20,fg="white")
         #deadspace5 = Frame(self.midSection_configPaneTabMain).pack()
         #deadspace6 = Frame(self.midSection_configPaneTabMain).pack()
         self.midSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
-        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg='#424242')
+        deadspace2 = Frame(self.midSection_configPaneTabMain,height=100, bg=self.GRAY)
         self.midSection_configPaneTabMain.add(deadspace2)
         # List for VEs stored in GUI
         self.prelimVEList = []
@@ -528,17 +542,18 @@ class GUIApplication(threading.Thread):
         if self.allowToCalibrate:
             logging.debug('Going to create a TopLevel window now')
             self.maincalib_window = Toplevel()
-            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg=self.GRAY)
             self.maincalib_window.title("Calibrate cameras")
-            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg='#424242')
+            self.prepareCalib_mainFrame = Frame(self.maincalib_window, height=1000, width=1000, bg=self.GRAY)
             self.prepareCalib_mainFrame.grid(row=0,column=0)
-            self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg='#424242', fg='white')
+            self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Select camera to calibrate', font=('Arial', 14), bg=self.GRAY, fg=self.WHITE_TEXT
+                                                )
             self.selectCamToCalib_label.grid(row=1,column=0, columnspan=2)
-            #self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg='#424242', fg="white")
+            #self.previewButton_calibPage = Button(self.mainFrame, text="Preview", state='disabled', bg=self.GRAY, fg="white")
             #self.previewButton_calibPage.grid(row=3, column=0)
-            #self.connectButton_calibPage = Button(self.mainFrame, text="Connect",  state='disabled', bg='#424242', fg="white")
+            #self.connectButton_calibPage = Button(self.mainFrame, text="Connect",  state='disabled', bg=self.GRAY, fg="white")
             #self.connectButton_calibPage.grid(row=2, column=0)
-            #self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg='#424242', fg="white")
+            #self.connectStateLabel_calibPage = Label(self.mainFrame, text="Not connected", bg=self.GRAY, fg="white")
             #self.connectStateLabel_calibPage.grid(row=2, column=1)
 
             # Add a container that gonna hold "Connection Status Preview", given from the VEConfig-class
@@ -552,21 +567,23 @@ class GUIApplication(threading.Thread):
                 calibCamToList.append(i)
             self.possibleCamsToCalibOption = OptionMenu(self.prepareCalib_mainFrame, self.camToCalib_var,
                                                         *calibCamToList, command=self.setCamToCalib)
-            self.possibleCamsToCalibOption.config(highlightbackground='#424242',bg='#424242', fg='white')
+            self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY,bg=self.GRAY, fg=self.WHITE_TEXT
+                                                  )
             self.possibleCamsToCalibOption.grid(row=1,column=3)
             #self.deadLabel = Label(self.prepareCalib_mainFrame, text='deadLabel1')
             #self.deadLabel.grid(row=2,column=0)
 
 
-    def setCamToCalib(self, value):
+    def setCamToCalib(self, cameraIndex):
         '''
         We have choosen a value, and want to display connection options and status for the camera.
-        :param value: The choosen camera index.
+        Also displaying configurations for calibration process.
+        :param cameraIndex: The choosen camera index.
         :return:
         '''
         logging.info('Selected cam with value: ' + str(self.camToCalib_var.get()))
         self.camIndexToCalibrate = self.camToCalib_var.get()
-        self.vecuToCalib = self.getVEConfigUnitById(value)
+        self.vecuToCalib = self.getVEConfigUnitById(cameraIndex)
         if self.vecuToCalib is not None:
             logging.debug("Id of given VECU: "+ str(self.vecuToCalib.getIndex()))
             state = self.vecuToCalib.getState()
@@ -586,36 +603,52 @@ class GUIApplication(threading.Thread):
         self.calibType_var.set('Film')
         self.calibOptions = OptionMenu(self.prepareCalib_mainFrame, self.calibType_var,
                                                     *calibOptions, command=self.doCalib)
-        self.possibleCamsToCalibOption.config(highlightbackground='#424242', bg='#424242', fg='white')
+        self.possibleCamsToCalibOption.config(highlightbackground=self.GRAY, bg=self.GRAY, fg=self.WHITE_TEXT
+                                              )
         self.possibleCamsToCalibOption.grid(row=1, column=3)
-        deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg='#424242')
-        self.doCalibButton = Button(self.prepareCalib_mainFrame, text="Calibrate",bg='#424242',fg='white',command=self.doCalib)
+        deadSpace11 = Frame(self.prepareCalib_mainFrame, height=20,bg=self.GRAY)
+        self.doCalibButton = Button(self.prepareCalib_mainFrame, text="Calibrate",bg=self.GRAY,fg=self.WHITE_TEXT
+                                    ,command=self.doCalib)
         self.doCalibButton.grid(row=5,column=0)
         self.selectCamToCalib_label = Label(self.prepareCalib_mainFrame, text='Number of secs/frames',
-                                            font=('Arial', 11), bg='#424242', fg='white')
+                                            font=('Arial', 11), bg=self.GRAY, fg=self.WHITE_TEXT
+                                            )
         self.selectCamToCalib_label.grid(row=5, column=1)
-        self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg='#424242',fg='white')
+        self.lengthOfCalib = Entry(self.prepareCalib_mainFrame,bg=self.GRAY,fg=self.WHITE_TEXT
+                                   )
         self.lengthOfCalib.insert(0,'12')
         self.lengthOfCalib.grid(row=5,column=3)
-        self.calibName_label = Label(self.prepareCalib_mainFrame, text='Name of calibration file',
-                                            font=('Arial', 11), bg='#424242', fg='white')
+        self.calibName_label = Label(self.prepareCalib_mainFrame, text='Name of calibration file, 2 letters.',
+                                            font=('Arial', 11), bg=self.GRAY, fg=self.WHITE_TEXT
+                                     )
         self.calibName_label.grid(row=6, column=1)
-        self.calibName = Entry(self.prepareCalib_mainFrame, bg='#424242', fg='white')
-        self.calibName.insert(0, 'CameraXB')
+        self.calibName = Entry(self.prepareCalib_mainFrame, bg=self.GRAY, fg=self.WHITE_TEXT
+                               )
+        self.calibName.insert(0, 'XB')
         self.calibName.grid(row=6, column=3)
 
     def doCalib(self):
-        logging.debug('Starting doing calib.')
-        calibType = self.calibType_var.get() # Either 'Film' or 'Images'
-        VEtoCalib = self.vecuToCalib.getVE()
-        if VEtoCalib is None: # Not already created
-            # Create VE
-            self.vecuToCalib.setState(1)
-        calibLength = int(self.lengthOfCalib.get())
-        if calibType == 'Film':
-            logging.debug('We are calibrating with film.')
-            calibThread = threading.Thread(target=self.takeUpCalibrationVideo, args=(calibLength, VEtoCalib))
-            calibThread.start()
+        '''
+        Do the calibration process, if filename is correctly.
+        Create a thread to take up the film.
+        :return:
+        '''
+        calibFileName = str(self.calibName.get())
+        if len(calibFileName) == 2:
+            logging.debug('Starting doing calib.')
+            calibType = self.calibType_var.get() # Either 'Film' or 'Images'
+            VEtoCalib = self.vecuToCalib.getVE()
+            if VEtoCalib is None: # Not already created
+                # Create VE
+                self.vecuToCalib.setState(1)
+            calibLength = int(self.lengthOfCalib.get())
+            if calibType == 'Film':
+                logging.debug('We are calibrating with film.')
+                calibThread = threading.Thread(target=self.takeUpCalibrationVideo, args=(calibLength, VEtoCalib))
+                calibThread.start()
+        else:
+            logging.debug('The filename is ' + str(len(calibFileName)) + ' long. The name is ' + calibFileName)
+            self.showErrorBox('The name of the calibration-file must be precisely 2 letters/numbers long! ')
     def takeUpCalibrationVideo(self, lengthSec, VE):
         '''
         Running in own thread.
@@ -637,11 +670,9 @@ class GUIApplication(threading.Thread):
             print('Frame: ' + str(frame))
             #ret, frame = cap.read()
             if frame is not None:
-                frame = cv2.flip(frame, 0)
-
+                #frame = cv2.flip(frame, 0)
                 # write the flipped frame
                 out.write(frame)
-
                 cv2.imshow('frame', frame)
                 cv2.waitKey(40)
                 timeElapsed = time.time() - startTime
@@ -649,7 +680,6 @@ class GUIApplication(threading.Thread):
                 print('Wanted length: ' + str(lengthSec))
                 if int(timeElapsed) > lengthSec:
                     notAbort = False
-
         # Calibrate the video
         camParam = videoCalibration(videoName, debug=True)
         #Destroy the calibration window.
@@ -680,12 +710,13 @@ class GUIApplication(threading.Thread):
             return
         self.merge_window = Toplevel()
         self.merge_window.title("Merge boards")
-        self.merge_topframe = Frame(self.merge_window, bg='#424242')
-        self.merge_frame = Frame(self.merge_topframe, bg='#424242')
+        self.merge_topframe = Frame(self.merge_window, bg=self.GRAY)
+        self.merge_frame = Frame(self.merge_topframe, bg=self.GRAY)
         self.merge_topframe.pack()
         self.merge_frame.pack()
 
-        self.intro_text = Text(self.merge_frame, bg='#424242', fg='white')
+        self.intro_text = Text(self.merge_frame, bg=self.GRAY, fg=self.WHITE_TEXT
+                               )
         text = "This is the merger. Here you can do so several board markers acts as one, thus gives " \
                "you much better accuracy. This because we use find the best correlation between multiple cameras and " \
                "multiple markers to " \
@@ -695,20 +726,23 @@ class GUIApplication(threading.Thread):
                "be merged, should be visible for the choosen merger camera.   "
         self.intro_text.insert(END,text)
         self.intro_text.grid(column=0, row=0, columnspan=2)
-        self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg='#424242',fg="white", height=5)
+        self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg=self.GRAY,fg="white", height=5)
         self.main_cam_label.grid(column=0,row=1)
 
         self.main_board_var = IntVar()
         self.main_board_choice_id = 0
         self.main_board_choice = OptionMenu(self.merge_frame, self.main_board_var, *self.boardIDlist, command=self.setMainMergerBoard)
-        self.main_board_choice.config(bg="#424242", fg="white", highlightbackground='#424242')
+        self.main_board_choice.config(bg="#424242", fg="white", highlightbackground=self.GRAY)
         self.main_board_choice.setvar("Choose")
         self.main_board_choice.grid(row=1, column=1)
-        self.packer = Frame(self.merge_frame, bg='#424242',width=150, height=30)
+        self.packer = Frame(self.merge_frame, bg=self.GRAY,width=150, height=30)
         self.packer.grid(row=3, column=0, columnspan=2)
-        self.abort_btn = Button(self.packer, text='Abort', bg='#424242', fg='white', command=self.merge_window.destroy)
-        self.next_btn = Button(self.packer, text='Next',bg='#424242', fg='white', command=self.doMergeProcess)
-        #self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+        self.abort_btn = Button(self.packer, text='Abort', bg=self.GRAY, fg=self.WHITE_TEXT
+                                , command=self.merge_window.destroy)
+        self.next_btn = Button(self.packer, text='Next',bg=self.GRAY, fg=self.WHITE_TEXT
+                               , command=self.doMergeProcess)
+        #self.abort_btn = Button(self.packer, bg=self.GRAY, fg=self.WHITE_TEXT
+        # )
         self.abort_btn.pack(side=LEFT,pady=10,padx=10)
         self.next_btn.pack(side=RIGHT,pady=10,padx=10)
 
@@ -731,28 +765,33 @@ class GUIApplication(threading.Thread):
         self.mergeprocess_frame = Frame(self.merge_topframe, bg="#424242")
         self.mergeprocess_frame.pack()
         # Add image showing the merge process, to be updated
-        self.image_frame = Frame(self.mergeprocess_frame, bg='#424242')
+        self.image_frame = Frame(self.mergeprocess_frame, bg=self.GRAY)
         self.image_frame.grid(row=0,column=0)
         self.merge_image = None # = ImageTk.PhotoImage(Image.open("True1.gif"))
         self.panel = Label(self.mergeprocess_frame, image=self.merge_image)
         self.panel.grid(row=0,column=0)
 
         # Show merge quality and some options
-        self.info_frame = Frame(self.mergeprocess_frame, bg='#424242')
+        self.info_frame = Frame(self.mergeprocess_frame, bg=self.GRAY)
         self.info_frame.grid(row=0,column=1)
-        Label(self.info_frame, text="Quality of merge: ", bg='#424242', fg='white').grid(row=0,column=0)
+        Label(self.info_frame, text="Quality of merge: ", bg=self.GRAY, fg=self.WHITE_TEXT
+              ).grid(row=0,column=0)
         self.mergeBoardProgressbarsList = dict()
         n = 0
         for n, board_index in enumerate(self.sub_board_indicies):
-            Label(self.info_frame, text=("Board " + str(board_index)), bg='#424242', fg='white').grid(row=n + 1, column=0)
+            Label(self.info_frame, text=("Board " + str(board_index)), bg=self.GRAY, fg=self.WHITE_TEXT
+                  ).grid(row=n + 1, column=0)
             pb = ttk.Progressbar(self.info_frame, value=0, maximum=1, orient="horizontal", length=100,
                                  mode="determinate")
             pb.grid(row=n + 1, column=1)
             self.mergeBoardProgressbarsList[board_index] = pb
-        self.cancel_btn = Button(self.info_frame, text='Abort', bg='#424242', fg='white',
+        self.cancel_btn = Button(self.info_frame, text='Abort', bg=self.GRAY, fg=self.WHITE_TEXT
+                                 ,
                                 command=self.merge_window.destroy)
-        self.finish_btn = Button(self.info_frame, text='Finish', bg='#424242', fg='white', command=self.mergeProcessFinished)
-        # self.abort_btn = Button(self.packer, bg='#424242', fg='white')
+        self.finish_btn = Button(self.info_frame, text='Finish', bg=self.GRAY, fg=self.WHITE_TEXT
+                                 , command=self.mergeProcessFinished)
+        # self.abort_btn = Button(self.packer, bg=self.GRAY, fg=self.WHITE_TEXT
+        # )
         self.cancel_btn.grid(row=n+2,column=0,pady=10, padx=10)
         self.finish_btn.grid(row=n+2,column=1, pady=10, padx=10)
 
@@ -820,7 +859,7 @@ class GUIApplication(threading.Thread):
         self.available_sub_boards = copy.copy(self.boardIDlist)
         self.available_sub_boards.remove(self.main_board_var.get())
         logging.debug("Value: "+str(value))
-        self.child_markers_label = Label(self.merge_frame, text="Markers to merge with:", fg="white",bg='#424242')
+        self.child_markers_label = Label(self.merge_frame, text="Markers to merge with:", fg="white",bg=self.GRAY)
         self.child_markers_label.grid(row=2,column=0)
         self.main_mergerboard = value
         self.cb_merger_frame = Frame(self.merge_frame)
@@ -834,7 +873,7 @@ class GUIApplication(threading.Thread):
             self._sub_board_checkbutton_states[boardID] = self._sub_board_checkbutton_state
             self._cb = Checkbutton(self.cb_merger_frame, text=str(boardID),  # str(self._id),
                                    fg="black", variable=self._sub_board_checkbutton_states[boardID],
-                                   bg='#424242', width=12)  # Checkbutton
+                                   bg=self.GRAY, width=12)  # Checkbutton
             self._cb.grid(row=boardID)
 
     def applyCamList(self):
@@ -1322,7 +1361,7 @@ class GUIApplication(threading.Thread):
         if id in self.boardButtons:
             logging.error("Attemptet to add board that already existed in list.")
             return
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg='#424242', fg='Orange',font=("Arial", "12","bold"),
+        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg=self.GRAY, fg='Orange',font=("Arial", "12","bold"),
                                     command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
         self.boardButtons[id] = button
         self.boardButtons[id].pack()
@@ -1356,7 +1395,7 @@ class GUIApplication(threading.Thread):
                 buttonText = "Camera " + str(camID)
                 button = tk.Radiobutton(self.left_camPaneTabMain, text=buttonText, padx=5,
                                         variable=self.__displayedCameraIndex,
-                                        value=camID, bg='#424242', fg='orange')
+                                        value=camID, bg=self.GRAY, fg='orange')
                 self.cameraButtonList.append(button)
                 self.cameraButtonList[-1].pack()
 

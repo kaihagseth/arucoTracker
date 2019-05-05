@@ -152,7 +152,9 @@ class VEConfigUnit(Thread):
             return None
         #print(buttonsToUpdate)
         if not len(buttonsToUpdate) == 0: # Only try if found buttons
+            logging.debug(str(buttonsToUpdate))
             for btn in buttonsToUpdate:
+                logging.debug("Button " + str(btn))
                 if text is not None:
                     btn.configure(text=text)
                 if state is not None:
@@ -264,7 +266,7 @@ class VEConfigUnit(Thread):
             self.continueRunInPE = True
             self.calibFilePopup.config(state="disabled")
             self._VE = None # Not the responsibility of GUI anymore
-
+            self._currState = 6
         elif newState is 7: # Failed to open camera
             self.doConfigStatusLabel(text="Failed.", fg="white")
             self.configButtons(buttonType="connect",text="Retry")

@@ -91,7 +91,7 @@ class Camera():
 
     def getUndistortedFrame(self):
         "Get threaded, undistorted frame. "
-        img = ic.getUndistortedFrame(self.getFrame())
+        img = ic.getUndistortedFrame(self.getFrame(), self.camera_parameters)
         return img
 
     def loadCameraParameters(self):
@@ -99,10 +99,13 @@ class Camera():
         :param filename: Name of file to get params from.
         """
         filename =  'calibValues/' + self.camera_label +'calib.npz'
-        npzfile = np.load(filename)
-        self.camera_parameters = {'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
-                             'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
-        logging.info("New camera values has been set.")
+        try:
+            npzfile = np.load(filename)
+            self.camera_parameters = {'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
+                                      'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
+            logging.info("New camera values has been set.")
+        except IOError as e:
+            logging.error('Calib file not found in dictionary.' + str(e))
 
     def saveCameraParameters(self):
         """
