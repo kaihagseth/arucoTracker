@@ -15,21 +15,15 @@ from GUI.GUILogin import GUILogin
 from PoseEstimator import PoseEstimator
 from threading import Thread
 
-class Connector(Thread):
+class Connector():
     '''
     Connect the UI with rest of the application.
     Start the GUI.
     '''
 
     def __init__(self):#ui_string):
-        Thread.__init__(self)
         self.logging_setup()
-        self.GUIupdaterFunction = None
-        self.GUIstreamFunction = None
         self.PE = PoseEstimator()
-        self._newBoard = None
-        self._resetExtrinsic = None
-        self._stopCommand = None
         self._collectGUIVEs = None
 
     def run(self):
@@ -40,7 +34,6 @@ class Connector(Thread):
         Start the UI, and communicate continuous with the GUI while loop is running in separate threads.
         '''
         self.PE.initialize(qualityDisplayFX=qualityDisplayFX, imageDisplayFX=imageDisplayFX, poseDisplayFX=poseDisplayFX)
-
 
     def setBoardIndex(self, bi):
         """
@@ -101,15 +94,16 @@ class Connector(Thread):
             self.PE.setAutoTracker(False)
 
     def addBoard(self, board):
+        """
+        Adds a board to the Pose Estimator
+        :param board: board to track
+        :return:
+        """
         self.PE.addBoard(board)
 
-    def setResetExtrinsic(self, reset):
-        self._resetExtrinsic = reset
+    def resetExtrinsic(self,):
         self.PE.resetExtrinsicMatrices()
 
-
-    def setStopCommand(self, sc):
-        self._stopCommand = sc
 
     def setCollectGUIVEs(self, var):
         self._collectGUIVEs = var
@@ -118,30 +112,6 @@ class Connector(Thread):
         self.PE.setVisionEntityList(VElist)
         self.setCollectGUIVEs(True) # Ready to be included
 
-    def setGUIupdaterFunction(self, updaterFX):
-        logging.info("GUIupdaterFx is set!")
-        self.GUIupdaterFunction = updaterFX
-
-    def setGUIStreamerFunction(self, streamerFX):
-        self.GUIstreamFunction = streamerFX
-
-    def doFindPoseStreamer(self):
-        """" This is NOT a connector function. It's just a connector variable that keeps a reference
-        to GUIApplication function! This variable is given a function in 'setGUIStreamerFunction' """
-        self.GUIstreamFunction()
-
-    def updateFields(self, poses, frame, boardPose_quality):
-        """
-        Ask GUI to update fieldsa in GUI class. 
-        :param poses: 
-        :param frame: 
-        :param boardPose_quality: 
-        :return: 
-        """"""
-        This is NOT a connector function. It's just a connector variable that keeps a reference 
-        to GUIApplication function!  This variable is given a function in 'setGUIupdaterFunction'"""
-        #logging.debug("Running updateFields in Connector")
-        self.GUIupdaterFunction(poses, frame, boardPose_quality)
 
     def removeVEFromPEListByIndex(self, camID):
         """
@@ -184,6 +154,14 @@ class Connector(Thread):
         :return: None
         """
         self.PE.setPoseDisplayFunction(poseDisplayFX)
+
+    def setImageDisplayFunction(self, imageDisplayFX):
+        """
+        Passes a function that displays an image from a vision entity to the GUI
+        :param imageDisplayFX: Function that displays image
+        :return: None
+        """
+        self.PE.setImageDisplayFunction(imageDisplayFX)
 
 if __name__ == '__main__':
     # logging_setup()

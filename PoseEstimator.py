@@ -1,7 +1,6 @@
 import threading, queue, logging
 import time
 import csv
-import inspect
 import logging
 import threading
 import time
@@ -28,12 +27,14 @@ class PoseEstimator():
         self.worldCoordinatesIsSet = False
         self.merger = None
         self.imageDisplayFX = None # Function used to display image frame
-        self.autoTracking = False # Tells if autotracking is active or not.
+        self.autoTracking = True # Tells if autotracking is active or not.
         self.trackedBoardIndex = None # Tells which board is being tracked.
         self.qualityDisplayFX = None # Function used to display quality of a chosen board
         self.poseDisplayFX = None # Function used to display pose of a chosen board
+        self.autoTrackingVE = None # Vision enity used for auto tracking
         self.logging = False
         self.running = False
+        self.merging = False
         self.runThread = False
 
     def createArucoBoard(self, board_width, board_height, marker_size, marker_gap):
@@ -161,6 +162,7 @@ class PoseEstimator():
         Create a new starterpoint for pose estimation.
         :return: None
         '''
+        self.worldCoordinatesIsSet = False
         for VE in self.getVisionEntityList():
             VE.resetExtrinsicMatrix()
 
@@ -288,6 +290,7 @@ class PoseEstimator():
         while True in veStatuses:
             veStatuses = [ve.running for ve in ves]
         self.running = False
+        self.resetExtrinsicMatrices()
         self.worldCoordinatesIsSet = False
 
     def stopThreads(self):
@@ -339,13 +342,14 @@ class PoseEstimator():
         :return: None
         """
         main_board = self.getBoards()[main_board_index]
-        self.setPoseDisplayFunction(imageDisplayFX)
         sub_boards = []
         for index in sub_boards_indeces:
             sub_boards.append(self.getBoards()[index])
         self.merger = Merger(self.dictionary, main_board, sub_boards)
         self.merger.startMerge()
         self.merger.setDisplayFunction(qualityDisplayFX)
+        self.setImageDisplayFunction(imageDisplayFX)
+
 
     def finishMerge(self):
         """
@@ -397,7 +401,8 @@ class PoseEstimator():
         """
         board = self.getBoards()[self.trackedBoardIndex]
         ve = board.getTrackingEntity()
-        if ve is not None:
+        if ve is not None and ve is not self.autoTrackingVE:
+            self.autoTrackingVE = ve
             self.routeDisplayFunction(ve.getCameraID())
 
     def routeDisplayFunction(self, cameraIndex):
@@ -433,3 +438,11 @@ class PoseEstimator():
         :return: None
         """
         self.autoTracking = autoTrackingStatus
+
+    def setImageDisplayFunction(self, imageDisplayFX):
+        """
+        Sets the image display function for the pose estimator
+        :param imageDisplayFX: The image display function to set.
+        :return: None
+        """
+        self.imageDisplayFX = imageDisplayFX
