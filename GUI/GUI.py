@@ -19,7 +19,7 @@ from GUI.ArucoBoardUnit import ArucoBoardUnit
 from VisionEntityClasses.VisionEntity import VisionEntity
 from VisionEntityClasses.ArucoBoard import ArucoBoard
 from exceptions import CamNotOpenedException
-from VisionEntityClasses.IntrinsicCalibrator import videoCalibration
+from VisionEntityClasses.IntrinsicCalibrator import videoCalibration, calibCam
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
@@ -113,7 +113,7 @@ class GUIApplication(threading.Thread):
         self.page_4 = ttk.Frame(self.notebook)
         self.page_5 = ttk.Frame(self.notebook)
         self.notebook.add(self.page_1, text='Camera')
-        self.notebook.add(self.page_3, text='PDF')
+        self.notebook.add(self.page_3, text='Markers')
         self.notebook.add(self.page_4, text='Graph')
         self.notebook.add(self.page_5, text='Configuration')
 
@@ -627,6 +627,49 @@ class GUIApplication(threading.Thread):
             logging.debug('The filename is ' + str(len(calibFileName)) + ' long. The name is ' + calibFileName)
             self.showErrorBox('The name of the calibration-file must be precisely 2 letters/numbers long! ')
 
+    def takeCalibrationImages(self, nImages, VE):
+        '''
+        Running in own thread.
+        Record the video, and send it to IntrinsicCalibration-class to do calibration.
+        :param lengthSec:
+        :param VE:
+        :return:
+        '''
+        # Define the codec and create VideoWriter object
+        #fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fileName = str(self.calibName.get())
+        #out = cv2.VideoWriter(('calibVideos/' + videoName + '.avi'), fourcc, 20.0, (640, 480))
+        #startTime = time.time()
+        nTaken = 0
+        imageList = []
+        notAbort = True
+        while notAbort:
+            VE.getCam().grabFrame()
+            ret, frame = VE.getCam().retrieveFrame()
+            # frame = VE.getFrame()
+            print('Frame: ' + str(frame))
+            # ret, frame = cap.read()
+            if frame is not None:
+                # frame = cv2.flip(frame, 0)
+                # write the flipped frame
+                #out.write(frame)
+                print('Images taken: ' + str(nTaken))
+                print('Wanted number of images: ' + str(nImages))
+                imageList.append(frame)
+                cv2.imshow('frame', frame)
+                cv2.waitKey(0)
+
+                nTaken += 1
+                #timeElapsed = time.time() - startTime
+                if int(nTaken) >= nImages:
+                    notAbort = False
+        # Calibrate the video
+        camParams = calibCam(imageList, showCalibration=True)#videoCalibration(videoName, debug=True)
+        np.savez(('calibValues/' + fileName + '.npz'), camParams)
+        logging.info('Parameters saved with filename ' + fileName + '.npz')
+        # Destroy the calibration window.
+        self.vecuToCalib.updateOptionMenu()
+
     def takeUpCalibrationVideo(self, lengthSec, VE):
         '''
         Running in own thread.
@@ -694,13 +737,14 @@ class GUIApplication(threading.Thread):
 
         self.intro_text = Text(self.merge_frame, bg=self.GRAY, fg=self.WHITE
                                )
-        text = "This is the merger. Here you can do so several board markers acts as one, thus gives " \
-               "you much better accuracy. This because we use find the best correlation between multiple cameras and " \
-               "multiple markers to " \
-               " provide good accuracy in all directions. \n" \
-               "To start with, select the main marker. This marker MUST BE VISIBLE TO ALL OTHER MARKERS that want to " \
-               "be merged during the merging process. During the process, the main marker, and the marker(s) that gonna " \
-               "be merged, should be visible for the choosen merger camera.   "
+        text = "This is the merger. Here you can do so several board markers acts as one, \n " \
+               "thus gives you much better accuracy. This because we use find the best \n " \
+               "correlation between multiple cameras and multiple markers to provide good \n " \
+               "accuracy in all directions. To start with, select the main marker. \n" \
+               "This marker MUST BE VISIBLE TO ALL OTHER MARKERS that want to " \
+               "be merged during the merging process. During the process, the main \n" \
+               "marker, and the marker(s) that gonna be merged, should be visible for the \n" \
+               "choosen merger camera.   "
         self.intro_text.insert(END,text)
         self.intro_text.grid(column=0, row=0, columnspan=2)
         self.main_cam_label = Label(self.merge_frame, text='Main marker:',bg=self.GRAY,fg="white", height=5)
@@ -1112,8 +1156,8 @@ class GUIApplication(threading.Thread):
         """
         try:
             logging.debug("Attempting to start pose estimation from GUI")
-            assert self.anyCameraInitiated and self.anyBoardsInitiated, "No cameras initialized. " \
-                                                                        "Please initialize camera in config-section"
+            assert self.anyCameraInitiated, "No cameras are initiated. Please add cameras in Configuration - Camera Config."
+            assert self.anyBoardsInitiated, "No boards are created. Please add Aruco Boards in Marksers tab."
             self.connector.startPoseEstimation(self.displayFrameInMainWindow, self.displayPoseInTrackingWindow,
                                                self.displayQualityInTrackingWindow)
             self.poseEstimationIsRunning = True
