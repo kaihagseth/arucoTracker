@@ -39,6 +39,7 @@ class GUIApplication(threading.Thread):
 
         # Observer technique: Tell connector which function to call when updating fields.
         self.connector.setPoseDisplayFunction(self.displayPoseInTrackingWindow)
+        self.connector.setImageDisplayFunction(self.displayFrameInMainWindow)
         self.connectorStarted = False
         # Fields written to by external objects. Should only be read in this object.
         self.imageFrame = None           # Image frame to be shown in camera window.
@@ -305,7 +306,7 @@ class GUIApplication(threading.Thread):
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
 
         self.gap.pack()
-        self.gap_entry.insert(0, '1')
+        self.gap_entry.insert(0, '5')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
@@ -397,7 +398,7 @@ class GUIApplication(threading.Thread):
 
         # Board selection variable setup
         self.boardIndex = tk.IntVar()  # Radio buttons controlling which board to track.
-        self.boardIndex.set(0)
+         #
 
 
         # invoke the button on the return key
@@ -887,6 +888,10 @@ class GUIApplication(threading.Thread):
             self.updateCamlist(self.VEsToSend)
 
     def setCameraIndexToDisplay(self):
+        """
+        Requests connector to display a camera from a given index.
+        :return: None
+        """
         self.connector.setCameraIndex(self.__displayedCameraIndex.get())
 
     def resetCamExtrinsic(self):
@@ -1204,6 +1209,8 @@ class GUIApplication(threading.Thread):
         if id in self.boardButtons:
             logging.error("Attemptet to add board that already existed in list.")
             return
+        if not self.boardButtons:
+            self.boardIndex.set(id)
         button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg=self.GRAY, fg='Orange',font=("Arial", "12","bold"),
                                     command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
         self.boardButtons[id] = button
@@ -1239,6 +1246,8 @@ class GUIApplication(threading.Thread):
                                         font=("Arial", "12", "bold"),
                                         command=self.setCameraIndexToDisplay, variable=self.__displayedCameraIndex,
                                         value=camID, bg='#424242', fg='Orange')
+                if not self.cameraButtonList:
+                    self.connector.setCameraIndex(camID) # If this is the first added cam, send it the display function.
                 self.cameraButtonList.append(button)
                 self.cameraButtonList[-1].pack()
 
