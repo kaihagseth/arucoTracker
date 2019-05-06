@@ -339,12 +339,14 @@ class GUIApplication(threading.Thread):
         self.page_4_frame.configure(relief='groove', borderwidth='2', background=self.GRAY, width=565)
 
         self.graph_frame = Frame(self.page_4_frame)
-        self.graph_frame.configure(background='red')
+        self.graph_frame.configure(background='white')
         self.graph_frame.configure(borderwidth='2')
         self.graph_frame.configure(relief='ridge')
         self.graph_frame.configure(width=750)
         self.graph_frame.configure(height=500)
+        canvas = tk.Canvas(self.graph_frame, width=750, height=500)
         self.graph_frame.pack()
+        canvas.pack()
 
         # Buttons in graph page
         self.btn_frame_4 = Frame(self.page_4_frame)
@@ -463,15 +465,6 @@ class GUIApplication(threading.Thread):
         # Create paned windows for GUI
         :return:
         '''
-        #self.midtopSectionLabel_configPaneTabMain = Frame(self.page_setup_camconfig, height=100)
-        #self.leftSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
-        #self.midtopSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
-        #
-        #self.rightSectionLabel_configPaneTabMain = Label(self.previewSection_configPaneTabMain, text="right pane")
-        #self.previewSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
-        #self.previewSection_configPaneTabMain.configure(bg=self.GRAY)
-        #self.rightSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
-
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.page_setup_camconfig)
         self.selectCamIndexesFrame.configure(bg=self.GRAY)
