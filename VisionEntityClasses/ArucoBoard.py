@@ -18,6 +18,7 @@ class ArucoBoard:
         self._transformationMatrix = None # World -> Model transformation
         self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
         self.ID = ArucoBoard.nextIndex
+        self.loggingFunction = None
         ArucoBoard.nextIndex += 1
         self.dictionary = dictionary
         self.autoTracked = False

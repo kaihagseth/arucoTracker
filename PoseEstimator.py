@@ -29,6 +29,7 @@ class PoseEstimator():
         self.imageDisplayFX = None # Function used to display image frame
         self.autoTracking = True # Tells if autotracking is active or not.
         self.trackedBoardIndex = None # Tells which board is being tracked.
+        self.loggedBoards = [] # Flags which boards are being logged.
         self.qualityDisplayFX = None # Function used to display quality of a chosen board
         self.poseDisplayFX = None # Function used to display pose of a chosen board
         self.autoTrackingVE = None # Vision enity used for auto tracking
@@ -86,7 +87,7 @@ class PoseEstimator():
                 logging.info(msg)
         return wantedCamIndexes
 
-    def initialize(self, imageDisplayFX=None, poseDisplayFX=None, qualityDisplayFX=None):
+    def initialize(self, imageDisplayFX=None, poseDisplayFX=None, qualityDisplayFX=None, loggingFX=None):
         '''
         Start Vision Entity threads for pose estimation.
         :return: None
@@ -95,6 +96,7 @@ class PoseEstimator():
         self.imageDisplayFX = imageDisplayFX
         self.poseDisplayFX = poseDisplayFX
         self.qualityDisplayFX = qualityDisplayFX
+        self.loggingFX = loggingFX
         self.runThread = True
         for VE in self.getVisionEntityList():
             VE.runThread = True
@@ -105,6 +107,11 @@ class PoseEstimator():
         th.start()
 
     def runPoseEstimationLoop(self):
+        """
+        Pose estimators threaded loop.
+        #TODO: Should this really be free-wheeling?
+        :return:
+        """
         self.running = True
         while self.runThread:
             self.updateBoardPoses()
@@ -113,7 +120,7 @@ class PoseEstimator():
             if self.qualityDisplayFX:
                 self.displayQuality()
             if self.logging:
-                self.writeCsvLog()
+                self.updateLog()
             if self.autoTracking:
                 self.autoTrack()
 
@@ -446,3 +453,13 @@ class PoseEstimator():
         :return: None
         """
         self.imageDisplayFX = imageDisplayFX
+
+    def updateBoardLog(self):
+        """
+        Updates the pose logs for the logged boards.
+        :return: None
+        """
+        boards = self.getBoards()
+        for index in self.loggedBoards:
+            pose = boards[index].getTransformationMatrix()
+            self.loggingFX(index, pose)

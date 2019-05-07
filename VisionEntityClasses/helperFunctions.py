@@ -124,6 +124,13 @@ def findCosineToBoard(cameraToBoardTransformation):
     cosineToBoard = -z3
     return cosineToBoard
 
+def decomposeHomogenousMatrixToEuler(homogenousMatrix):
+    R = homogenousMatrix[0:3,0:3]
+    evec = rotationMatrixToEulerAngles(R)
+    tvec = np.asarray(homogenousMatrix[0:3, 3])
+    x, y, z = tvec
+    roll, pitch, yaw = evec
+    return x, y, z, roll, pitch, yaw
 class IterativeMean():
     """
     Calculates an average sum between current and all previous inputs.
@@ -212,6 +219,8 @@ class IterativeMeanTransformationFinder:
         :return: Cumulative sum of all
         """
         return self.meanRotation.iterativeMean.weightCumSum
+
+
 
 if __name__ == '__main__':
     vector = np.array([1, 2, 3])

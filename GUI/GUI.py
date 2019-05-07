@@ -13,6 +13,7 @@ import ttkthemes
 import copy
 from PIL import ImageTk, Image
 from GUI import GUIDataPlotting
+from VisionEntityClasses.helperFunctions import *
 import numpy as np
 from GUI.VEConfigUnit import VEConfigUnit
 from GUI.ArucoBoardUnit import ArucoBoardUnit
@@ -192,6 +193,7 @@ class GUIApplication(threading.Thread):
         self.dispPoseBunker_camPaneTabMain.grid(column=0, row=1)
 
         # Text variables for visualization of movement
+        self.board_graph_data = dict()
         self.translation_values = [DoubleVar(), DoubleVar(), DoubleVar()]
         self.rotation_values = [DoubleVar(), DoubleVar(), DoubleVar()]
         self.boardPose_quality = DoubleVar()
@@ -356,7 +358,7 @@ class GUIApplication(threading.Thread):
         self.btn_plot.pack(side=LEFT)
         self.btn_plot.configure(background='#665959',disabledforeground='#911515',foreground='#FFFFFF')
         self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.runGraph(),self.hideButton(self.btn_plot)), height=2, width=7)
+        self.btn_plot.configure(command=lambda: (self.displayGraph(), self.hideButton(self.btn_plot)), height=2, width=7)
 
         self.stop_pressed = False
         self.btn_save =  tk.Button(self.btn_frame_4)
@@ -825,6 +827,35 @@ class GUIApplication(threading.Thread):
         self.panel.configure(image=image)
         self.panel.image = image
 
+    def updateGraphData(self, boardID, pose):
+        """
+        Writes a data point to the graph data.
+        :param boardID: the identifier for the tracked board.
+        :param pose: Homogenous matrix containing pose for this board.
+        :return: None
+        """
+        x, y, z, roll, pitch, yaw = decomposeHomogenousMatrixToEuler(pose)
+        if not boardID in self.board_graph_data:
+            self.board_graph_data[boardID] = dict()
+            self.board_graph_data[boardID]['x_data'] = []
+            self.board_graph_data[boardID]['y_data'] = []
+            self.board_graph_data[boardID]['z_data'] = []
+            self.board_graph_data[boardID]['roll_data'] = []
+            self.board_graph_data[boardID]['pitch_data'] = []
+            self.board_graph_data[boardID]['yaw_data'] = []
+            self.board_graph_data[boardID]['time_data'] = []
+            if not 'start_time' in self.board_graph_data:
+                self.board_graph_data['start_time'] = time.time()
+        self.board_graph_data[boardID]['x_data'].append(x)
+        self.board_graph_data[boardID]['y_data'].append(y)
+        self.board_graph_data[boardID]['z_data'].append(z)
+        self.board_graph_data[boardID]['roll_data'].append(roll)
+        self.board_graph_data[boardID]['pitch_data'].append(pitch)
+        self.board_graph_data[boardID]['yaw_data'].append(yaw)
+        self.board_graph_data[boardID]['time_data'].append(time.time() - self.board_graph_data['start_time'])
+        self.displayGraph()
+
+
     def setMainMergerBoard(self, value):
         self.available_sub_boards = copy.copy(self.boardIDlist)
         self.available_sub_boards.remove(self.main_board_var.get())
@@ -1264,10 +1295,16 @@ class GUIApplication(threading.Thread):
         self.root.attributes('-fullscreen', False)
         return 'break'
 
-    def runGraph(self):
+    def initializeGraph(self):
+        """
+        Initializes the graph logger.
+        :return:
+        """
+        raise NotImplementedError
+
+    def displayGraph(self):
         '''
         Setup for graph frame and variables needed to show x-y-z.
-        :param window: The frame you want to plot the graph in.
         :return: None
         '''
         #if self.x_graph or self.y_graph or self.z_graph is None:
