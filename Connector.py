@@ -163,7 +163,7 @@ class Connector():
         """
         self.PE.setImageDisplayFunction(imageDisplayFX)
 
-    def startGraphing(self, displayGraphFX, updateGraphFX, loggedBoards):
+    def startGraphing(self, displayGraphFX):
         """
         Starts graphing
         :param displayGraphFX: Function to use to display the graph data.
@@ -171,8 +171,16 @@ class Connector():
         :param loggedBoards: List over the ids of the boards that should be logged and graphed.
         :return: None
         """
-        self.PE.startGraphing(displayGraphFX, updateGraphFX, loggedBoards)
+        self.PE.startGraphing(displayGraphFX)
 
+    def startLogging(self, updateLogFX, loggedBoards):
+        """
+        Starts logging the position of the selected boards.
+        :param updateLogFX: Function used to log data.
+        :param loggedBoards: Identifiers of boards to log.
+        :return: None
+        """
+        self.PE.startLogging(updateLogFX, loggedBoards)
 
 if __name__ == '__main__':
     # logging_setup()

@@ -179,7 +179,7 @@ class GUIApplication(threading.Thread):
                                           command=lambda: (self.resetCamExtrinsic()))
         self.startLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Log to file', bg=self.GRAY,
                                           fg='Orange', state='disable', height=2, width=20, font=("Arial", "11"),
-                                          command=lambda: (self.runGraph(), self.hideButton(self.btn_plot)))
+                                          command=lambda: (self.startLogging(), self.hideButton(self.btn_plot)))
 
         # Add the buttons to the button panel
         self.optionLabel.pack(padx=5, pady=5)
@@ -1389,23 +1389,23 @@ class GUIApplication(threading.Thread):
         self.ax = self.graph_figure.subplots(3, 2, sharex=True, sharey=True)
 
         self.graph_lines = dict()
-        self.graph_lines['xline'] =     self.ax[0, 0].plot([], [], 'r')
-        self.graph_lines['yline'], =    self.ax[1, 0].plot([], [], 'g')
-        self.graph_lines['zline'], =    self.ax[2, 0].plot([], [], 'b')
-        self.graph_lines['roll_line'] = self.ax[0, 1].plot([], [], 'c')
-        self.graph_lines['pitch_line']= self.ax[1, 1].plot([], [], 'm')
-        self.graph_lines['yaw_line'] =  self.ax[2, 1].plot([], [], 'k')
+        self.graph_lines['xline'] =     self.ax[0][0].plot([], [], 'r')
+        self.graph_lines['yline'], =    self.ax[1][0].plot([], [], 'g')
+        self.graph_lines['zline'], =    self.ax[2][0].plot([], [], 'b')
+        self.graph_lines['roll_line'] = self.ax[0][1].plot([], [], 'c')
+        self.graph_lines['pitch_line']= self.ax[1][1].plot([], [], 'm')
+        self.graph_lines['yaw_line'] =  self.ax[2][1].plot([], [], 'k')
         self.graph_figure.suptitle('Pose')
-        self.ax[0, 0].set_ylabel('X')
-        self.ax[1, 0].set_ylabel('Y')
-        self.ax[2, 0].set_ylabel('Z')
-        self.ax[2, 0].set_xlabel('Time (s)')
-        self.ax[0, 1].set_ylabel('Roll')
-        self.ax[1, 1].set_ylabel('Pitch')
-        self.ax[2, 1].set_ylabel('Yaw')
-        self.ax[2, 1].set_xlabel('Time (s)')
+        self.ax[0][0].set_ylabel('X')
+        self.ax[1][0].set_ylabel('Y')
+        self.ax[2][0].set_ylabel('Z')
+        self.ax[2][0].set_xlabel('Time (s)')
+        self.ax[0][1].set_ylabel('Roll')
+        self.ax[1][1].set_ylabel('Pitch')
+        self.ax[2][1].set_ylabel('Yaw')
+        self.ax[2][1].set_xlabel('Time (s)')
         self.findLoggedBoards()
-        self.connector.startGraphing(self.updateGraphDisplay, self.updateGraphData, self.loggedBoards)
+        self.connector.startGraphing(self.updateGraphDisplay)
 
     def updateGraphDisplay(self):
         """
@@ -1465,3 +1465,9 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         self.loggedBoards = [unit.boardIsActive for unit in self.arucoBoardUnits.values()]
+
+    def startLogging(self):
+        """
+        Starts the logging of board positons.
+        :return:
+        """

@@ -99,6 +99,7 @@ class PoseEstimator():
         self.displayGraphFX = None
         self.loggingFX = loggingFX
         self.runThread = True
+        self.graphing = False
         for VE in self.getVisionEntityList():
             VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
@@ -120,12 +121,10 @@ class PoseEstimator():
                 self.displayPose()
             if self.qualityDisplayFX:
                 self.displayQuality()
-            if self.logging:
-                self.updateLog()
             if self.autoTracking:
                 self.autoTrack()
             if self.graphing:
-                self.displayGraphFx()
+                self.displayGraphFX()
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -457,31 +456,37 @@ class PoseEstimator():
         """
         self.imageDisplayFX = imageDisplayFX
 
-    def updateBoardLog(self):
+    def startLogging(self, updateGraphFX, loggedBoards):
         """
-        Updates the pose logs for the logged boards.
-        :return: None
+        Starts logging.
+        :param updateGraphFX: Function to use to update the graph data.
+        :param loggedBoards: List over the ids of the boards that should be logged and graphed.
+        :return:
         """
-        boards = self.getBoards()
-        for index in self.loggedBoards:
-            pose = boards[index].getTransformationMatrix()
-            self.loggingFX(index, pose)
+        for id in loggedBoards:
+            self.getBoards()[id].startLogging(updateGraphFX)
 
-    def startGraphing(self, displayGraphFX, updateGraphFX, loggedBoards):
+    def stopLogging(self):
+        """
+        Stops the logging of board positions.
+        :return:
+        """
+        for board in self.getBoards().values():
+            board.stopLogging()
+
+    def startGraphing(self, displayGraphFX):
         """
         Starts graphing
         :param displayGraphFX: Function to use to display the graph data.
-        :param updateGraphFX: Function to use to update the graph data.
-        :param loggedBoards: List over the ids of the boards that should be logged and graphed.
         :return: None
         """
         self.graphing = True
         self.displayGraphFX = displayGraphFX
-        for id in loggedBoards:
-            self.getBoards()[id].startGraphing(updateGraphFX)
 
     def stopGraphing(self):
+        """
+        Stops the logging of board positions.
+        :return:
+        """
         self.graphing = False
-        self.displayGraphFX = None
-        for board in self.getBoards().values():
-            board.stopGraphing()
+
