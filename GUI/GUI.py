@@ -11,7 +11,7 @@ matplotlib.use('TkAgg')
 import cv2
 import ttkthemes
 import copy
-from PIL import ImageTk, Image
+import PIL
 from GUI import GUIDataPlotting
 from VisionEntityClasses.helperFunctions import *
 import numpy as np
@@ -22,7 +22,6 @@ from VisionEntityClasses.ArucoBoard import ArucoBoard
 from exceptions import CamNotOpenedException
 from VisionEntityClasses.IntrinsicCalibrator import videoCalibration
 from matplotlib import pyplot as plt
-from matplotlib.animation import FuncAnimation
 import time
 class GUIApplication(threading.Thread):
     global length
@@ -31,7 +30,6 @@ class GUIApplication(threading.Thread):
         threading.Thread.__init__(self)
         self.connector = connector
         self.arucoBoardUnits = dict()
-        #self.arucoBoardUnits.append(board)
         msg = 'Thread: ', threading.current_thread().name
         logging.info(msg)
         self.camIndexesDisplayed = [False, False, False, False, False, False] # Set corresponding index for what indexes are displayed
@@ -77,6 +75,7 @@ class GUIApplication(threading.Thread):
         self.maincalib_window = None
 
         self.calibConnectionFrame = None
+        self.graph_figure = plt.figure()
 
     def run(self):
         '''
@@ -246,16 +245,9 @@ class GUIApplication(threading.Thread):
         # Page 3: PDF setup
         # FIXME: If you click on same field twice you can remove text from other fields.
         self.page_3_frame = Frame(self.page_3, bg="#424242")
-        # must keep a global reference to these two
-        try:
-            self.im = Image.open('arucoBoard.png')
-            self.im = self.im.resize((300, 300), Image.ANTIALIAS)
-            self.ph = ImageTk.PhotoImage(self.im)
-            # Need to use ph for tkinter to understand
-            self.btn_img = Label(self.page_3_frame,  image=self.ph)
-            self.btn_img.pack(side=RIGHT)
-        except TclError as e:
-            logging.error(str(e))
+        # Need to use ph for tkinter to understand
+        self.btn_img = Label(self.page_3_frame,  image='')
+        self.btn_img.pack(side=RIGHT)
         self.page_3_frame.pack()
         # Create container for holding board list
         self.boardlist_container = Frame(self.page_3)
@@ -317,7 +309,7 @@ class GUIApplication(threading.Thread):
         self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
         self.pdf_btn = Button(self.btn_frame, text='Generate board',
-                              command=lambda: [self.createArucoBoard()])
+                              command=self.createArucoBoard)
         self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
         self.pdf_btn.pack(side=LEFT)
         self.pdf_btn = Button(self.btn_frame, text='Add to tracking list',
@@ -357,8 +349,8 @@ class GUIApplication(threading.Thread):
         self.btn_plot = tk.Button(self.btn_frame_4)
         self.btn_plot.pack(side=LEFT)
         self.btn_plot.configure(background='#665959',disabledforeground='#911515',foreground='#FFFFFF')
-        self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.displayGraph(), self.hideButton(self.btn_plot)), height=2, width=7)
+        self.btn_plot.configure(text='Open graph window')
+        self.btn_plot.configure(command=lambda: (self.startGraphing(), self.hideButton(self.btn_plot)), height=2, width=7)
 
         self.stop_pressed = False
         self.btn_save =  tk.Button(self.btn_frame_4)
@@ -822,8 +814,8 @@ class GUIApplication(threading.Thread):
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         except TypeError:
             image = np.zeros((640, 480, 3), dtype=np.uint8)
-        image = Image.fromarray(image)
-        image = ImageTk.PhotoImage(image)
+        image = PIL.Image.fromarray(image)
+        image = PIL.ImageTk.PhotoImage(image, master=self.root)
         self.panel.configure(image=image)
         self.panel.image = image
 
@@ -933,8 +925,8 @@ class GUIApplication(threading.Thread):
         """
         try:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = Image.fromarray(image)
-            image = ImageTk.PhotoImage(image)
+            image = PIL.Image.fromarray(image)
+            image = PIL.ImageTk.PhotoImage(image, master=self.root)
             self.main_label.configure(image=image)
             self.main_label.image = image
         except AttributeError as e:
@@ -970,8 +962,8 @@ class GUIApplication(threading.Thread):
             #self.connector.PE.addBoard(self.userBoard)
             self.ph = self.userBoard.getBoardImage((300, 300))
             self.ph = cv2.cvtColor(self.ph, cv2.COLOR_BGR2RGB)
-            self.ph = Image.fromarray(self.ph)
-            self.ph = ImageTk.PhotoImage(self.ph)
+            self.ph = PIL.Image.fromarray(self.ph)
+            self.ph = PIL.ImageTk.PhotoImage(self.ph, master=self.root)
             self.btn_img.configure(image=self.ph)
         except ValueError as e: # Invalid values entered, try again
             logging.error(str(e))
@@ -1000,7 +992,11 @@ class GUIApplication(threading.Thread):
         :return:
         """
         try:
-            ABU = ArucoBoardUnit(board, self.boardlist_container)
+            ph = board.getBoardImage((175,175))
+            ph = cv2.cvtColor(ph, cv2.COLOR_BGR2RGB)
+            ph = PIL.Image.fromarray(ph)
+            ph = PIL.ImageTk.PhotoImage(ph, master=self.root)
+            ABU = ArucoBoardUnit(board, self.boardlist_container, ph)
             self.arucoBoardUnits[board.ID] = ABU
         except cv2.error as e:
             logging.error("Can't create that many boards, need to expand dictionary!")
@@ -1205,8 +1201,8 @@ class GUIApplication(threading.Thread):
                 _, frame = VE.retrieveFrame()
                 try:
                     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    image = Image.fromarray(image)
-                    image = ImageTk.PhotoImage(image)
+                    image = PIL.Image.fromarray(image)
+                    image = PIL.ImageTk.PhotoImage(image,master=self.root)
                     self.imgHolder.configure(image=image)
                     self.imgHolder.image = image
                 except cv2.error as e:
@@ -1300,54 +1296,40 @@ class GUIApplication(threading.Thread):
         Initializes the graph logger.
         :return:
         """
-        raise NotImplementedError
-
-    def displayGraph(self):
-        '''
-        Setup for graph frame and variables needed to show x-y-z.
-        :return: None
-        '''
-        #if self.x_graph or self.y_graph or self.z_graph is None:
-        #    graph_x = 0.0
-        #    graph_y = 0.0
-        #    graph_z = 0.0
-        #else:
-        t_data, x_data, y_data, z_data = [], [], [], []
-
-        figure = plt.figure()
-        self.ax = figure.subplots(3, 1, sharex=True, sharey=True)
-        line, = self.ax[0].plot(t_data, x_data, 'r')
-        line2, = self.ax[1].plot(t_data, y_data, 'c')
-        line3, = self.ax[2].plot(t_data, z_data, '-')
-        start_time = time.time()
-
-        def update(frame):
-            elapsed_time = time.time() - start_time
-            t_data.append(elapsed_time)
-            x_data.append(self.x_graph)
-            y_data.append(self.y_graph)
-            z_data.append(self.z_graph)
-            line.set_data(t_data, x_data)
-            line2.set_data(t_data, y_data)
-            line3.set_data(t_data, z_data)
-            figure.gca().relim()
-            figure.gca().autoscale_view()
-
-        figure.suptitle('Movement')
+        boardID = self.boardIndex.get()
+        graph_data = self.board_graph_data[boardID]
+        t_data = graph_data['time_data']
+        self.ax = self.graph_figure.subplots(3, 2, sharex=True, sharey=True)
+        self.graph_lines = dict()
+        self.graph_lines['xline'] = self.ax[0].plot(t_data, graph_data['x_data'], 'r')
+        self.graph_lines['yline'], = self.ax[1].plot(t_data, graph_data['y_data'], 'g')
+        self.graph_lines['zline'], = self.ax[2].plot(t_data, graph_data['z_data'], 'b')
+        self.graph_lines['roll_line'] = self.ax[3].plot(t_data, graph_data['roll_data'], 'c')
+        self.graph_lines['pitch_line']= self.ax[4].plot(t_data, graph_data['pitch_data'], 'm')
+        self.graph_lines['yaw_line'] = self.ax[5].plot(t_data, graph_data['yaw_data'], 'k')
+        self.graph_figure.suptitle('Pose')
         self.ax[0].set_ylabel('X')
         self.ax[1].set_ylabel('Y')
         self.ax[2].set_ylabel('Z')
         self.ax[2].set_xlabel('Time (s)')
-        self.animation = FuncAnimation(figure, update, interval=100)
+        self.ax[3].set_ylabel('Roll')
+        self.ax[4].set_ylabel('Pitch')
+        self.ax[5].set_ylabel('Yaw')
+        self.ax[6].set_xlabel('Time (s)')
+        self.connector.startGraphing(self.updateGraphDisplay, self.updateGraphData, self.loggedBoards)
 
-        def _pause(self,event):
-            if self.stop_pressed:
-                self.animation.event_source.stop()
-                self.stop_pressed = False
-            else:
-                self.animation.event_source.start()
-                self.stop_pressed = True
+    def updateGraphDisplay(self):
+        """
+        Called upon by pose estimator when poses has been updated.
+        :return:
+        """
+        boardID = self.boardIndex.get()
+        for key, line in self.graph_lines.items():
+            line.set_data(self.board_graph_data[boardID]['time_data'], self.board_graph_data[boardID][key])
+        self.graph_figure.gca().relim()
+        self.graph_figure.gca().autoscale_view()
         plt.show()
+        # Pause?
 
     def hideButton(self, button):
         '''

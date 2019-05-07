@@ -29,9 +29,11 @@ class PoseEstimator():
         self.imageDisplayFX = None # Function used to display image frame
         self.autoTracking = True # Tells if autotracking is active or not.
         self.trackedBoardIndex = None # Tells which board is being tracked.
+        self.graphing = False # Flag to tell if graphing as active or not
         self.loggedBoards = [] # Flags which boards are being logged.
         self.qualityDisplayFX = None # Function used to display quality of a chosen board
         self.poseDisplayFX = None # Function used to display pose of a chosen board
+        self.graphDisplayFX = None # Function used to update graph
         self.autoTrackingVE = None # Vision enity used for auto tracking
         self.logging = False
         self.running = False
@@ -123,6 +125,8 @@ class PoseEstimator():
                 self.updateLog()
             if self.autoTracking:
                 self.autoTrack()
+            if self.graphing:
+                self.graphDisplayFX()
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -463,3 +467,10 @@ class PoseEstimator():
         for index in self.loggedBoards:
             pose = boards[index].getTransformationMatrix()
             self.loggingFX(index, pose)
+
+    def setGraphDisplayFunction(self, graph_display_fx):
+        """
+        Sets the function this class uses to display graph data.
+        :return: None
+        """
+        self.graphDisplayFX = graph_display_fx
