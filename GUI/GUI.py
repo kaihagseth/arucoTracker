@@ -1378,7 +1378,40 @@ class GUIApplication(threading.Thread):
         Initializes the graph logger.
         :return:
         """
-        raise NotImplementedError
+        boardID = self.boardIndex.get()
+        graph_data = self.board_graph_data[boardID]
+        t_data = graph_data['time_data']
+        self.ax = self.graph_figure.subplots(3, 2, sharex=True, sharey=True)
+        self.graph_lines = dict()
+        self.graph_lines['xline'] = self.ax[0].plot(t_data, graph_data['x_data'], 'r')
+        self.graph_lines['yline'], = self.ax[1].plot(t_data, graph_data['y_data'], 'g')
+        self.graph_lines['zline'], = self.ax[2].plot(t_data, graph_data['z_data'], 'b')
+        self.graph_lines['roll_line'] = self.ax[3].plot(t_data, graph_data['roll_data'], 'c')
+        self.graph_lines['pitch_line']= self.ax[4].plot(t_data, graph_data['pitch_data'], 'm')
+        self.graph_lines['yaw_line'] = self.ax[5].plot(t_data, graph_data['yaw_data'], 'k')
+        self.graph_figure.suptitle('Pose')
+        self.ax[0].set_ylabel('X')
+        self.ax[1].set_ylabel('Y')
+        self.ax[2].set_ylabel('Z')
+        self.ax[2].set_xlabel('Time (s)')
+        self.ax[3].set_ylabel('Roll')
+        self.ax[4].set_ylabel('Pitch')
+        self.ax[5].set_ylabel('Yaw')
+        self.ax[6].set_xlabel('Time (s)')
+        self.connector.startGraphing(self.updateGraphDisplay, self.updateGraphData, self.loggedBoards)
+
+    def updateGraphDisplay(self):
+        """
+        Called upon by pose estimator when poses has been updated.
+        :return:
+        """
+        boardID = self.boardIndex.get()
+        for key, line in self.graph_lines.items():
+            line.set_data(self.board_graph_data[boardID]['time_data'], self.board_graph_data[boardID][key])
+        self.graph_figure.gca().relim()
+        self.graph_figure.gca().autoscale_view()
+        plt.show()
+        # Pause?
 
     def displayGraph(self):
         '''
