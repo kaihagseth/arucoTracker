@@ -101,8 +101,7 @@ class VEConfigUnit(Thread):
         :param parent: Mother widget for the button
         :return: The created button
         '''
-        connectBtn = Button(parent, text="Connect", bg='#424242', fg="white",
-                                      command=self.doConnect,
+        connectBtn = Button(parent, text="Connect", bg='#424242', fg="white", command=self.doConnect,
                                       width=15)  # , variable=self._state, onvalue=1, offvalue=0)
         self.connectionButtons.append(connectBtn)
         return connectBtn
@@ -213,24 +212,8 @@ class VEConfigUnit(Thread):
             self.configButtons(buttonType="connect",text="Connecting...", command=self.doDisconnect)
             self.configButtons(buttonType="preview",state='normal')
             self.doConfigStatusLabel(text="Connecting...", fg="black")
-            try:
-                # Create the VisionEntity
-                self._VE = VisionEntity(self._id)
-                self._currState = 1
-                if self._VE is not None:
-                    #Success
-                    self.setState(2)
-                    return
-                else:
-                    logging.debug("Failed to open camera.")
-                    self.setState(0)
-                    self._currState = 0
-                    return
-            except CamNotOpenedException as e:
-                logging.error("Failed to open camera.")
-                self._VE = None
-                self.setState(7)
-                return
+            thread = Thread(target=self.doTryConnect(),daemon=True)
+            thread.start()
         elif newState is 2: # Connected, VE created, preview is available
             logging.debug("Setting state to 2.")
             self.configButtons(buttonType="connect", text="Disconnect", command=self.doDisconnect)
@@ -279,6 +262,26 @@ class VEConfigUnit(Thread):
             self.setState(0)
             self._cb.config(state="normal")
             self.continueRunInPE = False
+
+    def doTryConnect(self):
+        try:
+            # Create the VisionEntity
+            self._VE = VisionEntity(self._id)
+            self._currState = 1
+            if self._VE is not None:
+                # Success
+                self.setState(2)
+                return
+            else:
+                logging.debug("Failed to open camera.")
+                self.setState(0)
+                self._currState = 0
+                return
+        except CamNotOpenedException as e:
+            logging.error("Failed to open camera.")
+            self._VE = None
+            self.setState(7)
+            return
 
     def doDisconnect(self):
         '''

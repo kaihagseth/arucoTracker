@@ -133,7 +133,7 @@ class GUIApplication(threading.Thread):
         self.edit_menu.add_command(label='Paste', command=None)
         self.menu.add_cascade(label='Edit', menu=self.edit_menu)
 
-        self.setup_menu.add_command(label='Calibrate cameras', command=self.launchCalibrationWindow)
+        self.setup_menu.add_command(label='Calibrate cameras', command=self.launchCalibrationWidget)
         #self.setup_menu.add_command(label='Copy', command=None)
         #self.setup_menu.add_command(label='Paste', command=None)
         self.menu.add_cascade(label='Setup', menu=self.setup_menu)
@@ -509,15 +509,19 @@ class GUIApplication(threading.Thread):
     def setupCalibrationPage(self):
         self.mainframe_cabtab = Frame(self.page_setup_calib, bg=self.GRAY)#, width=1000, height=1000, bg=self.GRAY)
         self.mainframe_cabtab.grid(row=0,column=0)
-        self.launchCalibrationWindow()
+        self.launchCalibrationWidget()
 
 
-    def launchCalibrationWindow(self):
+    def launchCalibrationWidget(self):
+        '''
+        Create the widget for choosing which camera to calibrate, and allow further widgets to be created.
+
+        :return:
+        '''
         self.allowToCalibrate = False
         if not self.poseEstimationIsRunning: # Can't calibrate while running.
             self.allowToCalibrate = True
         if self.allowToCalibrate:
-            logging.debug('Going to create a TopLevel window now')
             self.prepareCalib_mainFrame = Frame(self.mainframe_cabtab, height=1000, width=1000, bg=self.GRAY)
             warningText = 'Please read this! \n - Doing calibration is not necessary for daily use. \n' \
                           '- It\'s only necessary when using new cameras, or changing the lenses on the old. \n' \

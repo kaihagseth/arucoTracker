@@ -89,21 +89,32 @@ class Camera():
         """Load and use the earlier saved intrinsic parameters from a file.
         :param filename: Name of file to get params from.
         """
-        filename =  'calibValues/' + self.camera_label +'calib.npz'
+        filename =  'calibValues/' + self.camera_label +'.npz'
         try:
             npzfile = np.load(filename)
+            npzfile2 = np.load('calibValues/A1calib.npz')
+            #logging.debug(str(filename))
+            #print("Fil 2 keys dict:")
+            #for k in npzfile.files():
+            #    print(k)
+            #
+            #logging.debug(str(filename))
+            #for k in npzfile.files():
+            #    print(k)
             self.camera_parameters = {'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
                                       'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
             logging.info("New camera values has been set.")
         except IOError as e:
             logging.error('Calib file not found in dictionary.' + str(e))
+        except KeyError as e:
+            logging.error('.' + str(e))
 
     def saveCameraParameters(self):
         """
         Saves current camera values to a file
         :return:
         """
-        filename = 'calibValues/' + self.camera_id +'calib.npz'
+        filename = 'calibValues/' + self.camera_id +'.npz'
         np.savez(filename, ret=self.camera_parameters['ret'], mtx=self.camera_parameters['mtx'],
                  dist=self.camera_parameters['dist'], rvecs=self.self.camera_parameters['rvecs'],
                  tvecs=self.self.camera_parameters['tvecs'], newcameramtx=self.camera_parameters['newcameramtx'],
