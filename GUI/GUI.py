@@ -115,7 +115,7 @@ class GUIApplication(threading.Thread):
         self.page_5 = ttk.Frame(self.notebook)
         self.notebook.add(self.page_1, text='Camera')
         self.notebook.add(self.page_3, text='Markers')
-        self.notebook.add(self.page_4, text='Graph')
+        #self.notebook.add(self.page_4, text='Graph')
         self.notebook.add(self.page_5, text='Configuration')
 
         #  File menu setup
@@ -159,12 +159,35 @@ class GUIApplication(threading.Thread):
         self.top_left = PanedWindow(self.left_camPaneTabMain)
         self.top_left.configure(bg=self.GRAY, relief='groove', borderwidth='2')
 
-        self.bottom_left = PanedWindow(self.left_camPaneTabMain)
-        self.bottom_left.configure( bg=self.GRAY, relief='groove', borderwidth='2')
+        self.boardListWidget_panedwindow = PanedWindow(self.left_camPaneTabMain)
+        self.boardListWidget_panedwindow.configure(bg=self.GRAY, relief='groove', borderwidth='2')
 
+        self.buttonPanelLeft_panedwindow = PanedWindow(self.left_camPaneTabMain)
+        self.buttonPanelLeft_panedwindow.configure(bg=self.GRAY, relief='groove', borderwidth='2')
+        # Add buttons for showing graph, reset starting point, and start logging
+        self.optionLabel = Label(self.buttonPanelLeft_panedwindow, text='Running options:', bg=self.GRAY,
+                                          fg=self.WHITE, font=("Arial", "12"))
 
-        self.left_camPaneTabMain.add(self.top_left, height=500)
-        self.left_camPaneTabMain.add(self.bottom_left, height=250)
+        self.showGraphWindow_btn = Button(self.buttonPanelLeft_panedwindow, text='Show graph window  ', bg=self.GRAY,
+                                          fg='Orange', height=2, width=20,font=("Arial", "11"),
+                                          command=lambda: (self.runGraph(), self.hideButton(self.btn_plot)))
+        self.resetExtrinsic_btn = Button(self.buttonPanelLeft_panedwindow, text='Reset startingpose', bg=self.GRAY,
+                                          fg='Orange', height=2, width=20,font=("Arial", "11"), state='disable',
+                                          command=lambda: (self.resetCamExtrinsic()))
+        self.startLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Log to file', bg=self.GRAY,
+                                          fg='Orange', state='disable', height=2, width=20, font=("Arial", "11"),
+                                          command=lambda: (self.runGraph(), self.hideButton(self.btn_plot)))
+
+        # Add the buttons to the button panel
+        self.optionLabel.pack(padx=5, pady=5)
+        self.showGraphWindow_btn.pack(padx=10,pady=10)
+        self.resetExtrinsic_btn.pack(padx=10,pady=10)
+        self.startLogging_btn.pack(padx=10,pady=10)
+
+        # Add the left-menu widget to the main left-menu widget
+        self.left_camPaneTabMain.add(self.top_left, height=250, width = 80)
+        self.left_camPaneTabMain.add(self.boardListWidget_panedwindow, height=150)
+        self.left_camPaneTabMain.add(self.buttonPanelLeft_panedwindow, height=150)
 
         self.midSection_camPaneTabMain = PanedWindow(self.root_cam_tab, orient=VERTICAL, bg='gray40') # Mid GUI
         self.root_cam_tab.add(self.midSection_camPaneTabMain)
@@ -383,7 +406,7 @@ class GUIApplication(threading.Thread):
         self.camFrameSettingSection.configure()
         self.camFrameSettingSection.pack()
 
-        self.availCamsLabel = Label(self.left_camPaneTabMain, text='Available cameras: ',font=("Arial", "12"))
+        self.availCamsLabel = Label(self.left_camPaneTabMain, text='Available cameras: ',font=("Arial", "12"),width = 20)
         self.availCamsLabel.configure(bg=self.GRAY,fg=self.WHITE
                                       )
         self.availCamsLabel.pack()
@@ -393,10 +416,10 @@ class GUIApplication(threading.Thread):
 
         # Camera selection variable
         tk.Radiobutton(self.left_camPaneTabMain, text="Auto", padx=5, variable=self.__displayedCameraIndex,
-                       command=self.setCameraIndexToDisplay, value=-1, bg=self.GRAY, fg='orange',font=("Arial", "12","bold")).pack()
+                       command=self.setCameraIndexToDisplay, value=-1, bg=self.GRAY, fg='orange',font=("Arial", "12")).pack()
 
-        self.board_label = Label(self.bottom_left, text='Boards', padx=20,bg=self.GRAY, fg=self.WHITE
-                                 ,font=("Arial", "12")).pack()
+        self.board_label = Label(self.boardListWidget_panedwindow, text='Boards:', padx=20, bg=self.GRAY, fg=self.WHITE
+                                 , font=("Arial", "12")).pack()
 
         # Board selection variable setup
         self.boardIndex = tk.IntVar()  # Radio buttons controlling which board to track.
@@ -435,7 +458,7 @@ class GUIApplication(threading.Thread):
         #self.page_setup_camconfig
         # Create notebook under setuptab #TODO: Have the notebook in the left section.
         self.configurationtab_notebook = ttk.Notebook(self.leftSection_configPaneTabMain)
-        self.page_setup_calib = ttk.Frame(self.configurationtab_notebook)
+        self.page_setup_calib = ttk.Frame(self.configurationtab_notebook, height=400)
         self.page_setup_camconfig = ttk.Frame(self.configurationtab_notebook)
         self.configurationtab_notebook.add(self.page_setup_camconfig, text='Camera config')
         self.configurationtab_notebook.add(self.page_setup_calib, text='Calibration')
@@ -490,6 +513,9 @@ class GUIApplication(threading.Thread):
                                                        text="Apply", bg=self.GRAY, command=self.applyCamList, width=20, fg="white")
         #self.leftSection_configPaneTabMain.add(self.sendCamSelectionButton_configTab)
         self.sendCamSelectionButton_configTab.pack(fill=BOTH)
+        self.deadspace15 = Frame(self.page_setup_camconfig, height=100, bg=self.GRAY)
+        self.deadspace15.pack(fill=BOTH)
+
         deadspace2 = Frame(self.leftSection_configPaneTabMain, height=100, bg=self.GRAY)
         self.leftSection_configPaneTabMain.add(deadspace2)
         # List for VEs stored in GUI
@@ -501,7 +527,7 @@ class GUIApplication(threading.Thread):
         self.imgHolder.pack()
 
     def setupCalibrationPage(self):
-        self.mainframe_cabtab = Frame(self.page_setup_calib, bg=self.GRAY)#, width=1000, height=1000, bg=self.GRAY)
+        self.mainframe_cabtab = Frame(self.page_setup_calib, bg=self.GRAY, height=400)#, width=1000, height=1000, bg=self.GRAY)
         self.mainframe_cabtab.grid(row=0,column=0)
         self.launchCalibrationWidget()
 
@@ -941,7 +967,7 @@ class GUIApplication(threading.Thread):
         # TODO: Use stack to indicate job done? Add button to GUI.
         :return:
         '''
-        self.connector.resetCameraPositions()
+        self.connector.resetExtrinsic()
 
     def displayFrameInMainWindow(self, frame):
         """
@@ -1163,6 +1189,8 @@ class GUIApplication(threading.Thread):
             self.connector.startPoseEstimation(self.displayFrameInMainWindow, self.displayPoseInTrackingWindow,
                                                self.displayQualityInTrackingWindow)
             self.poseEstimationIsRunning = True
+            self.resetExtrinsic_btn.config(state='normal')
+            self.startLogging_btn.config(state='normal')
         except AssertionError as err:
             self.showErrorBox(err)
             return
@@ -1173,6 +1201,8 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         self.connector.stopPoseEstimation()
+        self.resetExtrinsic_btn.config(state='disable')
+        self.startLogging_btn.config(state='disable')
         self.poseEstimationIsRunning = False
         logging.debug("Stop signal sent.")
 
@@ -1252,8 +1282,8 @@ class GUIApplication(threading.Thread):
             return
         if not self.boardButtons:
             self.boardIndex.set(id)
-        button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg=self.GRAY, fg='Orange',font=("Arial", "12","bold"),
-                                    command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
+        button = tk.Radiobutton(self.boardListWidget_panedwindow, text=buttonText, padx=5, bg=self.GRAY, fg='Orange', font=("Arial", "12", "bold"),
+                                command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
         self.boardButtons[id] = button
         self.boardButtons[id].pack()
 

@@ -90,6 +90,7 @@ class Camera():
         :param filename: Name of file to get params from.
         """
         filename =  'calibValues/' + self.camera_label +'.npz'
+        logging.info('Filename: ' + filename)
         try:
             npzfile = np.load(filename)
             npzfile2 = np.load('calibValues/A1calib.npz')
