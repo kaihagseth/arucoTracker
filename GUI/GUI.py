@@ -56,6 +56,7 @@ class GUIApplication(threading.Thread):
         self.__collectGUIVEs = []
         self.__doPreviewIndex = -1
 
+
         # GUI Handling flags
         self.doStopApp = False
         self.show_video = False
@@ -75,6 +76,7 @@ class GUIApplication(threading.Thread):
         # Some GUI frames (containers)
         self.calibCam_statusFrame = None
         self.maincalib_window = None
+        self.loggedBoards = []
 
         self.calibConnectionFrame = None
 
@@ -171,7 +173,7 @@ class GUIApplication(threading.Thread):
 
         self.showGraphWindow_btn = Button(self.buttonPanelLeft_panedwindow, text='Show graph window  ', bg=self.GRAY,
                                           fg='Orange', height=2, width=20,font=("Arial", "11"),
-                                          command=lambda: (self.runGraph(), self.hideButton(self.btn_plot)))
+                                          command=lambda: (self.initializeGraph(), self.hideButton(self.btn_plot)))
         self.resetExtrinsic_btn = Button(self.buttonPanelLeft_panedwindow, text='Reset startingpose', bg=self.GRAY,
                                           fg='Orange', height=2, width=20,font=("Arial", "11"), state='disable',
                                           command=lambda: (self.resetCamExtrinsic()))
@@ -1378,26 +1380,31 @@ class GUIApplication(threading.Thread):
         Initializes the graph logger.
         :return:
         """
-        boardID = self.boardIndex.get()
-        graph_data = self.board_graph_data[boardID]
-        t_data = graph_data['time_data']
+        try:
+            assert self.anyBoardsInitiated, "Track at least one board before opening graph window"
+        except AssertionError as err:
+            self.showErrorBox(err)
+            return
+        self.graph_figure = plt.figure()
         self.ax = self.graph_figure.subplots(3, 2, sharex=True, sharey=True)
+
         self.graph_lines = dict()
-        self.graph_lines['xline'] = self.ax[0].plot(t_data, graph_data['x_data'], 'r')
-        self.graph_lines['yline'], = self.ax[1].plot(t_data, graph_data['y_data'], 'g')
-        self.graph_lines['zline'], = self.ax[2].plot(t_data, graph_data['z_data'], 'b')
-        self.graph_lines['roll_line'] = self.ax[3].plot(t_data, graph_data['roll_data'], 'c')
-        self.graph_lines['pitch_line']= self.ax[4].plot(t_data, graph_data['pitch_data'], 'm')
-        self.graph_lines['yaw_line'] = self.ax[5].plot(t_data, graph_data['yaw_data'], 'k')
+        self.graph_lines['xline'] =     self.ax[0, 0].plot([], [], 'r')
+        self.graph_lines['yline'], =    self.ax[1, 0].plot([], [], 'g')
+        self.graph_lines['zline'], =    self.ax[2, 0].plot([], [], 'b')
+        self.graph_lines['roll_line'] = self.ax[0, 1].plot([], [], 'c')
+        self.graph_lines['pitch_line']= self.ax[1, 1].plot([], [], 'm')
+        self.graph_lines['yaw_line'] =  self.ax[2, 1].plot([], [], 'k')
         self.graph_figure.suptitle('Pose')
-        self.ax[0].set_ylabel('X')
-        self.ax[1].set_ylabel('Y')
-        self.ax[2].set_ylabel('Z')
-        self.ax[2].set_xlabel('Time (s)')
-        self.ax[3].set_ylabel('Roll')
-        self.ax[4].set_ylabel('Pitch')
-        self.ax[5].set_ylabel('Yaw')
-        self.ax[6].set_xlabel('Time (s)')
+        self.ax[0, 0].set_ylabel('X')
+        self.ax[1, 0].set_ylabel('Y')
+        self.ax[2, 0].set_ylabel('Z')
+        self.ax[2, 0].set_xlabel('Time (s)')
+        self.ax[0, 1].set_ylabel('Roll')
+        self.ax[1, 1].set_ylabel('Pitch')
+        self.ax[2, 1].set_ylabel('Yaw')
+        self.ax[2, 1].set_xlabel('Time (s)')
+        self.findLoggedBoards()
         self.connector.startGraphing(self.updateGraphDisplay, self.updateGraphData, self.loggedBoards)
 
     def updateGraphDisplay(self):
@@ -1412,53 +1419,6 @@ class GUIApplication(threading.Thread):
         self.graph_figure.gca().autoscale_view()
         plt.show()
         # Pause?
-
-    def displayGraph(self):
-        '''
-        Setup for graph frame and variables needed to show x-y-z.
-        :return: None
-        '''
-        #if self.x_graph or self.y_graph or self.z_graph is None:
-        #    graph_x = 0.0
-        #    graph_y = 0.0
-        #    graph_z = 0.0
-        #else:
-        t_data, x_data, y_data, z_data = [], [], [], []
-
-        figure = plt.figure()
-        self.ax = figure.subplots(3, 1, sharex=True, sharey=True)
-        line, = self.ax[0].plot(t_data, x_data, 'r')
-        line2, = self.ax[1].plot(t_data, y_data, 'c')
-        line3, = self.ax[2].plot(t_data, z_data, '-')
-        start_time = time.time()
-
-        def update(frame):
-            elapsed_time = time.time() - start_time
-            t_data.append(elapsed_time)
-            x_data.append(self.x_graph)
-            y_data.append(self.y_graph)
-            z_data.append(self.z_graph)
-            line.set_data(t_data, x_data)
-            line2.set_data(t_data, y_data)
-            line3.set_data(t_data, z_data)
-            figure.gca().relim()
-            figure.gca().autoscale_view()
-
-        figure.suptitle('Movement')
-        self.ax[0].set_ylabel('X')
-        self.ax[1].set_ylabel('Y')
-        self.ax[2].set_ylabel('Z')
-        self.ax[2].set_xlabel('Time (s)')
-        self.animation = FuncAnimation(figure, update, interval=100)
-
-        def _pause(self,event):
-            if self.stop_pressed:
-                self.animation.event_source.stop()
-                self.stop_pressed = False
-            else:
-                self.animation.event_source.start()
-                self.stop_pressed = True
-        plt.show()
 
     def hideButton(self, button):
         '''
@@ -1498,3 +1458,10 @@ class GUIApplication(threading.Thread):
         :return: A list of output variables
         """
         return {key: value.get() for key, value in varList.items()}
+
+    def findLoggedBoards(self):
+        """
+        Checks the arucoboardunits for which boards should be logged or not.
+        :return: None
+        """
+        self.loggedBoards = [unit.boardIsActive for unit in self.arucoBoardUnits.values()]

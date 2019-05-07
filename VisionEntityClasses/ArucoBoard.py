@@ -18,6 +18,7 @@ class ArucoBoard:
         self._transformationMatrix = None # World -> Model transformation
         self._tracking_ve = None # The vision entity that is currently responsible for tracking this board
         self.ID = ArucoBoard.nextIndex
+        self.logging = False
         self.loggingFunction = None
         ArucoBoard.nextIndex += 1
         self.dictionary = dictionary
@@ -54,12 +55,14 @@ class ArucoBoard:
         if camera_to_model_transformation is None:
             self._transformationMatrix = None
             self.setPoseQuality(0)
-            return
         else:
             world_to_camera_transformation = self._tracking_ve.getCameraPose()
             world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
             self._transformationMatrix = world_to_model_transformation
             self.setPoseQuality(self.calculatePoseQuality())
+            if self.logging:
+                self.loggingFunction(self.ID, self.getTransformationMatrix())
+
 
     def setFirstBoardPosition(self, ve):
         """
@@ -189,3 +192,20 @@ class ArucoBoard:
         :return:
         """
         self.autoTracked = autoTracked
+
+    def startLogging(self, logFx):
+        """
+        Writes this boards position to the log.
+        :param graphFX: Function to use for writing
+        :return:
+        """
+        self.logging = True
+        self.loggingFunction = logFx
+
+    def stopLogging(self):
+        """
+        Stops loggings this boards position.
+        :param graphFX: Function to use for writing
+        :return:
+        """
+        self.logging = False

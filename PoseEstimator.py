@@ -96,6 +96,7 @@ class PoseEstimator():
         self.imageDisplayFX = imageDisplayFX
         self.poseDisplayFX = poseDisplayFX
         self.qualityDisplayFX = qualityDisplayFX
+        self.displayGraphFX = None
         self.loggingFX = loggingFX
         self.runThread = True
         for VE in self.getVisionEntityList():
@@ -123,6 +124,8 @@ class PoseEstimator():
                 self.updateLog()
             if self.autoTracking:
                 self.autoTrack()
+            if self.graphing:
+                self.displayGraphFx()
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -463,3 +466,22 @@ class PoseEstimator():
         for index in self.loggedBoards:
             pose = boards[index].getTransformationMatrix()
             self.loggingFX(index, pose)
+
+    def startGraphing(self, displayGraphFX, updateGraphFX, loggedBoards):
+        """
+        Starts graphing
+        :param displayGraphFX: Function to use to display the graph data.
+        :param updateGraphFX: Function to use to update the graph data.
+        :param loggedBoards: List over the ids of the boards that should be logged and graphed.
+        :return: None
+        """
+        self.graphing = True
+        self.displayGraphFX = displayGraphFX
+        for id in loggedBoards:
+            self.getBoards()[id].startGraphing(updateGraphFX)
+
+    def stopGraphing(self):
+        self.graphing = False
+        self.displayGraphFX = None
+        for board in self.getBoards().values():
+            board.stopGraphing()

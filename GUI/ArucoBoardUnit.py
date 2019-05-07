@@ -20,10 +20,8 @@ class ArucoBoardUnit():
         self.conStatusLabel.grid(row=0, column=0, columnspan=3)
         self.btn = Button(self.container, text="Deactivate", command=self.deactivateBoard,fg="white", bg='#424242')
         self.btn.grid(row=1,column=2)
-        deadspace3 = Label(self.container, width=2,bg='#424242').grid(row=1, column=1)
         self.id_label = Label(self.container, text="ID: " + str(self.id),bg='#424242',fg="white")
         self.id_label.grid(row=1, column=0)
-        deadspace4 = Label(self.container, width=5, height=3,bg='#424242').grid(row=2, column=0)
 
         self.pht = board.getBoardImage((175,175))
         self.pht = cv2.cvtColor(self.pht, cv2.COLOR_BGR2RGB)
@@ -33,7 +31,6 @@ class ArucoBoardUnit():
         img = Label(self.container, image=self.pht,bg='#424242')
         img.grid(row=3, column=0, columnspan=3)
         self.container.grid(row=0, column=self.id)
-        #self.boardlist_pdftab.append(container)
 
     def deactivateBoard(self):
         """
@@ -42,7 +39,7 @@ class ArucoBoardUnit():
         """
         self.boardIsActive = False
         self.conStatusLabel.config(text="Not active", fg="red")
-        self.btn.config(text="Activate",command=self.activateBoard)
+        self.btn.config(text="Log this board",command=self.activateBoard)
 
     def activateBoard(self):
         """
@@ -51,7 +48,7 @@ class ArucoBoardUnit():
         """
         self.boardIsActive = False
         self.conStatusLabel.config(text="Active", fg="green")
-        self.btn.config(text="Deactivate", command=self.deactivateBoard)
+        self.btn.config(text="Stop logging this board", command=self.deactivateBoard)
 
     def removeBoard(self):
         """
