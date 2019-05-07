@@ -39,6 +39,7 @@ class GUIApplication(threading.Thread):
 
         # Observer technique: Tell connector which function to call when updating fields.
         self.connector.setPoseDisplayFunction(self.displayPoseInTrackingWindow)
+        self.connector.setImageDisplayFunction(self.displayFrameInMainWindow)
         self.connectorStarted = False
         # Fields written to by external objects. Should only be read in this object.
         self.imageFrame = None           # Image frame to be shown in camera window.
@@ -305,7 +306,7 @@ class GUIApplication(threading.Thread):
         self.size_entry.config(validate='key', validatecommand=vcmd_size)
 
         self.gap.pack()
-        self.gap_entry.insert(0, '1')
+        self.gap_entry.insert(0, '5')
         self.gap_entry.bind('<Button-1>', self.on_entry_click)
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
@@ -338,12 +339,14 @@ class GUIApplication(threading.Thread):
         self.page_4_frame.configure(relief='groove', borderwidth='2', background=self.GRAY, width=565)
 
         self.graph_frame = Frame(self.page_4_frame)
-        self.graph_frame.configure(background='red')
+        self.graph_frame.configure(background='white')
         self.graph_frame.configure(borderwidth='2')
         self.graph_frame.configure(relief='ridge')
         self.graph_frame.configure(width=750)
         self.graph_frame.configure(height=500)
+        canvas = tk.Canvas(self.graph_frame, width=750, height=500)
         self.graph_frame.pack()
+        canvas.pack()
 
         # Buttons in graph page
         self.btn_frame_4 = Frame(self.page_4_frame)
@@ -397,7 +400,7 @@ class GUIApplication(threading.Thread):
 
         # Board selection variable setup
         self.boardIndex = tk.IntVar()  # Radio buttons controlling which board to track.
-        self.boardIndex.set(0)
+         #
 
 
         # invoke the button on the return key
@@ -462,15 +465,6 @@ class GUIApplication(threading.Thread):
         # Create paned windows for GUI
         :return:
         '''
-        #self.midtopSectionLabel_configPaneTabMain = Frame(self.page_setup_camconfig, height=100)
-        #self.leftSection_configPaneTabMain.add(self.midtopSectionLabel_configPaneTabMain)
-        #self.midtopSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
-        #
-        #self.rightSectionLabel_configPaneTabMain = Label(self.previewSection_configPaneTabMain, text="right pane")
-        #self.previewSection_configPaneTabMain.add(self.rightSectionLabel_configPaneTabMain)
-        #self.previewSection_configPaneTabMain.configure(bg=self.GRAY)
-        #self.rightSectionLabel_configPaneTabMain.configure(bg=self.GRAY)
-
         # Configurations for which cams to connect
         self.selectCamIndexesFrame = Frame(self.page_setup_camconfig)
         self.selectCamIndexesFrame.configure(bg=self.GRAY)
@@ -935,6 +929,10 @@ class GUIApplication(threading.Thread):
             self.updateCamlist(self.VEsToSend)
 
     def setCameraIndexToDisplay(self):
+        """
+        Requests connector to display a camera from a given index.
+        :return: None
+        """
         self.connector.setCameraIndex(self.__displayedCameraIndex.get())
 
     def resetCamExtrinsic(self):
@@ -1252,6 +1250,8 @@ class GUIApplication(threading.Thread):
         if id in self.boardButtons:
             logging.error("Attemptet to add board that already existed in list.")
             return
+        if not self.boardButtons:
+            self.boardIndex.set(id)
         button = tk.Radiobutton(self.bottom_left, text=buttonText, padx=5, bg=self.GRAY, fg='Orange',font=("Arial", "12","bold"),
                                     command=self.setBoardIndexToDisplay, variable=self.boardIndex, value=id)
         self.boardButtons[id] = button
@@ -1287,6 +1287,8 @@ class GUIApplication(threading.Thread):
                                         font=("Arial", "12", "bold"),
                                         command=self.setCameraIndexToDisplay, variable=self.__displayedCameraIndex,
                                         value=camID, bg='#424242', fg='Orange')
+                if not self.cameraButtonList:
+                    self.connector.setCameraIndex(camID) # If this is the first added cam, send it the display function.
                 self.cameraButtonList.append(button)
                 self.cameraButtonList[-1].pack()
 
