@@ -149,23 +149,6 @@ class VisionEntity:
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
-        CToMMatrix = self.__cameraToModelMatrices[board.ID]
-        if CToMMatrix is not None:
-            #z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
-            #z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
-            #print("Z1: ", str(z1))
-            #print("Z2: ", str(z2))
-            #msg1 = CToMMatrix
-            #logging.debug(msg1)
-            #q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
-            #msg = "Q: ", q
-            #logging.debug(msg)
-            #print("Taking arccos gives:" + str(np.arccos(q)))
-            #self._detection_quality[board.ID] = np.arccos(q)
-            z3 = np.arccos(CToMMatrix[2, 2])  # Get the z-row
-            print("#####"
-                  "Z3 is " + str(np.rad2deg(z3)) +" degrees " \
-                                     " #####")
 
     def calculatePotentialCameraPoseQuality(self, board):
         """
@@ -175,23 +158,6 @@ class VisionEntity:
         """
         detectionQuality = self.getDetectionQuality()[board.ID]
         boardPoseQuality = board.getPoseQuality()
-        CToMMatrix = self.__cameraToModelMatrices[board.ID]
-        if CToMMatrix is not None:
-            #z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
-            #z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
-            #print("Z1: ", str(z1))
-            #print("Z2: ", str(z2))
-            #msg1 = CToMMatrix
-            #logging.debug(msg1)
-            #q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
-            #msg = "Q: ", q
-            #logging.debug(msg)
-            #print("Taking arccos gives:" + str(np.arccos(q)))
-            #self._detection_quality[board.ID] = np.arccos(q)
-            z3 = np.arccos(CToMMatrix[2, 2])  # Get the z-row
-            print("#####"
-                  "Z3 is " + str(np.rad2deg(z3)) +" degrees " \
-                                     " #####")
         assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
         assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
         return detectionQuality * boardPoseQuality

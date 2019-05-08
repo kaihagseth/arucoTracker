@@ -123,8 +123,8 @@ class PoseEstimator():
                 self.displayQuality()
             if self.autoTracking:
                 self.autoTrack()
-            if self.graphing:
-                self.displayGraphFX()
+            #if self.graphing:
+            #    self.displayGraphFX()
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -469,7 +469,7 @@ class PoseEstimator():
     def stopLogging(self):
         """
         Stops the logging of board positions.
-        :return:
+        :return: None
         """
         for board in self.getBoards().values():
             board.stopLogging()

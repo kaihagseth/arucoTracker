@@ -7,7 +7,7 @@ from tkinter import ttk
 from tkinter.messagebox import showinfo, showerror
 import matplotlib
 
-matplotlib.use('TkAgg')
+
 import cv2
 import ttkthemes
 import copy
@@ -24,6 +24,7 @@ from VisionEntityClasses.IntrinsicCalibrator import videoCalibration, calibCam
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
+matplotlib.use('TkAgg')
 class GUIApplication(threading.Thread):
     global length
 
@@ -178,7 +179,7 @@ class GUIApplication(threading.Thread):
                                           fg='Orange', height=2, width=20,font=("Arial", "11"), state='disable',
                                           command=lambda: (self.resetCamExtrinsic()))
         self.startLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Log to file', bg=self.GRAY,
-                                          fg='Orange', state='disable', height=2, width=20, font=("Arial", "11"),
+                                          fg='Orange', state='normal', height=2, width=20, font=("Arial", "11"),
                                           command=lambda: (self.startLogging(), self.hideButton(self.btn_plot)))
 
         # Add the buttons to the button panel
@@ -914,23 +915,22 @@ class GUIApplication(threading.Thread):
         if not boardID in self.board_graph_data:
             logging.debug("board: " + str(boardID) + " was added to graph data.")
             self.board_graph_data[boardID] = dict()
-            self.board_graph_data[boardID]['x_data'] = []
-            self.board_graph_data[boardID]['y_data'] = []
-            self.board_graph_data[boardID]['z_data'] = []
-            self.board_graph_data[boardID]['roll_data'] = []
-            self.board_graph_data[boardID]['pitch_data'] = []
-            self.board_graph_data[boardID]['yaw_data'] = []
-            self.board_graph_data[boardID]['time_data'] = []
+            self.board_graph_data[boardID]['x'] = []
+            self.board_graph_data[boardID]['y'] = []
+            self.board_graph_data[boardID]['z'] = []
+            self.board_graph_data[boardID]['roll'] = []
+            self.board_graph_data[boardID]['pitch'] = []
+            self.board_graph_data[boardID]['yaw'] = []
+            self.board_graph_data[boardID]['time'] = []
             if not 'start_time' in self.board_graph_data:
                 self.board_graph_data['start_time'] = time.time()
-        self.board_graph_data[boardID]['x_data'].append(x)
-        self.board_graph_data[boardID]['y_data'].append(y)
-        self.board_graph_data[boardID]['z_data'].append(z)
-        self.board_graph_data[boardID]['roll_data'].append(roll)
-        self.board_graph_data[boardID]['pitch_data'].append(pitch)
-        self.board_graph_data[boardID]['yaw_data'].append(yaw)
-        self.board_graph_data[boardID]['time_data'].append(time.time() - self.board_graph_data['start_time'])
-        self.displayGraph()
+        self.board_graph_data[boardID]['x'].append(x)
+        self.board_graph_data[boardID]['y'].append(y)
+        self.board_graph_data[boardID]['z'].append(z)
+        self.board_graph_data[boardID]['roll'].append(roll)
+        self.board_graph_data[boardID]['pitch'].append(pitch)
+        self.board_graph_data[boardID]['yaw'].append(yaw)
+        self.board_graph_data[boardID]['time'].append(time.time() - self.board_graph_data['start_time'])
 
 
     def setMainMergerBoard(self, value):
@@ -998,7 +998,6 @@ class GUIApplication(threading.Thread):
     def resetCamExtrinsic(self):
         '''
         Reset the cam extrinsic matrixes to the current frame point.
-        # TODO: Use stack to indicate job done? Add button to GUI.
         :return:
         '''
         self.connector.resetExtrinsic()
@@ -1386,17 +1385,17 @@ class GUIApplication(threading.Thread):
         except AssertionError as err:
             self.showErrorBox(err)
             return
-        self.graph_figure = plt.figure()
-        self.ax = self.graph_figure.subplots(3, 2, sharex=True, sharey=True)
+        graph_figure = plt.figure()
+        self.ax = graph_figure.subplots(3, 2, sharex=True, sharey=False)
 
         self.graph_lines = dict()
-        self.graph_lines['xline'] =     self.ax[0][0].plot([], [], 'r')[0]
-        self.graph_lines['yline'] =    self.ax[1][0].plot([], [], 'g')[0]
-        self.graph_lines['zline'] =    self.ax[2][0].plot([], [], 'b')[0]
-        self.graph_lines['roll_line'] = self.ax[0][1].plot([], [], 'c')[0]
-        self.graph_lines['pitch_line']= self.ax[1][1].plot([], [], 'm')[0]
-        self.graph_lines['yaw_line'] =  self.ax[2][1].plot([], [], 'k')[0]
-        self.graph_figure.suptitle('Pose')
+        self.graph_lines['x'] =     self.ax[0][0].plot([], [], 'r')[0]
+        self.graph_lines['y'] =    self.ax[1][0].plot([], [], 'g')[0]
+        self.graph_lines['z'] =    self.ax[2][0].plot([], [], 'b')[0]
+        self.graph_lines['roll'] = self.ax[0][1].plot([], [], 'c')[0]
+        self.graph_lines['pitch']= self.ax[1][1].plot([], [], 'm')[0]
+        self.graph_lines['yaw'] =  self.ax[2][1].plot([], [], 'k')[0]
+        graph_figure.suptitle('Pose')
         self.ax[0][0].set_ylabel('X')
         self.ax[1][0].set_ylabel('Y')
         self.ax[2][0].set_ylabel('Z')
@@ -1405,22 +1404,25 @@ class GUIApplication(threading.Thread):
         self.ax[1][1].set_ylabel('Pitch')
         self.ax[2][1].set_ylabel('Yaw')
         self.ax[2][1].set_xlabel('Time (s)')
-        self.findLoggedBoards()
-        self.connector.startGraphing(self.updateGraphDisplay)
 
-    def updateGraphDisplay(self):
-        """
-        Called upon by pose estimator when poses has been updated.
-        :return:
-        """
-        boardID = self.boardIndex.get()
-        for key, line in self.graph_lines.items():
-            print(key)
-            line.set_data(self.board_graph_data[boardID]['time_data'], self.board_graph_data[boardID][key])
-        self.graph_figure.gca().relim()
-        self.graph_figure.gca().autoscale_view()
+        def updateGraphDisplay(frame):
+            """
+            Update the information to plot in the graph window.
+            :return:
+            """
+            logging.debug("Attempting to update animation")
+            boardID = self.boardIndex.get()
+            for key, line in self.graph_lines.items():
+                line.set_data(self.board_graph_data[boardID]['time'], self.board_graph_data[boardID][key])
+            for i in range(3):
+                for j in range(2):
+                    self.ax[i][j].relim()
+                    self.ax[i][j].autoscale_view()
+
+        self.animation = matplotlib.animation.FuncAnimation(graph_figure, updateGraphDisplay, interval=1000)
         plt.show()
-        # Pause?
+
+
 
     def hideButton(self, button):
         '''
@@ -1466,10 +1468,14 @@ class GUIApplication(threading.Thread):
         Checks the arucoboardunits for which boards should be logged or not.
         :return: None
         """
-        self.loggedBoards = [unit.boardIsActive for unit in self.arucoBoardUnits.values()]
+        self.loggedBoards = [ident for ident, unit in self.arucoBoardUnits.items() if unit.boardIsActive]
+        print("Logged boards: " + str(self.loggedBoards))
 
     def startLogging(self):
         """
         Starts the logging of board positons.
-        :return:
+        :return: none
         """
+        self.findLoggedBoards()
+        logging.info("Starting logging for boards: " + str(self.loggedBoards))
+        self.connector.startLogging(self.updateGraphData, self.loggedBoards)
