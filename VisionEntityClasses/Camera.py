@@ -93,15 +93,6 @@ class Camera():
         logging.info('Filename: ' + filename)
         try:
             npzfile = np.load(filename)
-            npzfile2 = np.load('calibValues/A1calib.npz')
-            #logging.debug(str(filename))
-            #print("Fil 2 keys dict:")
-            #for k in npzfile.files():
-            #    print(k)
-            #
-            #logging.debug(str(filename))
-            #for k in npzfile.files():
-            #    print(k)
             self.camera_parameters = {'mtx': npzfile['mtx'], 'dist': npzfile['dist'],
                                       'newcameramtx': npzfile['newcameramtx'], 'roi': npzfile['roi']}
             logging.info("New camera values has been set.")

@@ -912,6 +912,7 @@ class GUIApplication(threading.Thread):
         """
         x, y, z, roll, pitch, yaw = decomposeHomogenousMatrixToEuler(pose)
         if not boardID in self.board_graph_data:
+            logging.debug("board: " + str(boardID) + " was added to graph data.")
             self.board_graph_data[boardID] = dict()
             self.board_graph_data[boardID]['x_data'] = []
             self.board_graph_data[boardID]['y_data'] = []
@@ -1389,12 +1390,12 @@ class GUIApplication(threading.Thread):
         self.ax = self.graph_figure.subplots(3, 2, sharex=True, sharey=True)
 
         self.graph_lines = dict()
-        self.graph_lines['xline'] =     self.ax[0][0].plot([], [], 'r')
-        self.graph_lines['yline'], =    self.ax[1][0].plot([], [], 'g')
-        self.graph_lines['zline'], =    self.ax[2][0].plot([], [], 'b')
-        self.graph_lines['roll_line'] = self.ax[0][1].plot([], [], 'c')
-        self.graph_lines['pitch_line']= self.ax[1][1].plot([], [], 'm')
-        self.graph_lines['yaw_line'] =  self.ax[2][1].plot([], [], 'k')
+        self.graph_lines['xline'] =     self.ax[0][0].plot([], [], 'r')[0]
+        self.graph_lines['yline'] =    self.ax[1][0].plot([], [], 'g')[0]
+        self.graph_lines['zline'] =    self.ax[2][0].plot([], [], 'b')[0]
+        self.graph_lines['roll_line'] = self.ax[0][1].plot([], [], 'c')[0]
+        self.graph_lines['pitch_line']= self.ax[1][1].plot([], [], 'm')[0]
+        self.graph_lines['yaw_line'] =  self.ax[2][1].plot([], [], 'k')[0]
         self.graph_figure.suptitle('Pose')
         self.ax[0][0].set_ylabel('X')
         self.ax[1][0].set_ylabel('Y')
@@ -1414,6 +1415,7 @@ class GUIApplication(threading.Thread):
         """
         boardID = self.boardIndex.get()
         for key, line in self.graph_lines.items():
+            print(key)
             line.set_data(self.board_graph_data[boardID]['time_data'], self.board_graph_data[boardID][key])
         self.graph_figure.gca().relim()
         self.graph_figure.gca().autoscale_view()
