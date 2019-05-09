@@ -43,7 +43,7 @@ class VEConfigUnit(Thread):
         # self._connectionStatusLabel = "Disconnected"
         self._label = Label(self._frame, text="Camera " +str(self._id) +":", bg="#424242", fg="white")#, font="Arial")
         self._cb = Checkbutton(self._frame, text="",#str(self._id),
-                            fg="black", variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)  # Checkbutton
+                            fg="black", variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)
         self.cb_string_v = []  # List for telling the status of the cam on given index
         # self.cb_string = []  # Status for each index/camera on index
         # Dictionary with options
@@ -344,6 +344,7 @@ class VEConfigUnit(Thread):
             self._cb.deselect() # Set off
             msg = "Deselecting checkbutton index ".format(self._id)
             logging.info(msg)
+
     def setDoPreviewState(self, state):
         '''
         Boool on or off to show prev image.

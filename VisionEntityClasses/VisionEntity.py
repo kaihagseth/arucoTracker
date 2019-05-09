@@ -141,7 +141,7 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
-        logging.info("This message should only pop up once or twice")
+        logging.info("Camera extrinsic matrix set")
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"

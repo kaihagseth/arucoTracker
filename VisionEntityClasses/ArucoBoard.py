@@ -56,12 +56,17 @@ class ArucoBoard:
             self._transformationMatrix = None
             self.setPoseQuality(0)
         else:
-            world_to_camera_transformation = self._tracking_ve.getCameraPose()
-            world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
-            self._transformationMatrix = world_to_model_transformation
-            self.setPoseQuality(self.calculatePoseQuality())
-            if self.logging:
-                self.loggingFunction(self.ID, self.getTransformationMatrix())
+            try:
+                world_to_camera_transformation = self._tracking_ve.getCameraPose()
+                world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
+                self._transformationMatrix = world_to_model_transformation
+                self.setPoseQuality(self.calculatePoseQuality())
+                if self.logging:
+                    self.loggingFunction(self.ID, self.getTransformationMatrix())
+            except TypeError as e:
+                logging.error(e)
+                self._transformationMatrix = None
+                self.setPoseQuality(0)
 
 
     def setFirstBoardPosition(self, ve):

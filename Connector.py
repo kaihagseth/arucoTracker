@@ -24,7 +24,6 @@ class Connector():
     def __init__(self):#ui_string):
         self.logging_setup()
         self.PE = PoseEstimator()
-        self._collectGUIVEs = None
 
     def run(self):
         self.startApplication()
@@ -102,15 +101,19 @@ class Connector():
         self.PE.addBoard(board)
 
     def resetExtrinsic(self,):
+        """
+        Resets the extrinsic matrices of all cameras.
+        :return: None
+        """
         self.PE.resetExtrinsicMatrices()
 
-
-    def setCollectGUIVEs(self, var):
-        self._collectGUIVEs = var
-
-    def collectGUIVEs(self, VElist):
+    def addVisionEntities(self, VElist):
+        """
+        Adds vision entities to the pose estimator.
+        :param VElist: Vision entities to create
+        :return: None
+        """
         self.PE.setVisionEntityList(VElist)
-        self.setCollectGUIVEs(True) # Ready to be included
 
 
     def removeVEFromPEListByIndex(self, camID):
@@ -181,6 +184,13 @@ class Connector():
         :return: None
         """
         self.PE.startLogging(updateLogFX, loggedBoards)
+
+    def stopLogging(self):
+        """
+        Stops the logging of positions for all boards.
+        :return: None
+        """
+        self.PE.stopLogging()
 
 if __name__ == '__main__':
     # logging_setup()

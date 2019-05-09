@@ -32,7 +32,6 @@ class PoseEstimator():
         self.qualityDisplayFX = None # Function used to display quality of a chosen board
         self.poseDisplayFX = None # Function used to display pose of a chosen board
         self.autoTrackingVE = None # Vision enity used for auto tracking
-        self.logging = False
         self.running = False
         self.merging = False
         self.runThread = False
