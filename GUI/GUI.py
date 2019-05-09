@@ -88,7 +88,7 @@ class GUIApplication(threading.Thread):
         TODO: Please add comments
         '''
         self.camIDInUse = 0
-
+        self.logging = False
         # Set up main window.
         self.root = Tk()
         self.root.style = ttkthemes.ThemedStyle()
@@ -1178,6 +1178,7 @@ class GUIApplication(threading.Thread):
         self.connector.stopPoseEstimation()
         self.resetExtrinsic_btn.config(state='disable')
         self.toggleLogging_btn.config(state='disable')
+        self.stopLogging()
         self.poseEstimationIsRunning = False
         self.showEmptyFrame()
         logging.debug("Stop signal sent.")
@@ -1419,6 +1420,9 @@ class GUIApplication(threading.Thread):
         Starts the logging of board positons.
         :return: none
         """
+        if self.logging:
+            return
+        self.logging = True
         self.findLoggedBoards()
         self.board_graph_data['start_time'] = time.time()
         for index in self.loggedBoards:
@@ -1442,9 +1446,11 @@ class GUIApplication(threading.Thread):
         Stops the logging of board positions.
         :return: None
         """
-        self.connector.stopLogging()
-        self.toggleLogging_btn.config(text='Start logging', command=lambda: (self.startLogging()))
-        self.enableButton(self.saveLogToCsv_btn)
+        if self.logging:
+            self.logging = False
+            self.connector.stopLogging()
+            self.toggleLogging_btn.config(text='Start logging', command=lambda: (self.startLogging()))
+            self.enableButton(self.saveLogToCsv_btn)
 
     def writeLogToCsv(self):
         """

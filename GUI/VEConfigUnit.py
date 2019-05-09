@@ -322,7 +322,6 @@ class VEConfigUnit(Thread):
         Set flag to remove the VE from the current PE running. Not implemented.
         :return:
         '''
-        #self.continueRunInPE = False
         self._mainGUI.connector.removeVEFromPEListByIndex(self._id)
         self.setState(0)
 

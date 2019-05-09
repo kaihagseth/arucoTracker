@@ -125,9 +125,9 @@ def findCosineToBoard(cameraToBoardTransformation):
     return cosineToBoard
 
 def decomposeHomogenousMatrixToEuler(homogenousMatrix):
-    R = homogenousMatrix[0:3,0:3]
+    R = homogenousMatrix[0:3, 0:3]
     evec = rotationMatrixToEulerAngles(R)
-    tvec = np.asarray(homogenousMatrix[0:3, 3])
+    tvec = np.asarray(homogenousMatrix[0:3, 3]).squeeze()
     x, y, z = tvec
     roll, pitch, yaw = evec
     return x, y, z, roll, pitch, yaw
