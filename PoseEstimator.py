@@ -1,6 +1,5 @@
 import threading, queue, logging
 import time
-import csv
 import logging
 import threading
 import time
@@ -99,7 +98,6 @@ class PoseEstimator():
         self.displayGraphFX = None
         self.loggingFX = loggingFX
         self.runThread = True
-        self.graphing = False
         for VE in self.getVisionEntityList():
             VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
@@ -123,8 +121,6 @@ class PoseEstimator():
                 self.displayQuality()
             if self.autoTracking:
                 self.autoTrack()
-            #if self.graphing:
-            #    self.displayGraphFX()
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -134,37 +130,6 @@ class PoseEstimator():
         '''
         del self.VisionEntityList[index]
 
-    def writeCsvLog(self, poses):
-        """
-        Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
-        # TODO: rewrite to accommodate for more than one pose!!
-        # FIXME: This function is not working as intended.
-        :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
-        :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
-        :return: None
-        """
-        if poses:
-            for pose in poses.values():
-                evec, tvec = pose
-        else:
-            evec, tvec = None, None
-        if tvec is None:
-            tvec = ['-', '-', '-']
-        if evec is None:
-            evec = ['-', '-', '-']
-        if not self._writer:
-            with open('logs/position_log.csv', 'w') as csv_file:
-                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'time']
-                self._log_start_time = time.time()
-                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
-                self._writer.writerow(fieldnames)
-                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
-                                       (time.time() - self._log_start_time)])
-        else:
-            with open('logs/position_log.csv', 'a') as csv_file:
-                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n',  dialect='excel')
-                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
-                                       (time.time() - self._log_start_time)])
 
     def resetExtrinsicMatrices(self):
         '''

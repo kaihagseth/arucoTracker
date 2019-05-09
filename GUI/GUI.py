@@ -6,6 +6,7 @@ from tkinter import Menu
 from tkinter import ttk
 from tkinter.messagebox import showinfo, showerror
 import matplotlib
+import csv
 
 
 import cv2
@@ -24,6 +25,7 @@ from VisionEntityClasses.IntrinsicCalibrator import videoCalibration, calibCam
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
+import datetime
 matplotlib.use('TkAgg')
 class GUIApplication(threading.Thread):
     global length
@@ -178,15 +180,20 @@ class GUIApplication(threading.Thread):
         self.resetExtrinsic_btn = Button(self.buttonPanelLeft_panedwindow, text='Reset startingpose', bg=self.GRAY,
                                           fg='Orange', height=2, width=20,font=("Arial", "11"), state='disable',
                                           command=lambda: (self.resetCamExtrinsic()))
-        self.startLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Log to file', bg=self.GRAY,
+        self.startLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Start logging', bg=self.GRAY,
                                           fg='Orange', state='normal', height=2, width=20, font=("Arial", "11"),
                                           command=lambda: (self.startLogging(), self.hideButton(self.btn_plot)))
+
+        self.saveLogToCsv_btn = Button(self.buttonPanelLeft_panedwindow, text='Save log to file', bg=self.GRAY,
+                                       fg='Orange', state='normal', height=2, width=20, font=("Arial", "11"),
+                                       command=lambda: (self.writeLogToCsv()))
 
         # Add the buttons to the button panel
         self.optionLabel.pack(padx=5, pady=5)
         self.showGraphWindow_btn.pack(padx=10,pady=10)
         self.resetExtrinsic_btn.pack(padx=10,pady=10)
         self.startLogging_btn.pack(padx=10,pady=10)
+        self.saveLogToCsv_btn.pack(padx=10,pady=10)
 
         # Add the left-menu widget to the main left-menu widget
         self.left_camPaneTabMain.add(self.top_left, height=250, width = 80)
@@ -1479,3 +1486,24 @@ class GUIApplication(threading.Thread):
         self.findLoggedBoards()
         logging.info("Starting logging for boards: " + str(self.loggedBoards))
         self.connector.startLogging(self.updateGraphData, self.loggedBoards)
+
+    def writeLogToCsv(self):
+        """
+        Writes the logged pose data to a csv-file.
+        :return: None
+        """
+        saveTimeString = '{0:%Y-%m_%d %H-%M-%S}'.format(datetime.datetime.now())
+        for boardID in self.loggedBoards:
+            filename = "Pose log - Board " + str(boardID) + ", " + saveTimeString + '.csv'
+            with open(filename, 'w') as csv_file:
+                writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
+                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'time']
+                writer.writerow(fieldnames)
+                for x, y, z, roll, pitch, yaw, t in zip(self.board_graph_data[boardID]['x'],
+                                                        self.board_graph_data[boardID]['y'],
+                                                        self.board_graph_data[boardID]['z'],
+                                                        self.board_graph_data[boardID]['roll'],
+                                                        self.board_graph_data[boardID]['pitch'],
+                                                        self.board_graph_data[boardID]['yaw'],
+                                                        self.board_graph_data[boardID]['time']):
+                    writer.writerow([x, y, z, roll, pitch, yaw, t])
