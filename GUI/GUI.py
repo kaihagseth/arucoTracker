@@ -1195,51 +1195,50 @@ class GUIApplication(threading.Thread):
                     id = VECU.getIndex()
                     return id
 
-    def setPreviewStatus(self, index):
+    def setPreviewStatus(self, VE, status):
         '''
-        Takew commands from VECU and organise so image preview is happening.
+        Take commands from VECU and organise so image preview is happening.
         :param index: Index for camera to preview. Remove the preview if index is -1.
         :return:
         '''
-        logging.debug("Inside.")
-        if index >= 0:
+        if status:
             # Show preview
             if self.imgHolder.image is not None:
-                # Remove earlier preview, just because
                 self.imgHolder.configure(image='')
                 self.imgHolder.image = None
-            self.showPreviewImage(index)
-        elif index is -1:
+            self.showPreviewImage(VE)
+        else:
             # Hide preview
+            VE.runPreview = False
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
 
-    def showPreviewImage(self, index):
+    def showPreviewImage(self, VE):
         '''
         Show preview video-feed from camera on given index.
-        :param index: Index of cam to preview
+        :param VE: The vision entity to display
         :return: None
         '''
-        logging.debug("Index to preview:"+ str(index))
-        if index is not -1 and index is not None:
-            try:
-                VECU = self.getVECUByIndex(index)
-                VE = VECU.getVE()
-                VE.grabFrame()
-                _, frame = VE.retrieveFrame()
-                try:
-                    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    image = Image.fromarray(image)
-                    image = ImageTk.PhotoImage(image)
-                    self.imgHolder.configure(image=image)
-                    self.imgHolder.image = image
-                except cv2.error as e:
-                    logging.error(str(e))
-            except AttributeError as e:
-                # VE not found or something.
-                # TODO: Change so this is a impossible error to hit. Hard to change cause threading etc.
-                msg = str(e) + " \n Probably caused by shutting down preview."
-                logging.error(str(e))
+        th = threading.Thread(target=VE.runPreviewLoop, args=[self.displayFrameInPreview], daemon=True)
+        th.start()
+
+    def displayFrameInPreview(self, frame):
+        """
+        Function used by VE to display a frame in the preview section in GUI.
+        :param vision_entity: Vision entity to display frames from
+        :param frame: Frame to display
+        :return: None
+        """
+        try:
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(image)
+            image = ImageTk.PhotoImage(image)
+            self.imgHolder.configure(image=image)
+            self.imgHolder.image = image
+        except cv2.error as e:
+            logging.error(str(e))
+
+
 
     def getVECUByIndex(self, index):
         for VECU in self.VEConfigUnits:

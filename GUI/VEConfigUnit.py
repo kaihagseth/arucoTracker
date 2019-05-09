@@ -289,7 +289,7 @@ class VEConfigUnit(Thread):
         logging.debug("Doing preview")
         self.setDoPreviewState(True)
         # Tell GUI that you want to do a preview.
-        self.GUI_setPreviewImage_fx(self._id)
+        self.GUI_setPreviewImage_fx(self.getVE(), True)
         self.setState(4)
 
     def hidePreview(self):
@@ -298,8 +298,9 @@ class VEConfigUnit(Thread):
         :return:
         """
         self.setDoPreviewState(False)
-        self.GUI_setPreviewImage_fx(-1)
+        self.GUI_setPreviewImage_fx(self.getVE(), False)
         self.setState(2)
+
     def getFrame(self):
         """
         Get image container.

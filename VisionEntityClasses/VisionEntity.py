@@ -23,6 +23,7 @@ class VisionEntity:
         self._detection_quality = dict()
         self.runThread = False
         self.running = False
+        self.runPreview = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
         self.__rejected = None # Rejected aruco corners - Should only be written to from thread.
@@ -40,6 +41,7 @@ class VisionEntity:
         """
         self.runThread = True
         self.running = True
+        self.runPreview = False
         if not self._camera.isOpen():
             self._camera.open()
         while self.runThread:
@@ -57,6 +59,22 @@ class VisionEntity:
         self.terminate()
         self.running = False
         logging.debug("Vision entity threaded loop stopped.")
+
+    def runPreviewLoop(self, previewDisplayFX):
+        """
+        Passes raw image stream to a display function.
+        :param previewDisplayFX:
+        :return:
+        """
+        self.runThread = False
+        self.runPreview = True
+        if not self._camera.isOpen():
+            self._camera.open()
+        while self.runPreview:
+            self.grabFrame()
+            self.retrieveFrame()
+            previewDisplayFX(self.getFrame())
+        previewDisplayFX(np.zeros((1, 1, 3), dtype=np.uint8))
 
     def calibrateCameraWithImages(self, images):
         """
