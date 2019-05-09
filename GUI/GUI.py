@@ -46,7 +46,7 @@ class GUIApplication(threading.Thread):
         self.connector.setImageDisplayFunction(self.displayFrameInMainWindow)
         self.connectorStarted = False
         # Fields written to by external objects. Should only be read in this object.
-        self.imageFrame = None           # Image frame to be shown in camera window.
+        self.imageFrame = None      # Image frame to be shown in camera window.
         self.modelPoses = None      # Poses of all currently tracked objects. (Only one at the time for now)
         self.userBoard = None       # Arucoboard created by user in GUI.
 
@@ -284,7 +284,7 @@ class GUIApplication(threading.Thread):
             self.im = self.im.resize((300, 300), Image.ANTIALIAS)
             self.ph = ImageTk.PhotoImage(self.im)
             # Need to use ph for tkinter to understand
-            self.btn_img = Label(self.page_3_frame,  image=self.ph)
+            self.btn_img = Label(self.page_3_frame,  image=ImageTk.PhotoImage(Image.fromarray(np.ones((300, 300)))))
             self.btn_img.pack(side=RIGHT)
         except TclError as e:
             logging.error(str(e))
@@ -348,14 +348,14 @@ class GUIApplication(threading.Thread):
         self.btn_frame = Frame(self.page_3, bg=self.GRAY)
         self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
-        self.pdf_btn = Button(self.btn_frame, text='Generate board',
+        self.generate_btn = Button(self.btn_frame, text='Generate board',
                               command=lambda: [self.createArucoBoard()])
-        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.pdf_btn.pack(side=LEFT)
-        self.pdf_btn = Button(self.btn_frame, text='Add to tracking list',
-                              command=lambda: [self.exportArucoBoard()])
-        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.pdf_btn.pack(side=LEFT)
+        self.generate_btn.configure(bg=self.GRAY, fg=self.WHITE)
+        self.generate_btn.pack(side=LEFT)
+        self.export_btn = Button(self.btn_frame, text='Add to tracking list',
+                              command=lambda: (self.exportArucoBoard()))
+        self.export_btn.configure(bg=self.GRAY, fg=self.WHITE)
+        self.export_btn.pack(side=LEFT)
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
                               command=lambda: [self.saveArucoPDF()])
         self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
@@ -555,7 +555,6 @@ class GUIApplication(threading.Thread):
         self.vecuToCalib = self.getVEConfigUnitById(cameraIndex)
         if self.vecuToCalib is not None:
             logging.debug("Id of given VECU: "+ str(self.vecuToCalib.getIndex()))
-            state = self.vecuToCalib.getState()
             if self.calibConnectionFrame is not None:
                 try:
                     logging.info('Removing widget with id ' + str(self.calibConnectionFrame.winfo_id()) )
@@ -843,14 +842,6 @@ class GUIApplication(threading.Thread):
         self.addBoardWidgetToGUI(newBoard)
         self.addBoardButton(newBoard)
 
-    def exportArucoBoard(self):
-        """
-        Adds an aruco board to the pushed boards list, to make it accessible to external objects.
-        :return: None
-        """
-        self.connector.addBoard(self.userBoard)
-        self.addBoardWidgetToGUI(self.userBoard)
-        self.addBoardButton(self.userBoard)
 
 
     def displayMergingQuality(self, qualityList):
@@ -929,7 +920,7 @@ class GUIApplication(threading.Thread):
         self.VEsToSend = []
         for VECU in self.VEConfigUnits:
             # Check if this VE should be included
-            include = VECU.getIncludeStatus()
+            include = VECU.getIncludeStatus() and VECU.getState() != 6
             if include:
                 VECU_VE = VECU.getVE()
                 VECU.setDoPreviewState(False)
@@ -952,8 +943,8 @@ class GUIApplication(threading.Thread):
         if self.VEsToSend: # is not empty
             self.anyCameraInitiated = True
             self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
-            self.connector.addVisionEntities(self.VEsToSend) # Send them to GUI
-            self.updateCamlist(self.VEsToSend)
+            self.connector.addVisionEntities(self.VEsToSend) # Send them to Pose Estimator
+            self.updateCamlist(self.VEsToSend) # Add to camera list.
 
     def setCameraIndexToDisplay(self):
         """
@@ -1020,6 +1011,10 @@ class GUIApplication(threading.Thread):
             logging.error(str(e))
             self.userBoard = None
             showinfo("Error", "Please insert insert whole numbers in the boxes to create board.")
+        except cv2.error as e:
+            logging.error(str(e))
+            self.userBoard = None
+            showinfo("Error", "Invalid value entered. Please check your entries and try again.")
 
     def exportArucoBoard(self):
         """
@@ -1028,6 +1023,7 @@ class GUIApplication(threading.Thread):
         """
         if self.userBoard is not None:
             # We have 'generated' the board.
+            self.userBoard.makeUnique()
             self.connector.addBoard(self.userBoard)
             self.addBoardWidgetToGUI(self.userBoard)
             self.addBoardButton(self.userBoard)
@@ -1063,8 +1059,12 @@ class GUIApplication(threading.Thread):
         Return values from entry and send it to the arucoPoseEstimator
         :return:None
         '''
-        if self.userBoard is not None:
-            self.userBoard.writeBoardToPDF()
+        try:
+            assert self.userBoard is not None, "Please create a board before exporting to pdf."
+        except AssertionError as e:
+            self.showErrorBox(e)
+            return
+        self.userBoard.writeBoardToPDF()
 
     def validate(self, string):
         '''
@@ -1161,6 +1161,8 @@ class GUIApplication(threading.Thread):
             assert self.anyBoardsInitiated, "No boards are created. Please add Aruco Boards in Marksers tab."
             self.connector.startPoseEstimation(self.displayFrameInMainWindow, self.displayPoseInTrackingWindow,
                                                self.displayQualityInTrackingWindow)
+            self.__displayedCameraIndex.set(-1)
+            self.setCameraIndexToDisplay()
             self.poseEstimationIsRunning = True
             self.resetExtrinsic_btn.config(state='normal')
             self.toggleLogging_btn.config(state='normal')
@@ -1177,6 +1179,7 @@ class GUIApplication(threading.Thread):
         self.resetExtrinsic_btn.config(state='disable')
         self.toggleLogging_btn.config(state='disable')
         self.poseEstimationIsRunning = False
+        self.showEmptyFrame()
         logging.debug("Stop signal sent.")
 
     def checkPreviewStatus(self):
@@ -1329,7 +1332,7 @@ class GUIApplication(threading.Thread):
         self.ax = graph_figure.subplots(3, 2, sharex=True, sharey=False)
 
         self.graph_lines = dict()
-        self.graph_lines['x'] =     self.ax[0][0].plot([], [], 'r')[0]
+        self.graph_lines['x'] =    self.ax[0][0].plot([], [], 'r')[0]
         self.graph_lines['y'] =    self.ax[1][0].plot([], [], 'g')[0]
         self.graph_lines['z'] =    self.ax[2][0].plot([], [], 'b')[0]
         self.graph_lines['roll'] = self.ax[0][1].plot([], [], 'c')[0]
@@ -1341,8 +1344,11 @@ class GUIApplication(threading.Thread):
         self.ax[2][0].set_ylabel('Z')
         self.ax[2][0].set_xlabel('Time (s)')
         self.ax[0][1].set_ylabel('Roll')
+        self.ax[0][1].yaxis.tick_right()
         self.ax[1][1].set_ylabel('Pitch')
+        self.ax[1][1].yaxis.tick_right()
         self.ax[2][1].set_ylabel('Yaw')
+        self.ax[2][1].yaxis.tick_right()
         self.ax[2][1].set_xlabel('Time (s)')
 
         def updateGraphDisplay(frame):
@@ -1461,3 +1467,10 @@ class GUIApplication(threading.Thread):
                                                         self.board_graph_data[boardID]['yaw'],
                                                         self.board_graph_data[boardID]['time']):
                     writer.writerow([x, y, z, roll, pitch, yaw, t])
+
+    def showEmptyFrame(self):
+        """
+        Removes the camera frame from the main window.
+        :return: None
+        """
+        self.main_label.configure(image='')

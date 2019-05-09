@@ -1,6 +1,3 @@
-import cv2
-import numpy as np
-import exceptions as exc
 from VisionEntityClasses.Camera import Camera
 from VisionEntityClasses.helperFunctions import *
 import logging
@@ -41,7 +38,10 @@ class VisionEntity:
         :param boards: The board object the pose estimator should detect and calculate pose for.
         :return:
         """
+        self.runThread = True
         self.running = True
+        if not self._camera.isOpen():
+            self._camera.open()
         while self.runThread:
             self.grabFrame()
             self.retrieveFrame()
@@ -56,14 +56,7 @@ class VisionEntity:
                 self.displayFX(self.drawAxis())
         self.terminate()
         self.running = False
-
-    def calibrateCameraWithTool(self):
-        """
-        # TODO: This function is not yet created in camera Class.
-        Calibrates intrinsic matrix and distortion coefficients for camera.
-        :return: None
-        """
-        self._camera.calibrateCamera()
+        logging.debug("Vision entity threaded loop stopped.")
 
     def calibrateCameraWithImages(self, images):
         """
@@ -200,12 +193,6 @@ class VisionEntity:
         Grabs frame from video stream
         :return:
         """
-        """
-        if not self.runThread: # If not interferring with poseestimation
-            ret, frame = self.getCam().grabFrame()
-            if ret:
-                return frame
-        return None"""
         cam = self.getCam()
         return cam.grabFrame()
 
@@ -291,6 +278,8 @@ class VisionEntity:
         Readies Vision Entity for termination
         :return: None
         """
+        self.displayFX = None
+        logging.info("Stopping camera " + str(self.getCameraID()))
         self._camera.terminate()
 
     def addBoards(self, boards):
@@ -338,3 +327,11 @@ class VisionEntity:
         :return: None
         """
         self.displayFX = displayFX
+
+    def stopThread(self):
+        """
+        Stopping the thread loop for this object.
+        :return:
+        """
+        self.runThread = False
+        logging.info("Vision entity is attempting to stop.")

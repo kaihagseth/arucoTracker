@@ -98,7 +98,6 @@ class PoseEstimator():
         self.loggingFX = loggingFX
         self.runThread = True
         for VE in self.getVisionEntityList():
-            VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             th.start()
             logging.debug('Vision entity created.')
@@ -112,7 +111,9 @@ class PoseEstimator():
         :return:
         """
         self.running = True
+        iteration_time = 1/20
         while self.runThread:
+            start_time = time.time()
             self.updateBoardPoses()
             if self.poseDisplayFX:
                 self.displayPose()
@@ -120,6 +121,10 @@ class PoseEstimator():
                 self.displayQuality()
             if self.autoTracking:
                 self.autoTrack()
+            done_time = time.time() - start_time
+            if done_time < iteration_time:
+                time.sleep(iteration_time - done_time)
+        logging.info("Pose estimator thread stopped.")
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -225,7 +230,7 @@ class PoseEstimator():
 
     def getCameraPositionQuality(self, camID=-1):
         '''
-        Get the quality/reliability , of the pose of a cam from world origo.
+        Get the quality/reliability , of the pose of a cam from world origen.
         :param camID: Cam to select
         :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
         '''
@@ -260,11 +265,10 @@ class PoseEstimator():
         self.runThread = False
         self.stopThreads()
         ves = self.getVisionEntityList()
-        while True in veStatuses:
-            veStatuses = [ve.running for ve in ves]
+        veStatuses = [ve.running for ve in ves]
+        logging.debug(str(veStatuses))
         self.running = False
         self.resetExtrinsicMatrices()
-        self.worldCoordinatesIsSet = False
 
     def stopThreads(self):
         """
@@ -272,7 +276,8 @@ class PoseEstimator():
         :return:
         """
         for VE in self.getVisionEntityList():
-            VE.runThread = False
+            logging.debug("Setting VEs runThread flag to false")
+            VE.stopThread()
 
     def addBoard(self, board):
         """

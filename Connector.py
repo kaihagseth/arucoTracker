@@ -54,7 +54,7 @@ class Connector():
         :return: None
         """
         logging.debug("Stopping pose estimator")
-        self.PE.stopThreads()
+        self.PE.stopPoseEstimation()
 
     def initConnectedCams(self):
         '''
