@@ -353,3 +353,10 @@ class VisionEntity:
         """
         self.runThread = False
         logging.info("Vision entity is attempting to stop.")
+
+    def getCameraPose(self):
+        """
+        Returns camera pose.
+        :return: Camera pose
+        """
+        return copy.copy(self._cameraPoseMatrix)

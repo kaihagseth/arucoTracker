@@ -313,11 +313,11 @@ class GUIApplication(threading.Thread):
         self.width_entry = Entry(self.page_3_entry_frame)
         vcmd_width = (self.width_entry.register(self.on_validate), '%P')
 
-        self.size = Label(self.page_3_label_frame, text='Size: ',bg=self.GRAY, fg=self.WHITE)
+        self.size = Label(self.page_3_label_frame, text='Size(mm): ',bg=self.GRAY, fg=self.WHITE)
         self.size_entry = Entry(self.page_3_entry_frame)
         vcmd_size = (self.size_entry.register(self.on_validate), '%P')
 
-        self.gap = Label(self.page_3_label_frame, text='Gap: ',bg=self.GRAY, fg=self.WHITE)
+        self.gap = Label(self.page_3_label_frame, text='Gap(mm): ',bg=self.GRAY, fg=self.WHITE)
         self.gap_entry = Entry(self.page_3_entry_frame, validate='key')
         vcmd_gap = (self.gap_entry.register(self.on_validate), '%P')
 
