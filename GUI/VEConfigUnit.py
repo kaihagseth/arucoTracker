@@ -149,11 +149,8 @@ class VEConfigUnit(Thread):
         else:
             logging.error('Type not found. ')
             return None
-        #print(buttonsToUpdate)
         if not len(buttonsToUpdate) == 0: # Only try if found buttons
-            logging.debug(str(buttonsToUpdate))
             for btn in buttonsToUpdate:
-                logging.debug("Button " + str(btn))
                 if text is not None:
                     btn.configure(text=text)
                 if state is not None:
@@ -197,8 +194,8 @@ class VEConfigUnit(Thread):
         7 = Failed to open cam
         8 = Remove cam from PE. Not implemented
         9 = Failed to use in PE (i.e. cam not opened)
-        :param newState:
-        :return:
+        :param newState: The new state
+        :return: None
         '''
         msg = "State "
         if newState is 0: # Disconnected, VE not initialised

@@ -494,6 +494,12 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         # Configurations for which cams to connect
+        text = 'Here you can checkout and configure cameras you wan\'t to use. \n \'Connecting\' the camera allows you ' \
+               'to select the calibration file for the  camera (default the same file as the camera label), and to ' \
+               'preview \nthe video so you know you got right. To use the cameras  in operation, mark the checkbox and press Apply. ' \
+               '\'Used in PE\' should then be stated.\n'
+        self.camConfigExplanationLabel = Label(self.page_setup_camconfig, text=text, bg=self.GRAY, fg = self.WHITE)
+        self.camConfigExplanationLabel.pack(fill=BOTH)
         self.selectCamIndexesFrame = Frame(self.page_setup_camconfig)
         self.selectCamIndexesFrame.configure(bg=self.GRAY)
         self.selectCamIndexesFrame.pack(fill=BOTH)#.add(self.selectCamIndexesFrame)
