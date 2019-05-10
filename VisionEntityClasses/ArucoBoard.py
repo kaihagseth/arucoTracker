@@ -20,7 +20,6 @@ class ArucoBoard:
         self.ID = ArucoBoard.nextIndex
         self.logging = False
         self.loggingFunction = None
-        ArucoBoard.nextIndex += 1
         self.dictionary = dictionary
         self.autoTracked = False
         if board is not None:
@@ -28,7 +27,16 @@ class ArucoBoard:
             return
         self._board = cv2.aruco.GridBoard_create(board_width, board_height, marker_size, marker_gap, dictionary,
                                                  self.first_marker)
-        ArucoBoard.first_marker = self.first_marker + (board_height * board_width)
+
+    def makeUnique(self):
+        """
+        Reserves this boards markers and ID by iterating class variables.
+        :return: None
+        """
+        ArucoBoard.nextIndex += 1
+        size = self._board.getGridSize()
+        ArucoBoard.first_marker = self.first_marker + (size[0] * size[1])
+        logging.debug("Board was made unique")
 
     def getGridBoardSize(self):
         return self._board.getGridSize()
@@ -56,12 +64,17 @@ class ArucoBoard:
             self._transformationMatrix = None
             self.setPoseQuality(0)
         else:
-            world_to_camera_transformation = self._tracking_ve.getCameraPose()
-            world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
-            self._transformationMatrix = world_to_model_transformation
-            self.setPoseQuality(self.calculatePoseQuality())
-            if self.logging:
-                self.loggingFunction(self.ID, self.getTransformationMatrix())
+            try:
+                world_to_camera_transformation = self._tracking_ve.getCameraPose()
+                world_to_model_transformation = world_to_camera_transformation * camera_to_model_transformation #Crash here
+                self._transformationMatrix = world_to_model_transformation
+                self.setPoseQuality(self.calculatePoseQuality())
+                if self.logging:
+                    self.loggingFunction(self.ID, self.getTransformationMatrix())
+            except TypeError as e:
+                logging.error(e)
+                self._transformationMatrix = None
+                self.setPoseQuality(0)
 
 
     def setFirstBoardPosition(self, ve):

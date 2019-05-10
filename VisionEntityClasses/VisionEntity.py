@@ -1,6 +1,3 @@
-import cv2
-import numpy as np
-import exceptions as exc
 from VisionEntityClasses.Camera import Camera
 from VisionEntityClasses.helperFunctions import *
 import logging
@@ -26,6 +23,7 @@ class VisionEntity:
         self._detection_quality = dict()
         self.runThread = False
         self.running = False
+        self.runPreview = False
         self.__corners = None # Detected aruco corners - Should only be written to from thread.
         self.__ids = None # Detected aruco ids - Should only be written to from thread.
         self.__rejected = None # Rejected aruco corners - Should only be written to from thread.
@@ -41,7 +39,11 @@ class VisionEntity:
         :param boards: The board object the pose estimator should detect and calculate pose for.
         :return:
         """
+        self.runThread = True
         self.running = True
+        self.runPreview = False
+        if not self._camera.isOpen():
+            self._camera.open()
         while self.runThread:
             self.grabFrame()
             self.retrieveFrame()
@@ -56,14 +58,23 @@ class VisionEntity:
                 self.displayFX(self.drawAxis())
         self.terminate()
         self.running = False
+        logging.debug("Vision entity threaded loop stopped.")
 
-    def calibrateCameraWithTool(self):
+    def runPreviewLoop(self, previewDisplayFX):
         """
-        # TODO: This function is not yet created in camera Class.
-        Calibrates intrinsic matrix and distortion coefficients for camera.
-        :return: None
+        Passes raw image stream to a display function.
+        :param previewDisplayFX:
+        :return:
         """
-        self._camera.calibrateCamera()
+        self.runThread = False
+        self.runPreview = True
+        if not self._camera.isOpen():
+            self._camera.open()
+        while self.runPreview:
+            self.grabFrame()
+            self.retrieveFrame()
+            previewDisplayFX(self.getFrame())
+        previewDisplayFX(np.zeros((1, 1, 3), dtype=np.uint8))
 
     def calibrateCameraWithImages(self, images):
         """
@@ -141,7 +152,7 @@ class VisionEntity:
         :param threshold: threshold to be above
         :return:
         """
-        logging.info("This message should only pop up once or twice")
+        logging.info("Camera extrinsic matrix set")
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
         assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
@@ -200,12 +211,6 @@ class VisionEntity:
         Grabs frame from video stream
         :return:
         """
-        """
-        if not self.runThread: # If not interferring with poseestimation
-            ret, frame = self.getCam().grabFrame()
-            if ret:
-                return frame
-        return None"""
         cam = self.getCam()
         return cam.grabFrame()
 
@@ -291,6 +296,8 @@ class VisionEntity:
         Readies Vision Entity for termination
         :return: None
         """
+        self.displayFX = None
+        logging.info("Stopping camera " + str(self.getCameraID()))
         self._camera.terminate()
 
     def addBoards(self, boards):
@@ -338,3 +345,11 @@ class VisionEntity:
         :return: None
         """
         self.displayFX = displayFX
+
+    def stopThread(self):
+        """
+        Stopping the thread loop for this object.
+        :return:
+        """
+        self.runThread = False
+        logging.info("Vision entity is attempting to stop.")

@@ -143,6 +143,7 @@ class Camera():
         :return:
         """
         self._vidCap.release()
+        logging.debug("Video capture released.")
 
     def setCamLabel(self, callname):
         """
@@ -152,3 +153,17 @@ class Camera():
         """
         self.camera_label = callname
         self.loadCameraParameters()
+
+    def open(self):
+        """
+        Opens the videocapture stream.
+        :return: None
+        """
+        self._vidCap.open(self._src)
+
+    def isOpen(self):
+        """
+        Checks if the video capture stream is open
+        :return: True if video capture is open, false if not.
+        """
+        return self._vidCap.isOpened()

@@ -27,7 +27,6 @@ class VEConfigUnit(Thread):
         self._currState = 0
         self._cb_v = BooleanVar()  # Variable to hold state of
         self._cb_v.set(False)
-        self._state = IntVar()
         self._stateText = StringVar()
         self.continueRunInPE = False # Whether to continue to use VE in PE.
         self.connectionButtons = []
@@ -40,12 +39,10 @@ class VEConfigUnit(Thread):
 
     def createSetupBox(self):
         self._stateText.set('Disconnected')  # Statustext of connection with cam
-        # self._connectionStatusLabel = "Disconnected"
         self._label = Label(self._frame, text="Camera " +str(self._id) +":", bg="#424242", fg="white")#, font="Arial")
         self._cb = Checkbutton(self._frame, text="",#str(self._id),
-                            fg="black", variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)  # Checkbutton
+                            fg="black", variable=self._cb_v, command=self.chkbox_checked, bg='#424242',width=12)
         self.cb_string_v = []  # List for telling the status of the cam on given index
-        # self.cb_string = []  # Status for each index/camera on index
         # Dictionary with options
         path = "calibValues"
         choices = os.listdir(path)
@@ -77,9 +74,10 @@ class VEConfigUnit(Thread):
         conStatusLabel = Label(parent, text="Disconnected", fg="red", bg='#424242', width=20)
         self.conStatusLabels.append(conStatusLabel)
         return conStatusLabel
+
     def doConfigStatusLabel(self, text=None,fg=None,bg=None,font=None,state=None):
         '''
-        Update all labelsd that wants to know the connection status.
+        Update all labels that wants to know the connection status.
         :param text:
         :param fg:
         :param bg:
@@ -90,8 +88,6 @@ class VEConfigUnit(Thread):
         for lbl in self.conStatusLabels:
             if text is not None:
                 lbl.configure(text=text)
-            #if state is not None:
-             #   lbl.configure(state=state)
             if fg is not None:
                 lbl.configure(fg=fg)
 
@@ -102,13 +98,13 @@ class VEConfigUnit(Thread):
         :return: The created button
         '''
         connectBtn = Button(parent, text="Connect", bg='#424242', fg="white", command=self.doConnect,
-                                      width=15)  # , variable=self._state, onvalue=1, offvalue=0)
+                                      width=15)
         self.connectionButtons.append(connectBtn)
         return connectBtn
 
     def createPreviewBtn(self, parent):
         previewBtn = Button(parent, text="Preview", command=self.doPreview, bg='#424242', fg="white",
-                                      state=DISABLED, width=15)  # , variable = self._state, onvalue=3, offvalue=2)
+                                      state=DISABLED, width=15)
         self.previewButtons.append(previewBtn)
         return previewBtn
 
@@ -171,11 +167,6 @@ class VEConfigUnit(Thread):
     def chkbox_checked(self):
         pass
 
-    def setConnectionStatus(self):
-        # self._state
-        state = self._state.get()
-        msg = state
-        logging.debug(msg)
 
     def doConnect(self):
         ''' Create a VisionEntity for the cam on index. Change button states. '''
@@ -295,16 +286,18 @@ class VEConfigUnit(Thread):
         logging.debug("Doing preview")
         self.setDoPreviewState(True)
         # Tell GUI that you want to do a preview.
-        self.GUI_setPreviewImage_fx(self._id)
+        self.GUI_setPreviewImage_fx(self.getVE(), True)
         self.setState(4)
+
     def hidePreview(self):
         """
         Hide the preview window
         :return:
         """
         self.setDoPreviewState(False)
-        self.GUI_setPreviewImage_fx(-1)
+        self.GUI_setPreviewImage_fx(self.getVE(), False)
         self.setState(2)
+
     def getFrame(self):
         """
         Get image container.
@@ -315,18 +308,21 @@ class VEConfigUnit(Thread):
     def getIncludeStatus(self):
         "Whether the VE should be taken in to the poseestimation."
         return self._cb_v.get()
+
     def getVE(self):
         return self._VE
+
     def getIndex(self):
         return self._id
+
     def removeVEFromRunningPE(self):
         '''
         Set flag to remove the VE from the current PE running. Not implemented.
         :return:
         '''
-        #self.continueRunInPE = False
         self._mainGUI.connector.removeVEFromPEListByIndex(self._id)
         self.setState(0)
+
     def setIncludeInPEbool(self, bool):
         '''
         Set the the mark whether to include VE in PE when applied. If false, the mark is taken away.
@@ -341,6 +337,7 @@ class VEConfigUnit(Thread):
             self._cb.deselect() # Set off
             msg = "Deselecting checkbutton index ".format(self._id)
             logging.info(msg)
+
     def setDoPreviewState(self, state):
         '''
         Boool on or off to show prev image.
@@ -353,7 +350,7 @@ class VEConfigUnit(Thread):
         return self._doPreviewState
 
     def getState(self):
-        return self._state
+        return self._currState
 
     def updateOptionMenu(self):
         menu = self.calibFilePopup["menu"]

@@ -1,6 +1,5 @@
 import threading, queue, logging
 import time
-import csv
 import logging
 import threading
 import time
@@ -33,7 +32,6 @@ class PoseEstimator():
         self.qualityDisplayFX = None # Function used to display quality of a chosen board
         self.poseDisplayFX = None # Function used to display pose of a chosen board
         self.autoTrackingVE = None # Vision enity used for auto tracking
-        self.logging = False
         self.running = False
         self.merging = False
         self.runThread = False
@@ -99,9 +97,7 @@ class PoseEstimator():
         self.displayGraphFX = None
         self.loggingFX = loggingFX
         self.runThread = True
-        self.graphing = False
         for VE in self.getVisionEntityList():
-            VE.runThread = True
             th = threading.Thread(target=VE.runThreadedLoop, args=[self.dictionary, self._arucoBoards], daemon=True)
             th.start()
             logging.debug('Vision entity created.')
@@ -115,7 +111,9 @@ class PoseEstimator():
         :return:
         """
         self.running = True
+        iteration_time = 1/20
         while self.runThread:
+            start_time = time.time()
             self.updateBoardPoses()
             if self.poseDisplayFX:
                 self.displayPose()
@@ -123,8 +121,10 @@ class PoseEstimator():
                 self.displayQuality()
             if self.autoTracking:
                 self.autoTrack()
-            #if self.graphing:
-            #    self.displayGraphFX()
+            done_time = time.time() - start_time
+            if done_time < iteration_time:
+                time.sleep(iteration_time - done_time)
+        logging.info("Pose estimator thread stopped.")
 
     def removeVEFromListByIndex(self, index):
         '''
@@ -134,37 +134,6 @@ class PoseEstimator():
         '''
         del self.VisionEntityList[index]
 
-    def writeCsvLog(self, poses):
-        """
-        Writes a row to the logging csv-file. Overwrites previous file if a new session is started.
-        # TODO: rewrite to accommodate for more than one pose!!
-        # FIXME: This function is not working as intended.
-        :param tvec: Translation vector. Numpy array with x y and z-coordinates to log.
-        :param evec: Euler rotation vector.  Numpy array with roll, pitch and yaw to log.
-        :return: None
-        """
-        if poses:
-            for pose in poses.values():
-                evec, tvec = pose
-        else:
-            evec, tvec = None, None
-        if tvec is None:
-            tvec = ['-', '-', '-']
-        if evec is None:
-            evec = ['-', '-', '-']
-        if not self._writer:
-            with open('logs/position_log.csv', 'w') as csv_file:
-                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'time']
-                self._log_start_time = time.time()
-                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
-                self._writer.writerow(fieldnames)
-                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
-                                       (time.time() - self._log_start_time)])
-        else:
-            with open('logs/position_log.csv', 'a') as csv_file:
-                self._writer = csv.writer(csv_file, delimiter=',', lineterminator='\n',  dialect='excel')
-                self._writer.writerow([tvec[0], tvec[1], tvec[2], evec[0], evec[1], evec[2],
-                                       (time.time() - self._log_start_time)])
 
     def resetExtrinsicMatrices(self):
         '''
@@ -261,7 +230,7 @@ class PoseEstimator():
 
     def getCameraPositionQuality(self, camID=-1):
         '''
-        Get the quality/reliability , of the pose of a cam from world origo.
+        Get the quality/reliability , of the pose of a cam from world origen.
         :param camID: Cam to select
         :return: Quality, number between 0 and 1, where 1 is complete accurate pose.
         '''
@@ -296,11 +265,10 @@ class PoseEstimator():
         self.runThread = False
         self.stopThreads()
         ves = self.getVisionEntityList()
-        while True in veStatuses:
-            veStatuses = [ve.running for ve in ves]
+        veStatuses = [ve.running for ve in ves]
+        logging.debug(str(veStatuses))
         self.running = False
         self.resetExtrinsicMatrices()
-        self.worldCoordinatesIsSet = False
 
     def stopThreads(self):
         """
@@ -308,7 +276,8 @@ class PoseEstimator():
         :return:
         """
         for VE in self.getVisionEntityList():
-            VE.runThread = False
+            logging.debug("Setting VEs runThread flag to false")
+            VE.stopThread()
 
     def addBoard(self, board):
         """

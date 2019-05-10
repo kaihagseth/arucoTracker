@@ -6,6 +6,7 @@ from tkinter import Menu
 from tkinter import ttk
 from tkinter.messagebox import showinfo, showerror
 import matplotlib
+import csv
 
 
 import cv2
@@ -24,6 +25,7 @@ from VisionEntityClasses.IntrinsicCalibrator import videoCalibration, calibCam
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
+import datetime
 matplotlib.use('TkAgg')
 class GUIApplication(threading.Thread):
     global length
@@ -44,7 +46,7 @@ class GUIApplication(threading.Thread):
         self.connector.setImageDisplayFunction(self.displayFrameInMainWindow)
         self.connectorStarted = False
         # Fields written to by external objects. Should only be read in this object.
-        self.imageFrame = None           # Image frame to be shown in camera window.
+        self.imageFrame = None      # Image frame to be shown in camera window.
         self.modelPoses = None      # Poses of all currently tracked objects. (Only one at the time for now)
         self.userBoard = None       # Arucoboard created by user in GUI.
 
@@ -68,8 +70,7 @@ class GUIApplication(threading.Thread):
         self.anyBoardsInitiated = False # Only True if one or more boards are intitated.
         # Button lists
         self.boardButtons = dict()
-        self.cameraButtonList = []
-        self.cameraButtonIndexList = []
+        self.cameraButtonList = dict()
 
         # Pose data
         self.translation_value_lists = [[],[],[]]
@@ -87,7 +88,7 @@ class GUIApplication(threading.Thread):
         TODO: Please add comments
         '''
         self.camIDInUse = 0
-
+        self.logging = False
         # Set up main window.
         self.root = Tk()
         self.root.style = ttkthemes.ThemedStyle()
@@ -172,21 +173,26 @@ class GUIApplication(threading.Thread):
         self.optionLabel = Label(self.buttonPanelLeft_panedwindow, text='Running options:', bg=self.GRAY,
                                           fg=self.WHITE, font=("Arial", "12"))
 
-        self.showGraphWindow_btn = Button(self.buttonPanelLeft_panedwindow, text='Show graph window  ', bg=self.GRAY,
-                                          fg='Orange', height=2, width=20,font=("Arial", "11"),
-                                          command=lambda: (self.initializeGraph(), self.hideButton(self.btn_plot)))
         self.resetExtrinsic_btn = Button(self.buttonPanelLeft_panedwindow, text='Reset startingpose', bg=self.GRAY,
                                           fg='Orange', height=2, width=20,font=("Arial", "11"), state='disable',
                                           command=lambda: (self.resetCamExtrinsic()))
-        self.startLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Log to file', bg=self.GRAY,
-                                          fg='Orange', state='normal', height=2, width=20, font=("Arial", "11"),
-                                          command=lambda: (self.startLogging(), self.hideButton(self.btn_plot)))
+
+        self.toggleLogging_btn = Button(self.buttonPanelLeft_panedwindow, text='Start logging', bg=self.GRAY,
+                                        fg='Orange', state='disable', height=2, width=20, font=("Arial", "11"),
+                                        command=lambda: (self.startLogging()))
+        self.showGraphWindow_btn = Button(self.buttonPanelLeft_panedwindow, text='Show graph window  ', bg=self.GRAY,
+                                          fg='Orange', height=2, width=20, font=("Arial", "11"), state='disable',
+                                          command=lambda: (self.initializeGraph()))
+        self.saveLogToCsv_btn = Button(self.buttonPanelLeft_panedwindow, text='Save log to file', bg=self.GRAY,
+                                       fg='Orange', state='disable', height=2, width=20, font=("Arial", "11"),
+                                       command=lambda: (self.writeLogToCsv()))
 
         # Add the buttons to the button panel
         self.optionLabel.pack(padx=5, pady=5)
+        self.toggleLogging_btn.pack(padx=10, pady=10)
         self.showGraphWindow_btn.pack(padx=10,pady=10)
         self.resetExtrinsic_btn.pack(padx=10,pady=10)
-        self.startLogging_btn.pack(padx=10,pady=10)
+        self.saveLogToCsv_btn.pack(padx=10,pady=10)
 
         # Add the left-menu widget to the main left-menu widget
         self.left_camPaneTabMain.add(self.top_left, height=250, width = 80)
@@ -278,7 +284,7 @@ class GUIApplication(threading.Thread):
             self.im = self.im.resize((300, 300), Image.ANTIALIAS)
             self.ph = ImageTk.PhotoImage(self.im)
             # Need to use ph for tkinter to understand
-            self.btn_img = Label(self.page_3_frame,  image=self.ph)
+            self.btn_img = Label(self.page_3_frame,  image=ImageTk.PhotoImage(Image.fromarray(np.ones((300, 300)))))
             self.btn_img.pack(side=RIGHT)
         except TclError as e:
             logging.error(str(e))
@@ -342,14 +348,14 @@ class GUIApplication(threading.Thread):
         self.btn_frame = Frame(self.page_3, bg=self.GRAY)
         self.btn_frame.configure(bg='black')
         self.btn_frame.pack()
-        self.pdf_btn = Button(self.btn_frame, text='Generate board',
+        self.generate_btn = Button(self.btn_frame, text='Generate board',
                               command=lambda: [self.createArucoBoard()])
-        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.pdf_btn.pack(side=LEFT)
-        self.pdf_btn = Button(self.btn_frame, text='Add to tracking list',
-                              command=lambda: [self.exportArucoBoard()])
-        self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.pdf_btn.pack(side=LEFT)
+        self.generate_btn.configure(bg=self.GRAY, fg=self.WHITE)
+        self.generate_btn.pack(side=LEFT)
+        self.export_btn = Button(self.btn_frame, text='Add to tracking list',
+                              command=lambda: (self.exportArucoBoard()))
+        self.export_btn.configure(bg=self.GRAY, fg=self.WHITE)
+        self.export_btn.pack(side=LEFT)
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
                               command=lambda: [self.saveArucoPDF()])
         self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
@@ -360,38 +366,6 @@ class GUIApplication(threading.Thread):
                               command=lambda: [self.doMerging()])
         self.merge_btn.configure(bg=self.GRAY, fg=self.WHITE)
         self.merge_btn.pack(side=LEFT)
-
-        # Page 4: Graph setup
-        self.page_4_frame = Frame(self.page_4)
-        self.page_4_frame.place(relx=0, rely=0, relheight=1, relwidth=1)
-        self.page_4_frame.configure(relief='groove', borderwidth='2', background=self.GRAY, width=565)
-
-        self.graph_frame = Frame(self.page_4_frame)
-        self.graph_frame.configure(background='white')
-        self.graph_frame.configure(borderwidth='2')
-        self.graph_frame.configure(relief='ridge')
-        self.graph_frame.configure(width=750)
-        self.graph_frame.configure(height=500)
-        canvas = tk.Canvas(self.graph_frame, width=750, height=500)
-        self.graph_frame.pack()
-        canvas.pack()
-
-        # Buttons in graph page
-        self.btn_frame_4 = Frame(self.page_4_frame)
-        self.btn_frame_4.pack()
-        self.start_pressed = False
-        self.btn_plot = tk.Button(self.btn_frame_4)
-        self.btn_plot.pack(side=LEFT)
-        self.btn_plot.configure(background='#665959',disabledforeground='#911515',foreground='#FFFFFF')
-        self.btn_plot.configure(text='Start')
-        self.btn_plot.configure(command=lambda: (self.displayGraph(), self.hideButton(self.btn_plot)), height=2, width=7)
-
-        self.stop_pressed = False
-        self.btn_save =  tk.Button(self.btn_frame_4)
-        self.btn_save.pack(side=RIGHT)
-        self.btn_save.configure(foreground='#FFFFFF', text='Stop',disabledforeground='#911515',background='#665959')
-        self.btn_save.configure(command=lambda: self.showButton(self.btn_plot), height=2, width=7)
-
 
 
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg=self.GRAY, height=500, width=50)
@@ -587,7 +561,6 @@ class GUIApplication(threading.Thread):
         self.vecuToCalib = self.getVEConfigUnitById(cameraIndex)
         if self.vecuToCalib is not None:
             logging.debug("Id of given VECU: "+ str(self.vecuToCalib.getIndex()))
-            state = self.vecuToCalib.getState()
             if self.calibConnectionFrame is not None:
                 try:
                     logging.info('Removing widget with id ' + str(self.calibConnectionFrame.winfo_id()) )
@@ -875,14 +848,6 @@ class GUIApplication(threading.Thread):
         self.addBoardWidgetToGUI(newBoard)
         self.addBoardButton(newBoard)
 
-    def exportArucoBoard(self):
-        """
-        Adds an aruco board to the pushed boards list, to make it accessible to external objects.
-        :return: None
-        """
-        self.connector.addBoard(self.userBoard)
-        self.addBoardWidgetToGUI(self.userBoard)
-        self.addBoardButton(self.userBoard)
 
 
     def displayMergingQuality(self, qualityList):
@@ -907,8 +872,13 @@ class GUIApplication(threading.Thread):
             image = np.zeros((640, 480, 3), dtype=np.uint8)
         image = Image.fromarray(image)
         image = ImageTk.PhotoImage(image)
-        self.panel.configure(image=image)
-        self.panel.image = image
+        try:
+            self.panel.configure(image=image)
+            self.panel.image = image
+        except TclError as e:
+            logging.error(e)
+            return
+
 
     def updateGraphData(self, boardID, pose):
         """
@@ -918,18 +888,6 @@ class GUIApplication(threading.Thread):
         :return: None
         """
         x, y, z, roll, pitch, yaw = decomposeHomogenousMatrixToEuler(pose)
-        if not boardID in self.board_graph_data:
-            logging.debug("board: " + str(boardID) + " was added to graph data.")
-            self.board_graph_data[boardID] = dict()
-            self.board_graph_data[boardID]['x'] = []
-            self.board_graph_data[boardID]['y'] = []
-            self.board_graph_data[boardID]['z'] = []
-            self.board_graph_data[boardID]['roll'] = []
-            self.board_graph_data[boardID]['pitch'] = []
-            self.board_graph_data[boardID]['yaw'] = []
-            self.board_graph_data[boardID]['time'] = []
-            if not 'start_time' in self.board_graph_data:
-                self.board_graph_data['start_time'] = time.time()
         self.board_graph_data[boardID]['x'].append(x)
         self.board_graph_data[boardID]['y'].append(y)
         self.board_graph_data[boardID]['z'].append(z)
@@ -965,10 +923,10 @@ class GUIApplication(threading.Thread):
         Collect all VEs to be sent to PE for PoseEstimation, and send it to connector.
         :return:
         '''
-        self.VEsToSend = [] # List of VEs to send to PoseEstimator
+        self.VEsToSend = []
         for VECU in self.VEConfigUnits:
             # Check if this VE should be included
-            include = VECU.getIncludeStatus()
+            include = VECU.getIncludeStatus() and VECU.getState() != 6
             if include:
                 VECU_VE = VECU.getVE()
                 VECU.setDoPreviewState(False)
@@ -991,8 +949,8 @@ class GUIApplication(threading.Thread):
         if self.VEsToSend: # is not empty
             self.anyCameraInitiated = True
             self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
-            self.connector.collectGUIVEs(self.VEsToSend) # Send them to GUI
-            self.updateCamlist(self.VEsToSend)
+            self.connector.addVisionEntities(self.VEsToSend) # Send them to Pose Estimator
+            self.updateCamlist(self.VEsToSend) # Add to camera list.
 
     def setCameraIndexToDisplay(self):
         """
@@ -1059,6 +1017,10 @@ class GUIApplication(threading.Thread):
             logging.error(str(e))
             self.userBoard = None
             showinfo("Error", "Please insert insert whole numbers in the boxes to create board.")
+        except cv2.error as e:
+            logging.error(str(e))
+            self.userBoard = None
+            showinfo("Error", "Invalid value entered. Please check your entries and try again.")
 
     def exportArucoBoard(self):
         """
@@ -1067,6 +1029,7 @@ class GUIApplication(threading.Thread):
         """
         if self.userBoard is not None:
             # We have 'generated' the board.
+            self.userBoard.makeUnique()
             self.connector.addBoard(self.userBoard)
             self.addBoardWidgetToGUI(self.userBoard)
             self.addBoardButton(self.userBoard)
@@ -1102,8 +1065,12 @@ class GUIApplication(threading.Thread):
         Return values from entry and send it to the arucoPoseEstimator
         :return:None
         '''
-        if self.userBoard is not None:
-            self.userBoard.writeBoardToPDF()
+        try:
+            assert self.userBoard is not None, "Please create a board before exporting to pdf."
+        except AssertionError as e:
+            self.showErrorBox(e)
+            return
+        self.userBoard.writeBoardToPDF()
 
     def validate(self, string):
         '''
@@ -1189,33 +1156,6 @@ class GUIApplication(threading.Thread):
             for value in self.rotation_values:
                 value.set(0.0)
 
-    def plotGraph(self, poses, frame):
-        '''
-        Send position for the board to GUIDataPlotting and plot pos on graph
-        :param poses:
-        :param frame:
-        :return:
-        '''
-        self.modelPoses = poses
-        self.imageFrame = frame
-        boardIndex = self.boardIndex.get()
-        if poses:
-            evec, tvec = poses[boardIndex]
-            x, y, z = tvec
-            x1 = 0
-            y1 = 0
-            z1 = 0
-            try:
-                if tvec is not None and x is not x1 and y is not y1 and z is not z1:
-                    GUIDataPlotting.plotXYZ(frame, x, y, z)
-                    x=x1
-                    y=y1
-                    z=z1
-                else:
-                    pass
-            except TypeError:
-                print('test')
-
     def startPoseEstimation(self):
         """
         Starts the pose estimator
@@ -1227,9 +1167,11 @@ class GUIApplication(threading.Thread):
             assert self.anyBoardsInitiated, "No boards are created. Please add Aruco Boards in Marksers tab."
             self.connector.startPoseEstimation(self.displayFrameInMainWindow, self.displayPoseInTrackingWindow,
                                                self.displayQualityInTrackingWindow)
+            self.__displayedCameraIndex.set(-1)
+            self.setCameraIndexToDisplay()
             self.poseEstimationIsRunning = True
             self.resetExtrinsic_btn.config(state='normal')
-            self.startLogging_btn.config(state='normal')
+            self.toggleLogging_btn.config(state='normal')
         except AssertionError as err:
             self.showErrorBox(err)
             return
@@ -1241,8 +1183,10 @@ class GUIApplication(threading.Thread):
         """
         self.connector.stopPoseEstimation()
         self.resetExtrinsic_btn.config(state='disable')
-        self.startLogging_btn.config(state='disable')
+        self.toggleLogging_btn.config(state='disable')
+        self.stopLogging()
         self.poseEstimationIsRunning = False
+        self.showEmptyFrame()
         logging.debug("Stop signal sent.")
 
     def checkPreviewStatus(self):
@@ -1257,51 +1201,50 @@ class GUIApplication(threading.Thread):
                     id = VECU.getIndex()
                     return id
 
-    def setPreviewStatus(self, index):
+    def setPreviewStatus(self, VE, status):
         '''
-        Takew commands from VECU and organise so image preview is happening.
+        Take commands from VECU and organise so image preview is happening.
         :param index: Index for camera to preview. Remove the preview if index is -1.
         :return:
         '''
-        logging.debug("Inside.")
-        if index >= 0:
+        if status:
             # Show preview
             if self.imgHolder.image is not None:
-                # Remove earlier preview, just because
                 self.imgHolder.configure(image='')
                 self.imgHolder.image = None
-            self.showPreviewImage(index)
-        elif index is -1:
+            self.showPreviewImage(VE)
+        else:
             # Hide preview
+            VE.runPreview = False
             self.imgHolder.configure(image='')
             self.imgHolder.image = None
 
-    def showPreviewImage(self, index):
+    def showPreviewImage(self, VE):
         '''
         Show preview video-feed from camera on given index.
-        :param index: Index of cam to preview
+        :param VE: The vision entity to display
         :return: None
         '''
-        logging.debug("Index to preview:"+ str(index))
-        if index is not -1 and index is not None:
-            try:
-                VECU = self.getVECUByIndex(index)
-                VE = VECU.getVE()
-                VE.grabFrame()
-                _, frame = VE.retrieveFrame()
-                try:
-                    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    image = Image.fromarray(image)
-                    image = ImageTk.PhotoImage(image)
-                    self.imgHolder.configure(image=image)
-                    self.imgHolder.image = image
-                except cv2.error as e:
-                    logging.error(str(e))
-            except AttributeError as e:
-                # VE not found or something.
-                # TODO: Change so this is a impossible error to hit. Hard to change cause threading etc.
-                msg = str(e) + " \n Probably caused by shutting down preview."
-                logging.error(str(e))
+        th = threading.Thread(target=VE.runPreviewLoop, args=[self.displayFrameInPreview], daemon=True)
+        th.start()
+
+    def displayFrameInPreview(self, frame):
+        """
+        Function used by VE to display a frame in the preview section in GUI.
+        :param vision_entity: Vision entity to display frames from
+        :param frame: Frame to display
+        :return: None
+        """
+        try:
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(image)
+            image = ImageTk.PhotoImage(image)
+            self.imgHolder.configure(image=image)
+            self.imgHolder.image = image
+        except cv2.error as e:
+            logging.error(str(e))
+
+
 
     def getVECUByIndex(self, index):
         for VECU in self.VEConfigUnits:
@@ -1358,8 +1301,8 @@ class GUIApplication(threading.Thread):
                                         value=camID, bg='#424242', fg='Orange')
                 if not self.cameraButtonList:
                     self.connector.setCameraIndex(camID) # If this is the first added cam, send it the display function.
-                self.cameraButtonList.append(button)
-                self.cameraButtonList[-1].pack()
+                self.cameraButtonList[camID] = button
+                self.cameraButtonList[camID].pack()
 
     def toggleFullscreen(self, event=None):
         '''
@@ -1395,7 +1338,7 @@ class GUIApplication(threading.Thread):
         self.ax = graph_figure.subplots(3, 2, sharex=True, sharey=False)
 
         self.graph_lines = dict()
-        self.graph_lines['x'] =     self.ax[0][0].plot([], [], 'r')[0]
+        self.graph_lines['x'] =    self.ax[0][0].plot([], [], 'r')[0]
         self.graph_lines['y'] =    self.ax[1][0].plot([], [], 'g')[0]
         self.graph_lines['z'] =    self.ax[2][0].plot([], [], 'b')[0]
         self.graph_lines['roll'] = self.ax[0][1].plot([], [], 'c')[0]
@@ -1407,8 +1350,11 @@ class GUIApplication(threading.Thread):
         self.ax[2][0].set_ylabel('Z')
         self.ax[2][0].set_xlabel('Time (s)')
         self.ax[0][1].set_ylabel('Roll')
+        self.ax[0][1].yaxis.tick_right()
         self.ax[1][1].set_ylabel('Pitch')
+        self.ax[1][1].yaxis.tick_right()
         self.ax[2][1].set_ylabel('Yaw')
+        self.ax[2][1].yaxis.tick_right()
         self.ax[2][1].set_xlabel('Time (s)')
 
         def updateGraphDisplay(frame):
@@ -1430,27 +1376,24 @@ class GUIApplication(threading.Thread):
 
 
 
-    def hideButton(self, button):
+    def disableButton(self, button):
         '''
         Hide the chosen button if you do not want it to be pressed until some other
         button is pressed first.
         :param button: The button you want to hide
         :return: None
         '''
-        button.lower()
-        self.stop_pressed = True
+        button.config(state='disabled')
 
-    def showButton(self, button):
+
+    def enableButton(self, button):
         '''
         Show a hidden button
         :param button: Button you want to show
         :return:
         '''
-        button.lift()
-        self.stop_pressed = False
+        button.config(state='normal')
 
-    def plotGraphPressed(self):
-        self.start_pressed = True
 
     def showErrorBox(self, err):
         """
@@ -1482,6 +1425,63 @@ class GUIApplication(threading.Thread):
         Starts the logging of board positons.
         :return: none
         """
+        if self.logging:
+            return
+        self.logging = True
         self.findLoggedBoards()
+        self.board_graph_data['start_time'] = time.time()
+        for index in self.loggedBoards:
+            logging.debug("board: " + str(index) + " was added to graph data.")
+            self.board_graph_data[index] = dict()
+            self.board_graph_data[index]['x'] = []
+            self.board_graph_data[index]['y'] = []
+            self.board_graph_data[index]['z'] = []
+            self.board_graph_data[index]['roll'] = []
+            self.board_graph_data[index]['pitch'] = []
+            self.board_graph_data[index]['yaw'] = []
+            self.board_graph_data[index]['time'] = []
         logging.info("Starting logging for boards: " + str(self.loggedBoards))
         self.connector.startLogging(self.updateGraphData, self.loggedBoards)
+        self.toggleLogging_btn.config(text='Stop logging', command=lambda: (self.stopLogging()))
+        self.enableButton(self.showGraphWindow_btn)
+        self.disableButton(self.saveLogToCsv_btn)
+
+    def stopLogging(self):
+        """
+        Stops the logging of board positions.
+        :return: None
+        """
+        if self.logging:
+            self.logging = False
+            self.connector.stopLogging()
+            self.toggleLogging_btn.config(text='Start logging', command=lambda: (self.startLogging()))
+            self.enableButton(self.saveLogToCsv_btn)
+
+    def writeLogToCsv(self):
+        """
+        Writes the logged pose data to a csv-file.
+        :return: None
+        """
+        self.disableButton(self.saveLogToCsv_btn)
+        saveTimeString = '{0:%Y-%m_%d %H-%M-%S}'.format(datetime.datetime.now())
+        for boardID in self.loggedBoards:
+            filename = "logs\Pose log - Board " + str(boardID) + ", " + saveTimeString + '.csv'
+            with open(filename, 'w') as csv_file:
+                writer = csv.writer(csv_file, delimiter=',', lineterminator='\n', dialect='excel')
+                fieldnames = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'time']
+                writer.writerow(fieldnames)
+                for x, y, z, roll, pitch, yaw, t in zip(self.board_graph_data[boardID]['x'],
+                                                        self.board_graph_data[boardID]['y'],
+                                                        self.board_graph_data[boardID]['z'],
+                                                        self.board_graph_data[boardID]['roll'],
+                                                        self.board_graph_data[boardID]['pitch'],
+                                                        self.board_graph_data[boardID]['yaw'],
+                                                        self.board_graph_data[boardID]['time']):
+                    writer.writerow([x, y, z, roll, pitch, yaw, t])
+
+    def showEmptyFrame(self):
+        """
+        Removes the camera frame from the main window.
+        :return: None
+        """
+        self.main_label.configure(image='')
