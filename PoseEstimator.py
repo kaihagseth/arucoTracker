@@ -79,7 +79,7 @@ class PoseEstimator():
         '''
         Find all cams connected to system.  
         :return: List of indexes of wanted cameras.
-        '''  # TODO: Find new algorithm, this thing is sloooow.
+        '''
         for i in wantedCamIndexes:
                 msg = 'Webcam on index {0} included.'.format(i)
                 logging.info(msg)
@@ -223,7 +223,7 @@ class PoseEstimator():
         master_ve = None
         for ve in self.getVisionEntityList():
             potential_board_quality = ve.getCameraPoseQuality() * ve.getDetectionQuality()[board.ID]
-            if potential_board_quality > highest_potential_board_quality:
+            if potential_board_quality > highest_potential_board_quality and ve.getCameraPose() is not None:
                 highest_potential_board_quality = potential_board_quality
                 master_ve = ve
         return master_ve
