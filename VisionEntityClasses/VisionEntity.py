@@ -143,6 +143,7 @@ class VisionEntity:
         :return:
         """
         self._cameraPoseMatrix = None
+        self._cameraPoseQuality = 0
 
     def setCameraPose(self, board):
         """
