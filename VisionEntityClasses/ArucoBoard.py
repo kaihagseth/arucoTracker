@@ -84,7 +84,7 @@ class ArucoBoard:
         :return: ret
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
-        self.setPoseQuality(0)
+        self.setPoseQuality(1)
         ve.setCameraPose(self)
         ve.setCameraPoseQuality(1)
         return True
