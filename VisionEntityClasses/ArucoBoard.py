@@ -81,11 +81,10 @@ class ArucoBoard:
         """
         Sets the board pose to origen and calibrates VE.
         :param ve: Vision entity to calibrate
-        :param q_threshold: Minimum accepted quality.
         :return: ret
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
-        self.setPoseQuality(1)
+        self.setPoseQuality(0)
         ve.setCameraPose(self)
         ve.setCameraPoseQuality(1)
         return True

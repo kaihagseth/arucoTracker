@@ -460,4 +460,3 @@ class PoseEstimator():
         :return:
         """
         self.graphing = False
-
