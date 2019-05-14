@@ -9,14 +9,16 @@ class Camera():
     Class for Camera.
     """
     def __init__(self, cam_name="Cam0", src_index=0, camera_label='A1',
-                 load_camera_parameters=True):
+                 load_camera_parameters=True, flip=True):
         """
         :param cam_name: Name of camera
         :param src_index: Index opencv uses to access this camera
         :param camera_label: String corresponding to yellow label on camera.
         :param loadCameraParameters: Flag to decide if you should load this cameras parameters.
+        :param flip: Decides if the frame should be flipped.
         """
         logging.info("Creating Camera: Name: " + str(cam_name) + "; Label: " + str(camera_label) + "Index: " + str(src_index))
+        self.flip = flip
         self._name = cam_name
         self.camera_label = camera_label
         self.camera_parameters = {'mtx': None, 'ret': None, 'dist': None, 'rvecs': None, 'tvecs': None,
@@ -128,6 +130,8 @@ class Camera():
         :return: retval, frame
         """
         ret, self._frame = self._vidCap.retrieve()
+        if self.flip:
+            self._frame = cv2.flip(self._frame, -1)
         return ret, self._frame
 
     def getFrame(self):

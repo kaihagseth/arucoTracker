@@ -143,6 +143,7 @@ class VisionEntity:
         :return:
         """
         self._cameraPoseMatrix = None
+        self._cameraPoseQuality = 0
 
     def setCameraPose(self, board):
         """
@@ -155,8 +156,6 @@ class VisionEntity:
         logging.info("Camera extrinsic matrix set")
         origin_to_model = board.getTransformationMatrix()
         model_to_camera = invertTransformationMatrix(self.__cameraToModelMatrices[board.ID])
-        assert model_to_camera is not None, "Attempting to set camera pose without knowing Model->Camera transfrom"
-        assert origin_to_model is not None, "Attempting to set camera pose without knowing World->Model transform"
         origin_to_camera = origin_to_model * model_to_camera
         origin_to_camera = origin_to_camera / origin_to_camera[3, 3]
         self._cameraPoseMatrix = origin_to_camera
@@ -169,8 +168,6 @@ class VisionEntity:
         """
         detectionQuality = self.getDetectionQuality()[board.ID]
         boardPoseQuality = board.getPoseQuality()
-        assert boardPoseQuality <= 1, "Board pose quality is above 1: bpq is " + str(boardPoseQuality)
-        assert detectionQuality <= 1, "Detection quality is above 1: dq is " + str(detectionQuality)
         return detectionQuality * boardPoseQuality
 
 

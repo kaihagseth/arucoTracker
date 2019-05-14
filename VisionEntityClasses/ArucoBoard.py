@@ -81,7 +81,6 @@ class ArucoBoard:
         """
         Sets the board pose to origen and calibrates VE.
         :param ve: Vision entity to calibrate
-        :param q_threshold: Minimum accepted quality.
         :return: ret
         """
         self._transformationMatrix = np.matrix(np.eye(4, dtype=np.float32))
@@ -222,3 +221,11 @@ class ArucoBoard:
         :return:
         """
         self.logging = False
+
+    def reset(self):
+        """
+        Resets current position and tracking entity.
+        :return: None
+        """
+        self.setTrackingEntity(None)
+        self.updateBoardPose(None)

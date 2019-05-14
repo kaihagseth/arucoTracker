@@ -17,7 +17,7 @@ class PoseEstimator():
     Collect pose and info from all cameras, and find the best estimated pose possible.
     """
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-    QTHRESHOLD = 0.8  # How good the quality of the first frame has to be in order to be set as the first camera
+    QTHRESHOLD = 0.2  # How good the quality of the first frame has to be in order to be set as the first camera
     def __init__(self):
         self.VisionEntityList = dict()  # List for holding VEs
         self._writer = None
@@ -141,6 +141,8 @@ class PoseEstimator():
         :return: None
         '''
         self.worldCoordinatesIsSet = False
+        for board in self.getBoards().values():
+            board.reset()
         for VE in self.getVisionEntityList():
             VE.resetExtrinsicMatrix()
 
@@ -458,4 +460,3 @@ class PoseEstimator():
         :return:
         """
         self.graphing = False
-
