@@ -285,7 +285,7 @@ class GUIApplication(threading.Thread):
             self.ph = ImageTk.PhotoImage(self.im)
             # Need to use ph for tkinter to understand
             self.btn_img = Label(self.page_3_frame,  image=ImageTk.PhotoImage(Image.fromarray(np.ones((300, 300)))))
-            self.btn_img.pack(side=RIGHT)
+            self.btn_img.pack(side=RIGHT, pady=15,padx=15)
         except TclError as e:
             logging.error(str(e))
         self.page_3_frame.pack()
@@ -302,9 +302,9 @@ class GUIApplication(threading.Thread):
         self.page_3_entry_frame = Frame(self.page_3_frame)
         self.page_3_entry_frame.configure(relief='groove', borderwidth='2')
 
-        self.page_3_label_frame.pack(side=LEFT)
-        self.page_3_entry_frame.pack(side=RIGHT)
-
+        self.page_3_label_frame.pack(side=LEFT, pady=15,padx=15)
+        self.deadspace14 = Frame(self.page_3_frame, width=15).pack(side=RIGHT)
+        self.page_3_entry_frame.pack(side=RIGHT, pady=15,padx=15)
         self.length = Label(self.page_3_label_frame, text='Length:', bg=self.GRAY, fg=self.WHITE)  # Add text to label
         self.length_entry = Entry(self.page_3_entry_frame)  # Create entry for that label
         vcmd_length = (self.length_entry.register(self.on_validate), '%P')  # Check if input is valid
@@ -345,27 +345,27 @@ class GUIApplication(threading.Thread):
         self.gap_entry.pack()
         self.gap_entry.config(validate='key', validatecommand=vcmd_gap)
 
-        self.btn_frame = Frame(self.page_3, bg=self.GRAY)
-        self.btn_frame.configure(bg='black')
+        self.btn_frame = Frame(self.page_3, bg=self.GRAY, borderwidth='2',relief='groove')
+        self.btn_frame.configure(bg='#424242')
         self.btn_frame.pack()
         self.generate_btn = Button(self.btn_frame, text='Generate board',
                               command=lambda: [self.createArucoBoard()])
         self.generate_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.generate_btn.pack(side=LEFT)
+        self.generate_btn.pack(side=LEFT, pady=15,padx=15)
         self.export_btn = Button(self.btn_frame, text='Add to tracking list',
                               command=lambda: (self.exportArucoBoard()))
         self.export_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.export_btn.pack(side=LEFT)
+        self.export_btn.pack(side=LEFT, pady=15,padx=15)
         self.pdf_btn = Button(self.btn_frame, text='Save Aruco Board',
                               command=lambda: [self.saveArucoPDF()])
         self.pdf_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.pdf_btn.pack(side=LEFT)
+        self.pdf_btn.pack(side=LEFT, pady=15,padx=15)
 
         Frame(self.btn_frame, width=5,bg=self.GRAY).pack(side=LEFT)
         self.merge_btn = Button(self.btn_frame, text='Merge',
                               command=lambda: [self.doMerging()])
         self.merge_btn.configure(bg=self.GRAY, fg=self.WHITE)
-        self.merge_btn.pack(side=LEFT)
+        self.merge_btn.pack(side=LEFT, pady=15,padx=15)
 
 
         self.camFrameSettingSection = Frame(self.left_camPaneTabMain, bg=self.GRAY, height=500, width=50)
@@ -924,7 +924,7 @@ class GUIApplication(threading.Thread):
         :return:
         '''
         self.VEsToSend = []
-        for VECU in self.VEConfigUnits:
+        for VECU in self.VEConfigUnits: # Itewrate ovber all created VECUs
             # Check if this VE should be included
             include = VECU.getIncludeStatus() and VECU.getState() != 6
             if include:
@@ -948,10 +948,10 @@ class GUIApplication(threading.Thread):
                         VECU.setState(9)
         if self.VEsToSend: # is not empty
             self.anyCameraInitiated = True
-            self.poseEstimationStartDenied_label.grid_forget() # Remove eventual error warning
             self.connector.addVisionEntities(self.VEsToSend) # Send them to Pose Estimator
             self.updateCamlist(self.VEsToSend) # Add to camera list.
-
+        else:
+            logging.info('No VEs sent to PE.')
     def setCameraIndexToDisplay(self):
         """
         Requests connector to display a camera from a given index.
