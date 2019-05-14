@@ -141,6 +141,8 @@ class PoseEstimator():
         :return: None
         '''
         self.worldCoordinatesIsSet = False
+        for board in self.getBoards().values():
+            board.reset()
         for VE in self.getVisionEntityList():
             VE.resetExtrinsicMatrix()
 

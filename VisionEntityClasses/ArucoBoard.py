@@ -222,3 +222,11 @@ class ArucoBoard:
         :return:
         """
         self.logging = False
+
+    def reset(self):
+        """
+        Resets current position and tracking entity.
+        :return: None
+        """
+        self.setTrackingEntity(None)
+        self.updateBoardPose(None)
