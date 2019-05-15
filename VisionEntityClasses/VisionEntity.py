@@ -248,7 +248,23 @@ class VisionEntity:
                                                 findCosineToBoard(self.__cameraToModelMatrices[board.ID])
         except TypeError:
             self._detection_quality[board.ID] = 0
-
+        CToMMatrix = self.__cameraToModelMatrices[board.ID]
+        if CToMMatrix is not None:
+            #z1 = np.asarray(CToMMatrix[0:3, 2]).flatten() # Get the z-row
+            #z2 = np.asarray(np.matrix([0, 0, 1]).T).flatten()
+            #print("Z1: ", str(z1))
+            #print("Z2: ", str(z2))
+            #msg1 = CToMMatrix
+            #logging.debug(msg1)
+            #q = np.linalg.norm(np.dot(z1, z2)) / (np.linalg.norm(z1) * np.linalg.norm(z2))
+            #msg = "Q: ", q
+            #logging.debug(msg)
+            #print("Taking arccos gives:" + str(np.arccos(q)))
+            #self._detection_quality[board.ID] = np.arccos(q)
+            z3 = np.arccos(CToMMatrix[2, 2])  # Get the z-row
+            print("#####"
+                  "Z3 is " + str(np.rad2deg(z3)) +" degrees " \
+                                     " #####")
 
     def drawAxis(self):
         """
