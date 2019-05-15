@@ -71,6 +71,7 @@ class Connector():
 
     def initConnectedCams(self):
         '''
+        Cool stuff
         Initialise cams connected to PC.
         Send the camlist and create a VisionEntities. for each camera.
         :param includeDefaultCam: If True, include the inbuilt webcam.
